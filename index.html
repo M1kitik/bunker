@@ -7,35 +7,126 @@
 <!-- Скрипт Telegram: внутри Telegram даёт доступ к облачным сохранениям и вибрации.
      В обычном браузере просто ничего не делает. -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0e0f0c; --panel:#171a14; --line:#2c3324; --text:#d8e0c8;
-    --dim:#8a937a; --acc:#c9e265; --warn:#e8a23a; --bad:#e05a47;
+    --bg:#090b11; --glass:rgba(255,255,255,.06); --gline:rgba(255,255,255,.1); --text:#eef0f6;
+    --dim:#9097a8; --acc:#ff8a3d; --acc2:#28dcbe; --warn:#ffb340; --bad:#ff5d5d; --good:#7be36a;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:"Courier New",monospace;font-size:15px;line-height:1.45;min-height:100vh}
-  #app{max-width:520px;margin:0 auto;padding:0 12px 40px}
-  .hud{position:sticky;top:0;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line);z-index:5;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:13px}
-  .hud div{background:var(--panel);border:1px solid var(--line);padding:4px 2px;border-radius:4px;text-align:center;white-space:nowrap}
-  .hud .day{grid-column:1/-1;display:flex;justify-content:space-between;color:var(--acc);padding:4px 8px}
-  h1{color:var(--acc);font-size:30px;letter-spacing:6px;margin:40px 0 6px}
-  h2{color:var(--acc);font-size:18px;margin:16px 0 8px}
-  p{margin:8px 0}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--text);font-family:Manrope,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.45;min-height:100vh;overflow-x:hidden}
+  body::before,body::after{content:"";position:fixed;border-radius:50%;pointer-events:none;z-index:0}
+  body::before{width:340px;height:340px;left:-120px;top:-100px;background:radial-gradient(circle,rgba(255,122,48,.35),transparent 70%)}
+  body::after{width:320px;height:320px;right:-140px;top:45%;background:radial-gradient(circle,rgba(40,220,190,.2),transparent 70%)}
+  #app{max-width:520px;margin:0 auto;padding:0 14px 40px;position:relative;z-index:1}
+  #app.tabs-on{padding-bottom:150px}
+  h1{font-family:Unbounded,sans-serif;font-size:30px;letter-spacing:3px;margin:36px 0 4px}
+  h2{font-family:Unbounded,sans-serif;font-size:17px;margin:16px 0 8px}
+  p{margin:6px 0}
   .dim{color:var(--dim)} .small{font-size:13px}
-  .good{color:var(--acc)} .warn{color:var(--warn)} .bad{color:var(--bad)}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;margin:10px 0}
-  button{font-family:inherit;font-size:15px;background:#232a1b;color:var(--text);border:1px solid var(--acc);border-radius:5px;padding:12px;width:100%;margin:6px 0;text-align:left;cursor:pointer}
-  button:active{background:#2f3a22}
-  button:disabled{opacity:.35;border-color:var(--line);cursor:default}
-  button.main{background:var(--acc);color:#111;font-weight:bold;text-align:center}
-  button.sel{border-color:var(--warn);background:#3a2f17}
-  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
-  .row button{width:auto;padding:6px 16px;margin:0;text-align:center}
-  .log li{margin:4px 0 4px 18px}
+  .good{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+  .card{background:var(--glass);border:1px solid var(--gline);border-radius:18px;padding:14px;margin:10px 0;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  button{font-family:inherit;font-size:15px;font-weight:600;background:var(--glass);color:var(--text);border:1px solid var(--gline);border-radius:14px;padding:13px 14px;width:100%;margin:5px 0;text-align:left;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:transform .08s}
+  button:active{transform:scale(.98)}
+  button:disabled{opacity:.35;cursor:default}
+  button.main{background:linear-gradient(90deg,#ff7a30,#ff9a4a);color:#170c05;border:none;justify-content:center;font-weight:800;box-shadow:0 6px 20px rgba(255,122,48,.3)}
+  button.sel{border-color:var(--acc);background:rgba(255,138,61,.14)}
+  .tag{font-size:11px;font-weight:700;background:rgba(0,0,0,.25);border-radius:9px;padding:3px 8px;white-space:nowrap}
+  button.main .tag{background:rgba(0,0,0,.15)}
   .blink{animation:b 1s steps(2) infinite} @keyframes b{50%{opacity:0}}
+  .log li{margin:6px 0 6px 18px}
+
+  /* шапка и кольца ресурсов */
+  .hud{position:sticky;top:0;z-index:5;padding:10px 0 8px;background:linear-gradient(var(--bg) 75%,rgba(9,11,17,0))}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .topbar b{font-family:Unbounded;font-size:17px}
+  .chips{display:flex;gap:6px;align-items:center}
+  .chip{background:var(--glass);border:1px solid var(--gline);border-radius:20px;padding:4px 10px;font-size:12px;white-space:nowrap}
+  .chip.btn{cursor:pointer;width:auto;margin:0;padding:4px 9px}
+  .rings{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .ring{background:var(--glass);border:1px solid var(--gline);border-radius:14px;padding:6px 8px;display:flex;align-items:center;gap:8px}
+  .ring .rg{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;position:relative}
+  .ring .rg::after{content:"";position:absolute;inset:3px;border-radius:50%;background:#14161e}
+  .ring .rg i{position:relative;z-index:1;font-style:normal;font-size:12px}
+  .ring b{font-size:14px;line-height:1;display:block}
+  .ring span{font-size:10px;color:var(--dim)}
+  .ring.warn{border-color:rgba(255,179,64,.5)} .ring.bad{border-color:rgba(255,93,93,.6);background:rgba(255,93,93,.08)}
+
+  /* карточка события */
+  .ev{border-radius:20px;overflow:hidden;background:var(--glass);border:1px solid var(--gline);margin:8px 0}
+  .ev .art{height:150px;position:relative;display:grid;place-items:center;font-size:64px}
+  .ev .art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,11,17,0) 40%,rgba(20,22,30,1))}
+  .ev .art span{position:relative;z-index:1;filter:drop-shadow(0 8px 20px rgba(0,0,0,.6));animation:float 4s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-6px)}}
+  .ev .art em{position:absolute;left:14px;top:12px;z-index:2;font-style:normal;font-size:11px;font-weight:800;background:var(--acc);color:#140a04;border-radius:10px;padding:3px 9px}
+  .ev .body{padding:4px 16px 14px}
+  .ev h3{font-family:Unbounded;font-size:18px;margin-bottom:6px}
+  .ev .body p{color:#c3c7d4;font-size:14px}
+
+  /* отсеки */
+  .room-card{display:flex;align-items:center;gap:12px}
+  .room-ico{width:42px;height:42px;border-radius:13px;background:rgba(255,255,255,.07);display:grid;place-items:center;font-size:20px;flex:none}
+  .room-info{flex:1;min-width:0}
+  .room-info b{display:block;font-size:15px}
+  .room-info span{font-size:12px;color:var(--dim)}
+  .pips{display:inline-flex;gap:3px;margin-left:6px;vertical-align:1px}
+  .pips i{width:7px;height:7px;border-radius:2px;background:#2c303c}.pips i.on{background:var(--acc)}
+  .stepper{display:flex;align-items:center;gap:6px}
+  .stepper button{width:34px;height:34px;padding:0;margin:0;border-radius:11px;justify-content:center;font-size:18px}
+  .stepper b{min-width:34px;text-align:center;font-size:14px}
+  .out{font-size:12px;font-weight:700;color:var(--good);background:rgba(123,227,106,.1);border-radius:8px;padding:2px 7px;margin-left:6px}
+  .forecast{display:flex;flex-wrap:wrap;gap:6px}
+  .forecast .chip b{font-weight:800}
+
+  /* нижняя панель */
+  .dock{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(14,16,23,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--gline);padding:8px 14px calc(8px + env(safe-area-inset-bottom))}
+  .dock .inner{max-width:520px;margin:0 auto}
+  .dock .main{margin:0 0 8px}
+  .tabbar{display:grid;grid-template-columns:repeat(4,1fr);text-align:center}
+  .tabbar div{font-size:10px;color:#7d8394;cursor:pointer;padding:2px 0}
+  .tabbar div b{display:block;font-size:19px;margin-bottom:1px;filter:grayscale(1);opacity:.6}
+  .tabbar div.on{color:var(--acc)} .tabbar div.on b{filter:none;opacity:1}
+  .person{display:flex;gap:12px;align-items:flex-start;position:relative}
+  .av{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:22px;flex:none;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
+  .pinfo{flex:1;min-width:0}
+  .pname{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .pname b{font-size:16px}
+  .ptags{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0 2px}
+  .ptag{font-size:11px;font-weight:700;background:rgba(255,255,255,.08);border-radius:8px;padding:2px 7px}
+  .ptag.bad{background:rgba(255,93,93,.18);color:#ff9c9c}
+  .hpbar{height:5px;border-radius:3px;background:#2a2c35;margin:8px 0;overflow:hidden}
+  .hpbar i{display:block;height:100%;border-radius:3px}
+  .hp{position:absolute;right:14px;top:14px;font-size:12px;font-weight:800}
+  select.job{width:100%;font-family:inherit;font-size:14px;font-weight:600;color:var(--text);background:rgba(255,255,255,.07);border:1px solid var(--gline);border-radius:12px;padding:9px 10px;appearance:none;-webkit-appearance:none}
+  select.job option{background:#14161e;color:#eef0f6}
+  .jr{border-left:2px solid var(--acc);padding:2px 0 2px 12px;margin:12px 0}
+  .jr small{color:var(--dim);font-size:11px;font-weight:700;letter-spacing:1px}
+  .jr b{display:block;margin:2px 0}
+  .jr p{font-size:13px;color:#c3c7d4}
   /* Заставка */
   #cut{position:fixed;inset:0;width:100vw;height:100vh;z-index:100;background:#000;transition:opacity .6s}
-  #skip{position:fixed;right:12px;bottom:16px;z-index:101;width:auto;padding:8px 14px;background:rgba(0,0,0,.5);border-color:#555;color:#aaa;font-size:13px}
+  #skip{position:fixed;right:12px;bottom:16px;z-index:101;width:auto;padding:8px 14px;background:rgba(0,0,0,.5);border-color:#555;color:#aaa;font-size:13px;border-radius:20px}
+  /* Бункер в разрезе */
+  .bunker{margin:10px 0;border:1px solid var(--gline);border-radius:18px;overflow:hidden;background:#0b0a08}
+  .bunker svg{display:block;width:100%;height:auto}
+  .bunker .room{cursor:pointer}
+  .spin{transform-box:fill-box;transform-origin:center;animation:spin 1.6s linear infinite}
+  .spin.slow{animation-duration:3.5s}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bob{animation:bob 1.4s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-1.5px)}}
+  .bubble{animation:bubble 2.2s ease-in infinite;opacity:0}
+  @keyframes bubble{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translateY(-34px);opacity:0}}
+  .blinkf{animation:blinkf 1.1s steps(2) infinite}
+  @keyframes blinkf{50%{opacity:.15}}
+  .flicker{animation:flicker 2.3s infinite}
+  @keyframes flicker{0%,100%{opacity:1}8%{opacity:.2}10%{opacity:.9}45%{opacity:.7}47%{opacity:.1}50%{opacity:.8}}
+  .sway{transform-box:fill-box;transform-origin:bottom center;animation:sway 3s ease-in-out infinite}
+  @keyframes sway{50%{transform:rotate(6deg)}}
+  .ash{animation:ash 6s linear infinite}
+  @keyframes ash{from{transform:translate(0,-6px)}to{transform:translate(-14px,52px)}}
+  .card.hl,.chip.hl{border-color:var(--acc);box-shadow:0 0 0 2px rgba(255,138,61,.4)}
 </style>
 </head>
 <body>
@@ -73,24 +164,49 @@ function wipe(){
 }
 
 /* =========================================================
-   2. ДАННЫЕ ИГРЫ: отсеки, предметы, концовки
+   2. ДАННЫЕ ИГРЫ: отсеки, люди, предметы, концовки
    ========================================================= */
 const ROOMS = {
-  generator:{name:'⚡ Генератор',      desc:'Даёт энергию всему бункеру', cost:0,  per:4, res:'energy',    use:0},
-  water:    {name:'💧 Водоочистка',    desc:'Очищает воду',               cost:0,  per:4, res:'water',     use:1},
-  filter:   {name:'🌀 Фильтр воздуха', desc:'Снижает радиацию',           cost:0,  per:2, res:'rad',       use:2},
-  farm:     {name:'🌱 Гидропоника',    desc:'Выращивает еду',             cost:8,  per:4, res:'food',      use:2},
-  workshop: {name:'🛠 Мастерская',     desc:'Делает материалы',           cost:4,  per:3, res:'materials', use:1},
-  medbay:   {name:'➕ Медпункт',       desc:'Поднимает мораль',           cost:12, per:3, res:'morale',    use:1},
-  radio:    {name:'📻 Радиорубка',     desc:'Ловит и усиливает сигнал',   cost:15, per:1, res:'signal',    use:1},
+  generator:{name:'⚡ Генератор',      desc:'Даёт энергию всему бункеру', cost:0,  per:4,  res:'energy',    use:0},
+  water:    {name:'💧 Водоочистка',    desc:'Очищает воду',               cost:0,  per:4,  res:'water',     use:1},
+  filter:   {name:'🌀 Фильтр воздуха', desc:'Снижает радиацию',           cost:0,  per:2,  res:'rad',       use:2},
+  farm:     {name:'🌱 Гидропоника',    desc:'Выращивает еду',             cost:8,  per:4,  res:'food',      use:2},
+  workshop: {name:'🛠 Мастерская',     desc:'Делает материалы',           cost:4,  per:3,  res:'materials', use:1},
+  medbay:   {name:'➕ Медпункт',       desc:'Лечит больных и раненых',    cost:12, per:15, res:'heal',      use:1},
+  radio:    {name:'📻 Радиорубка',     desc:'Ловит и усиливает сигнал',   cost:15, per:1,  res:'signal',    use:1},
 };
 const MAX_LVL = 3;
+
+// Профессии: работа «по специальности» даёт ×1.5
+const PROFS = {
+  boss:    {n:'Командир',  i:'🎖', room:null},
+  electric:{n:'Электрик',  i:'🔌', room:'generator'},
+  medic:   {n:'Медсестра', i:'🩺', room:'medbay'},
+  farmer:  {n:'Агроном',   i:'🌾', room:'farm'},
+  mechanic:{n:'Механик',   i:'🔧', room:'workshop'},
+  plumber: {n:'Сантехник', i:'🚰', room:'water'},
+  child:   {n:'Ребёнок',   i:'🧸', room:null},
+};
+// Черты характера
+const TRAITS = {
+  leader: {n:'Лидер',   i:'⭐', d:'+1 мораль каждый день'},
+  worker: {n:'Трудяга', i:'💪', d:'+25% к работе'},
+  lazy:   {n:'Лентяй',  i:'😴', d:'−25% к работе'},
+  glutton:{n:'Обжора',  i:'🍖', d:'Ест вдвое больше'},
+  tough:  {n:'Крепкий', i:'🛡', d:'Радиация и раны вредят вдвое меньше'},
+  sickly: {n:'Хилый',   i:'🤧', d:'Чаще болеет и дольше выздоравливает'},
+  coward: {n:'Трус',    i:'😰', d:'Может струсить на вылазке'},
+  thief:  {n:'Вор',     i:'🦝', d:'Тайком таскает еду', hidden:true},
+};
+const ADULT_TRAITS = ['worker','worker','lazy','glutton','tough','tough','sickly','coward','thief'];
+const CHILD_TRAITS = ['coward','sickly','tough','glutton','worker'];
+const AV_COLORS = ['#ff8a3d','#4ab8ff','#7be36a','#ff7aa8','#b58ad8','#ffd23a','#28dcbe','#e0e0e0'];
 
 const ITEMS = [
   {id:'food',   name:'🥫 Ящик консервов',  desc:'+15 еды'},
   {id:'water',  name:'🚰 Канистры с водой', desc:'+15 воды'},
   {id:'tools',  name:'🧰 Инструменты',      desc:'+10 материалов'},
-  {id:'meds',   name:'💊 Аптечка',          desc:'+15 морали'},
+  {id:'meds',   name:'💊 Аптечка',          desc:'+15 морали, все здоровы'},
   {id:'radio',  name:'📻 Радиоприёмник',    desc:'Радиорубка сразу построена'},
   {id:'filter', name:'🌀 Запасной фильтр',  desc:'Фильтр воздуха сразу 2 уровня'},
 ];
@@ -108,61 +224,116 @@ const ENDINGS = {
    3. СОСТОЯНИЕ ИГРЫ
    ========================================================= */
 let S = null;
+const rnd = arr => arr[Math.floor(Math.random()*arr.length)];
+const chance = p => Math.random() < p;
 
+function makePerson(name, prof, trait){
+  return {name, prof, trait: trait || rnd(prof==='child' ? CHILD_TRAITS : ADULT_TRAITS), hp:100, sick:false, isolated:false, job:null};
+}
 function newState(){
-  return {
+  const s = {
     screen:'pick', day:1,
     res:{food:15, water:15, materials:6, morale:55, rad:10, signal:0},
-    residents:['Ты','Пётр','Вера'],
+    residents:[ makePerson('Ты','boss','leader'), makePerson('Пётр','electric'), makePerson('Вера','medic') ],
     rooms:{
       generator:{lvl:1,w:0}, water:{lvl:1,w:0}, filter:{lvl:1,w:0},
       farm:{lvl:0,w:0}, workshop:{lvl:0,w:0}, medbay:{lvl:0,w:0}, radio:{lvl:0,w:0},
     },
-    flags:{}, seen:[], hunger:0,
-    picked:[], eventId:null, ctx:{}, resultText:'', log:[], lastEvent:null, ending:null,
+    flags:{}, seen:[], picked:[], eventId:null, ctx:{}, resultText:'', log:[], lastEvent:null, ending:null, journal:[], tab:'bunker',
   };
+  // стартовая расстановка
+  s.residents[0].job='filter'; s.residents[1].job='generator'; s.residents[2].job='water';
+  return s;
+}
+// перевод старых сохранений (жители были просто именами)
+function migrate(s){
+  if(s.residents && typeof s.residents[0]==='string'){
+    const PR={'Ты':'boss','Пётр':'electric','Вера':'medic','Марина':'farmer','Лёша':'child','Соня':'child','Глеб':'mechanic'};
+    s.residents = s.residents.map(n=>makePerson(n, PR[n]||'plumber', n==='Ты'?'leader':undefined));
+    for(const id in s.rooms) s.rooms[id].w=0;
+  }
+  return s;
 }
 
-/* ---------- помощники ---------- */
-const rnd = arr => arr[Math.floor(Math.random()*arr.length)];
-const chance = p => Math.random() < p;
+/* ---------- помощники по людям ---------- */
+const P = name => S.residents.find(p=>p.name===name);
+const people = f => S.residents.filter(f || (()=>true));
+const cap = id => S.rooms[id].lvl*2;
+const assigned = id => people(p=>p.job===id);
+const traitKnown = p => !TRAITS[p.trait].hidden || !!S.flags['known_'+p.name];
+const canWalk = p => p.prof!=='child' && !p.sick && p.hp>=40;
+function addResident(name, prof, trait){ if(!P(name)) S.residents.push(makePerson(name, prof, trait)); }
+function killResident(name){
+  const others = people(p=>p.name!=='Ты');
+  const v = (name && P(name)) ? P(name) : (others.length ? rnd(others) : P('Ты'));
+  if(!v) return 'Кто-то';
+  S.residents.splice(S.residents.indexOf(v),1);
+  return v.name;
+}
+function hurt(p, n){ p.hp = Math.max(0, p.hp - (p.trait==='tough' ? Math.ceil(n/2) : n)); }
+function syncW(){
+  for(const id in S.rooms){
+    const a=assigned(id);
+    if(a.length>cap(id)) a.slice(cap(id)).forEach(p=>p.job=null);
+    S.rooms[id].w = assigned(id).filter(p=>!p.sick).length;
+  }
+  people(p=>p.sick && p.job).forEach(p=>p.job=null);
+}
+function workers(){ return people(p=>p.job).length; }
+function freeWorkers(){ return people(p=>!p.job && !p.sick).length; }
+// сила работника в отсеке
+function mult(p, id){
+  if(p.sick) return 0;
+  let m=1;
+  if(PROFS[p.prof].room===id) m*=1.5;
+  if(p.prof==='child') m*=0.5;
+  if(p.trait==='worker') m*=1.25;
+  if(p.trait==='lazy') m*=0.75;
+  if(p.hp<40) m*=0.5;
+  return m;
+}
 function clamp(){
   const r=S.res;
   r.morale = Math.max(0, Math.min(100, r.morale));
   r.rad    = Math.max(0, Math.min(100, r.rad));
   ['food','water','materials','signal'].forEach(k=> r[k]=Math.max(0, r[k]));
-}
-function workers(){ let s=0; for(const id in S.rooms) s+=S.rooms[id].w; return s; }
-function freeWorkers(){ return S.residents.length - workers(); }
-function addResident(name){ S.residents.push(name); }
-function killResident(name){
-  // Если имя не указано — погибает случайный житель, «Ты» — последним
-  const others = S.residents.filter(n=>n!=='Ты');
-  const victim = (name && S.residents.includes(name)) ? name : (others.length ? rnd(others) : 'Ты');
-  S.residents.splice(S.residents.indexOf(victim),1);
-  // если работников больше, чем людей — снимаем лишних
-  while(freeWorkers()<0){
-    const busy = Object.keys(S.rooms).filter(id=>S.rooms[id].w>0);
-    S.rooms[rnd(busy)].w--;
-  }
-  return victim;
+  S.residents.forEach(p=> p.hp=Math.max(0, Math.min(100, Math.round(p.hp))));
 }
 
 /* =========================================================
    4. СОБЫТИЯ
    cond  — когда событие может выпасть
    once  — выпадает только один раз
+   pre   — подготовка (выбор участников)
+   choices — массив или функция, возвращающая массив
    choices[].req — условие, при котором кнопку можно нажать
    choices[].go  — что произойдёт; возвращает текст результата
    ========================================================= */
+function choicesOf(e){ return typeof e.choices==='function' ? e.choices() : e.choices; }
+function who(p){ return `${p.name} ${PROFS[p.prof].i}`; }
+
+function sortieGo(name){
+  const p=P(name); if(!p) return 'Никто не пошёл.';
+  if(p.trait==='coward' && chance(.5)){ S.flags['known_'+p.name]=1; S.res.morale-=2; return `${p.name} дошёл до лестницы и повернул назад: «Я не могу… простите». Теперь все знают, что ${p.name} — трус.`; }
+  hurt(p, 8+Math.floor(Math.random()*18));
+  const roll=Math.random();
+  if(roll < (p.trait==='tough'?0.06:0.12)){ killResident(p.name); S.res.morale-=10; return `${p.name} не вернулся. Только треск в рации — и тишина.`; }
+  let bonus='';
+  if(p.prof==='mechanic'){ S.res.materials+=4; bonus=' Как механик, ' + p.name + ' притащил ещё и годные запчасти.'; }
+  if(p.prof==='medic'){ people(q=>q.sick).forEach(q=>q.sick=false); bonus=' В аптеке нашлись лекарства — все больные поправляются.'; }
+  if(!S.flags.docs && roll<0.5){ S.flags.docs=1; S.res.materials+=4; return `${p.name} возвращается облучённым, но с добычей — и с промокшей папкой с грифом «ПОЛДЕНЬ. Совершенно секретно».${bonus}`; }
+  S.res.materials+=7; S.res.food+=5;
+  return `${p.name} возвращается с полным рюкзаком: консервы, провода, инструменты. Здоровье: ❤ ${p.hp}.${bonus}`;
+}
+
 const EVENTS = {
   knock:{
     title:'Стук в шлюз',
-    text:()=>'Сирена давно стихла. Сквозь гул вентиляции — удары в гермодверь. Женский голос: «Пустите! Со мной двое детей!» Счётчик радиации снаружи щёлкает всё чаще.',
+    text:()=>'Сирена давно стихла. Сквозь гул вентиляции — удары в гермодверь. Женский голос: «Пустите! Со мной двое детей! Я агроном, я умею выращивать еду!» Счётчик радиации снаружи щёлкает всё чаще.',
     choices:[
-      {t:'Открыть шлюз', go:()=>{ ['Марина','Лёша','Соня'].forEach(addResident); S.res.morale+=10; S.res.rad+=8; S.flags.kind=1;
-        return 'Шлюз лязгает. Марина с детьми падают на пол, кашляя пеплом. Ртов стало больше — но в бункере снова звучит детский голос.'; }},
-      {t:'Впустить только детей', go:()=>{ ['Лёша','Соня'].forEach(addResident); S.res.morale-=5; S.res.rad+=4; S.flags.hard=1;
+      {t:'Открыть шлюз (+3 👥)', go:()=>{ addResident('Марина','farmer'); addResident('Лёша','child'); addResident('Соня','child'); S.res.morale+=10; S.res.rad+=8; S.flags.kind=1;
+        return 'Шлюз лязгает. Марина с детьми падают на пол, кашляя пеплом. Ртов стало больше — но в бункере снова звучит детский голос. Загляни во вкладку «Люди»: у каждого свой характер.'; }},
+      {t:'Впустить только детей (+2 👥)', go:()=>{ addResident('Лёша','child'); addResident('Соня','child'); S.res.morale-=5; S.res.rad+=4; S.flags.hard=1;
         return 'Мать сама проталкивает детей в щель и отступает. Дверь закрывается. Дети молчат весь вечер.'; }},
       {t:'Не открывать', go:()=>{ S.res.morale-=20; S.flags.cold=1;
         return 'Стук продолжается ещё полчаса. Потом — тишина. Никто в бункере не смотрит тебе в глаза.'; }},
@@ -188,26 +359,84 @@ const EVENTS = {
     ]
   },
   quarrel:{
-    cond:()=>S.day>=3 && S.residents.length>=4,
+    cond:()=>S.day>=3 && people(p=>p.name!=='Ты').length>=3,
     title:'Драка из-за пайка',
+    pre:()=>{
+      let o=people(p=>p.name!=='Ты' && p.prof!=='child');
+      if(o.length<2) o=people(p=>p.name!=='Ты');
+      const th=o.find(p=>p.trait==='thief' && !traitKnown(p));
+      S.ctx.a = th && chance(.6) ? th.name : rnd(o).name;
+      S.ctx.b = (rnd(o.filter(p=>p.name!==S.ctx.a))||{name:'кто-то'}).name;
+    },
     text:()=>`${S.ctx.a} и ${S.ctx.b} сцепились из-за пайка: каждый уверен, что другой ворует еду.`,
-    pre:()=>{ const o=S.residents.filter(n=>n!=='Ты'); S.ctx.a=rnd(o); S.ctx.b=rnd(o.filter(n=>n!==S.ctx.a))||'кого-то'; },
     choices:[
       {t:'Разделить еду поровну, включая себя (−2 🍞)', go:()=>{ S.res.food-=2; S.res.morale+=6; return 'Ты отдаёшь часть своего пайка. Люди это запомнят.'; }},
-      {t:'Наказать зачинщика', go:()=>{ S.res.morale-=4; S.flags.strict=(S.flags.strict||0)+1; return 'Порядок восстановлен. Страхом.'; }},
-      {t:'Пусть разбираются сами', go:()=>{ S.res.morale-=10; return 'Ссора тлеет ещё несколько дней.'; }},
+      {t:'Обыскать обоих', go:()=>{
+        const t=[P(S.ctx.a),P(S.ctx.b)].find(p=>p && p.trait==='thief');
+        if(t){ S.flags['known_'+t.name]=1; S.flags.thiefCaught=t.name; S.res.morale+=2; return `Под матрасом у ${t.name} — пачка галет и банка тушёнки. Вор найден. Завтра нужно решить, что с ним делать.`; }
+        S.res.morale-=5; return 'Ничего не нашли. Оба обижены, остальные шепчутся.'; }},
+      {t:'Пусть разбираются сами', go:()=>{ S.res.morale-=8; hurt(P(S.ctx.a)||S.residents[0],10); return `Ссора закончилась разбитым носом. ${S.ctx.a} ходит с синяком.`; }},
+    ]
+  },
+  pantry:{
+    cond:()=>(S.flags.stolen||0)>=6 && people(p=>p.trait==='thief' && !traitKnown(p)).length>0,
+    title:'Пропадает еда',
+    text:()=>`На складе снова недостача — за последние дни пропало около ${S.flags.stolen} 🍞. Это не крысы: банки исчезают целыми.`,
+    choices:[
+      {t:'Устроить ночную засаду', go:()=>{
+        const t=people(p=>p.trait==='thief' && !traitKnown(p))[0];
+        S.flags['known_'+t.name]=1; S.flags.thiefCaught=t.name; S.flags.stolen=0;
+        return `В три часа ночи из темноты склада выходит ${t.name} с банкой в руках. Завтра — суд.`; }},
+      {t:'Урезать пайки всем', go:()=>{ S.res.morale-=6; S.flags.stolen=0; return 'Все получают меньше. Вор по-прежнему среди вас.'; }},
+    ]
+  },
+  thief_judge:{
+    title:'Суд над вором',
+    text:()=>`${S.flags.thiefCaught} стоит посреди жилого отсека. Все смотрят на тебя.`,
+    choices:[
+      {t:'Выгнать на поверхность (−1 👥)', go:()=>{ const n=S.flags.thiefCaught; killResident(n); S.flags.thiefDone=1; S.res.morale+=3; return `Шлюз закрывается за спиной ${n}. Справедливо — но в бункере стало тише и холоднее.`; }},
+      {t:'Простить и дать второй шанс', go:()=>{ const p=P(S.flags.thiefCaught); S.flags.thiefDone=1; S.res.morale-=2;
+        if(p && chance(.5)){ p.trait='worker'; return `${p.name} плачет и обещает отработать. И правда — работает за двоих. Черта изменилась: 💪 Трудяга.`; }
+        return `${p?p.name:'Вор'} кивает, но глаза бегают. Посмотрим.`; }},
+      {t:'Наказать тяжёлой работой', go:()=>{ const p=P(S.flags.thiefCaught); S.flags.thiefDone=1; if(p){ p.trait='lazy'; hurt(p,10); } S.res.morale+=1;
+        return `${p?p.name:'Вор'} неделю таскает мусор и чистит фильтры. Красть больше не будет — но и работает теперь нехотя (😴 Лентяй).`; }},
     ]
   },
   sick:{
-    cond:()=>S.day>=4 && S.residents.length>=3,
-    pre:()=>{ S.ctx.name=rnd(S.residents.filter(n=>n!=='Ты')); },
+    cond:()=>S.day>=4 && people(p=>p.name!=='Ты' && !p.sick).length>0,
+    pre:()=>{
+      const pool=[]; people(p=>p.name!=='Ты' && !p.sick).forEach(p=>{ pool.push(p); if(p.trait==='sickly'){ pool.push(p); pool.push(p); } });
+      const p=rnd(pool); p.sick=true; S.ctx.name=p.name;
+    },
     title:'Жар',
-    text:()=>`${S.ctx.name} мечется в лихорадке. Лоб горячий, губы потрескались.`,
+    text:()=>{ const p=P(S.ctx.name); return `${who(p)} мечется в лихорадке. Лоб горячий, губы потрескались. Пока болен — не работает, теряет здоровье и может заразить других.${p.trait==='sickly'&&traitKnown(p)?' Опять — здоровье у неё/него всегда было слабым.':''}`; },
     choices:[
-      {t:'Лечить в медпункте (−3 💧)', req:()=>S.rooms.medbay.lvl>0 && S.res.water>=3, go:()=>{ S.res.water-=3; S.res.morale+=5; return `${S.ctx.name} идёт на поправку.`; }},
-      {t:'Отдать двойную порцию воды (−4 💧)', req:()=>S.res.water>=4, go:()=>{ S.res.water-=4; if(chance(.7)) return `Жар спадает. ${S.ctx.name} выживет.`; killResident(S.ctx.name); S.res.morale-=10; return `Не помогло. ${S.ctx.name} не дожил до утра.`; }},
-      {t:'Изолировать', go:()=>{ S.res.morale-=8; if(chance(.6)) return `${S.ctx.name} выкарабкался сам — и не забудет, как его заперли.`; const v=killResident(S.ctx.name); S.res.morale-=5; return `Утром за дверью изолятора тихо. ${v} больше нет.`; }},
+      {t:'Открыть аптечку (💊)', req:()=>S.flags.medkit===1, go:()=>{ const p=P(S.ctx.name); S.flags.medkit=2; if(p){ p.sick=false; p.hp=Math.min(100,p.hp+20); } return `Таблетки из аптечки сделали своё дело. ${S.ctx.name} снова на ногах. Аптечка пуста.`; }},
+      {t:'Лечить в медпункте (−3 💧)', req:()=>S.rooms.medbay.lvl>0 && S.res.water>=3, go:()=>{ const p=P(S.ctx.name); S.res.water-=3; S.res.morale+=3; if(p){ p.sick=false; p.hp=Math.min(100,p.hp+10); } return `${S.ctx.name} идёт на поправку и завтра сможет работать.`; }},
+      {t:'Отдать двойную порцию воды (−4 💧)', req:()=>S.res.water>=4, go:()=>{ const p=P(S.ctx.name); S.res.water-=4; if(!p) return ''; p.hp=Math.min(100,p.hp+20); if(chance(.5)){ p.sick=false; return `Жар спадает. ${p.name} выживет.`; } return `Стало легче, но ${p.name} ещё болен. Медпункт бы помог.`; }},
+      {t:'Изолировать от остальных', go:()=>{ const p=P(S.ctx.name); S.res.morale-=4; if(p) p.isolated=true; return `${S.ctx.name} будет болеть в одиночестве — зато никого не заразит.`; }},
     ]
+  },
+  idea:{
+    cond:()=>S.day>=3 && ideaPerson()!==null,
+    pre:()=>{ S.ctx.name=ideaPerson().name; },
+    title:'Идея специалиста',
+    text:()=>{ const p=P(S.ctx.name); return ({
+      electric:`${who(p)}: «Дайте мне материалы — перемотаю обмотку, и генератор будет выдавать больше».`,
+      medic:`${who(p)}: «Я могу сделать отвар и прокипятить бинты. Больные встанут на ноги, а все остальные — окрепнут».`,
+      farmer:`${who(p)}: «В старом ящике нашлись семена. Посадим — будет больше еды».`,
+      mechanic:`${who(p)}: «Из этого хлама соберу нормальный верстак».`,
+      plumber:`${who(p)}: «Трубы текут. Подлатаю — воды станет больше».`,
+    })[p.prof]; },
+    choices:()=>{ const p=P(S.ctx.name), pr=p.prof; return [
+      ({electric:{t:'Улучшить генератор (−4 🛠)', req:()=>S.res.materials>=4 && S.rooms.generator.lvl<MAX_LVL, go:()=>{ S.res.materials-=4; S.rooms.generator.lvl++; return `Генератор гудит ровнее. Уровень повышен до ${S.rooms.generator.lvl}.`; }},
+        medic:{t:'Сделать (−3 💧)', req:()=>S.res.water>=3, go:()=>{ S.res.water-=3; people().forEach(q=>{ q.sick=false; q.hp=Math.min(100,q.hp+15); }); return 'Пахнет травами и спиртом. Все больные поправились, все жители +15 ❤.'; }},
+        farmer:{t:'Посадить (−2 💧)', req:()=>S.res.water>=2, go:()=>{ S.res.water-=2; if(S.rooms.farm.lvl===0){ S.rooms.farm.lvl=1; return 'В углу появились первые грядки — гидропоника построена бесплатно!'; } S.res.food+=10; return 'Первый урожай: +10 🍞.'; }},
+        mechanic:{t:'Собрать верстак (−2 🛠)', req:()=>S.res.materials>=2, go:()=>{ S.res.materials-=2; if(S.rooms.workshop.lvl<MAX_LVL){ S.rooms.workshop.lvl++; return `Мастерская ${S.rooms.workshop.lvl===1?'построена':'улучшена до ур. '+S.rooms.workshop.lvl}.`; } S.res.materials+=8; return 'Верстак уже есть — зато из хлама вышло +8 🛠.'; }},
+        plumber:{t:'Подлатать трубы (−3 🛠)', req:()=>S.res.materials>=3, go:()=>{ S.res.materials-=3; S.res.water+=12; return 'Капель прекратилась. +12 💧.'; }},
+      })[pr],
+      {t:'Не сейчас', go:()=>{ S.res.morale-=1; return `${S.ctx.name} пожимает плечами и возвращается к работе.`; }},
+    ]; }
   },
   generator_burn:{
     cond:()=>S.day>=4,
@@ -215,22 +444,23 @@ const EVENTS = {
     text:()=>'Генератор воет на высокой ноте, от кожуха пахнет горелой изоляцией.',
     choices:[
       {t:'Остановить и починить (−3 🛠)', req:()=>S.res.materials>=3, go:()=>{ S.res.materials-=3; return 'Сутки в полутьме, зато генератор цел.'; }},
-      {t:'Работать дальше', go:()=>{ if(chance(.5)) return 'Обошлось. Генератор понемногу остыл.'; if(S.rooms.generator.lvl>1){ S.rooms.generator.lvl--; S.rooms.generator.w=Math.min(S.rooms.generator.w, S.rooms.generator.lvl*2); return 'Хлопок, дым — сгорела обмотка. Генератор потерял уровень.'; } S.res.materials=Math.max(0,S.res.materials-5); return 'Хлопок, дым. Пришлось потратить материалы на срочный ремонт.'; }},
+      {t:'Работать дальше', go:()=>{
+        if(chance(.5)) return 'Обошлось. Генератор понемногу остыл.';
+        const w=assigned('generator')[0]; let hurtTxt='';
+        if(w){ hurt(w,30); hurtTxt=` ${w.name} получает ожоги (❤ ${w.hp}).`; }
+        if(S.rooms.generator.lvl>1){ S.rooms.generator.lvl--; return 'Хлопок, дым — сгорела обмотка. Генератор потерял уровень.'+hurtTxt; }
+        S.res.materials=Math.max(0,S.res.materials-5); return 'Хлопок, дым. Пришлось потратить материалы на срочный ремонт.'+hurtTxt; }},
     ]
   },
   sortie:{
-    cond:()=>S.day>=5 && S.residents.length>=2,
-    pre:()=>{ S.ctx.name=rnd(S.residents.filter(n=>n!=='Ты' && n!=='Лёша' && n!=='Соня')) || rnd(S.residents.filter(n=>n!=='Ты')); },
+    cond:()=>S.day>=5 && people(canWalk).length>=1,
+    pre:()=>{ const c=people(canWalk).filter(p=>p.name!=='Ты'); const pool=c.length?c:people(canWalk);
+      S.ctx.cands = pool.sort(()=>Math.random()-.5).slice(0,3).map(p=>p.name); },
     title:'Вылазка',
-    text:()=>`${S.ctx.name} предлагает подняться наверх и обыскать разрушенный магазин неподалёку.`,
-    choices:[
-      {t:'Отправить (риск)', go:()=>{
-        S.res.rad+=3;
-        const roll=Math.random();
-        if(roll<0.15){ killResident(S.ctx.name); S.res.morale-=10; return `${S.ctx.name} не вернулся. Только треск в рации — и тишина.`; }
-        if(!S.flags.docs && roll<0.55){ S.flags.docs=1; S.res.materials+=4; return `${S.ctx.name} возвращается с материалами — и с промокшей папкой с грифом «ПОЛДЕНЬ. Совершенно секретно».`; }
-        S.res.materials+=8; S.res.food+=5; return `${S.ctx.name} возвращается с полным рюкзаком: консервы, провода, инструменты.`;
-      }},
+    text:()=>'Нужно обыскать разрушенный магазин неподалёку. Наверху радиация — кто пойдёт, вернётся облучённым. Кого отправить?',
+    choices:()=>[
+      ...S.ctx.cands.filter(n=>P(n)).map(n=>{ const p=P(n), t=traitKnown(p)?TRAITS[p.trait].i:'❔';
+        return {t:`Отправить: ${p.name} ${PROFS[p.prof].i} (❤${p.hp} ${t})`, go:()=>sortieGo(n)}; }),
       {t:'Слишком опасно', go:()=>{ S.res.morale-=2; return 'Все остаются внизу. Безопасно — и тоскливо.'; }},
     ]
   },
@@ -255,15 +485,15 @@ const EVENTS = {
   stranger:{
     once:true, cond:()=>S.day>=7,
     title:'Чужак у шлюза',
-    text:()=>'В камере шлюза мужчина в противогазе, с обрезом. «Воды. Только воды — и я уйду».',
+    text:()=>'В камере шлюза мужчина в противогазе, с обрезом. «Воды. Только воды — и я уйду. Я механик, если что».',
     choices:[
       {t:'Дать воды (−5 💧)', req:()=>S.res.water>=5, go:()=>{ S.res.water-=5; S.res.materials+=4; S.flags.strangerFriend=1; return 'Он кивает и оставляет у двери ящик с инструментами. «Спасибо. Я запомню».'; }},
-      {t:'Впустить его в бункер', go:()=>{ addResident('Глеб'); S.res.morale-=5; return 'Его зовут Глеб. Жители косятся на обрез, но лишние руки не помешают.'; }},
+      {t:'Впустить его в бункер (+1 👥)', go:()=>{ addResident('Глеб','mechanic', chance(.5)?'thief':'tough'); S.res.morale-=5; return 'Его зовут Глеб, он механик. Жители косятся на обрез, но лишние руки не помешают. Что он за человек — покажет время.'; }},
       {t:'Прогнать', go:()=>{ if(chance(.5)){ S.res.materials=Math.max(0,S.res.materials-5); return 'Уходя, он стреляет в замок. Ремонт обошёлся в материалы.'; } return 'Он молча уходит в пепельную метель.'; }},
     ]
   },
   birthday:{
-    once:true, cond:()=>S.day>=10 && S.residents.includes('Соня'),
+    once:true, cond:()=>S.day>=10 && !!P('Соня'),
     title:'День рождения',
     text:()=>'Соне сегодня восемь. Она делает вид, что забыла, но то и дело поглядывает на взрослых.',
     choices:[
@@ -273,10 +503,12 @@ const EVENTS = {
   },
   quiet:{
     title:'Тихое утро',
+    pre:()=>{ S.ctx.name=(rnd(people(p=>p.name!=='Ты'))||{name:'Кто-то'}).name; },
     text:()=>'Ничего не случилось. Иногда это лучшая новость.',
     choices:[
       {t:'Работать как обычно', go:()=>'Обычный день под землёй.'},
-      {t:'Устроить вечер историй', go:()=>{ S.res.morale+=4; return 'Пётр рассказывает про рыбалку на Волге. Все смеются.'; }},
+      {t:'Устроить вечер историй', go:()=>{ S.res.morale+=4; return `${S.ctx.name} рассказывает про жизнь до войны. Все смеются — впервые за неделю.`; }},
+      {t:'Дать всем отдохнуть', go:()=>{ people().forEach(p=>p.hp=Math.min(100,p.hp+10)); S.res.morale+=2; return 'Все отсыпаются. +10 ❤ каждому.'; }},
     ]
   },
   final:{
@@ -289,18 +521,24 @@ const EVENTS = {
     ]
   },
 };
+function ideaPerson(){
+  const c=people(p=>['electric','medic','farmer','mechanic','plumber'].includes(p.prof) && !p.sick && !S.flags['idea_'+p.name]);
+  return c.length ? c[0] : null;
+}
 
 function pickEvent(){
   if(S.day===1) return 'knock';
+  if(S.flags.thiefCaught && !S.flags.thiefDone && P(S.flags.thiefCaught)) return 'thief_judge';
   if(S.flags.signal && !S.flags.finalDeclined && S.res.signal>=10) return 'final';
   const pool = Object.keys(EVENTS).filter(id=>{
     const e=EVENTS[id];
-    if(['knock','final','quiet'].includes(id)) return false;
+    if(['knock','final','quiet','thief_judge'].includes(id)) return false;
     if(e.once && S.seen.includes(id)) return false;
     if(id===S.lastEvent) return false;
     return !e.cond || e.cond();
   });
-  if(!pool.length || chance(.15)) return 'quiet';
+  if(pool.includes('pantry')) return 'pantry';
+  if(!pool.length || chance(.12)) return 'quiet';
   return rnd(pool);
 }
 
@@ -308,27 +546,30 @@ function pickEvent(){
    5. РАСЧЁТ ДНЯ
    ========================================================= */
 function compute(){
+  syncW();
+  const power = id => assigned(id).reduce((s,p)=>s+mult(p,id),0);
   let prodE=0, useE=0;
   for(const id in S.rooms){
     const r=S.rooms[id]; if(!r.lvl) continue;
-    if(id==='generator') prodE += r.lvl*4 + r.w*ROOMS.generator.per;
+    if(id==='generator') prodE += Math.round(r.lvl*4 + power(id)*ROOMS.generator.per);
     else useE += ROOMS[id].use;
   }
   const eff = useE ? Math.min(1, prodE/useE) : 1;
-  const d={food:0, water:0, materials:0, morale:0, signal:0, rad:0};
+  const d={food:0, water:0, materials:0, morale:0, signal:0, rad:0, heal:0};
   const out={};
   for(const id in S.rooms){
     const r=S.rooms[id]; if(!r.lvl || id==='generator') continue;
-    let v = r.w * ROOMS[id].per * (1 + 0.5*(r.lvl-1));
+    let v = power(id) * ROOMS[id].per * (1 + 0.5*(r.lvl-1));
     if(id==='filter') v += r.lvl*2;
     v = Math.round(v*eff);
     out[id]=v;
     if(id==='filter') d.rad -= v; else d[ROOMS[id].res] += v;
   }
-  const n=S.residents.length;
-  d.food -= n; d.water -= n;
-  d.rad  += 5;          // радиация просачивается с поверхности
-  if(S.residents.length>5 && !S.rooms.medbay.lvl) d.morale -= 1;  // теснота и тоска без медпункта
+  d.food  -= people().reduce((s,p)=>s+(p.trait==='glutton'?2:1),0);
+  d.water -= S.residents.length;
+  d.rad   += 5;                                                    // радиация просачивается с поверхности
+  d.morale += people(p=>p.trait==='leader' && !p.sick && p.hp>=40).length;   // лидеры
+  if(S.residents.length>5 && !S.rooms.medbay.lvl) d.morale -= 1;  // теснота без медпункта
   return {d, prodE, useE, eff, out};
 }
 
@@ -338,20 +579,55 @@ function endDay(){
   const sign = v => (v>=0?'+':'')+v;
   log.push(`🍞 Еда ${sign(d.food)}   💧 Вода ${sign(d.water)}   🛠 ${sign(d.materials)}`);
   if(eff<1) log.push(`<span class="warn">⚡ Не хватает энергии — отсеки работали на ${Math.round(eff*100)}%</span>`);
-  for(const k in d) r[k]+=d[k];
+  for(const k in d) if(k!=='heal') r[k]+=d[k];
 
-  // Голод и жажда
-  if(r.food<0 || r.water<0){
-    r.food=Math.max(0,r.food); r.water=Math.max(0,r.water);
-    S.hunger++; r.morale-=8;
-    log.push('<span class="bad">Еды или воды не хватило. Люди голодают.</span>');
-    if(S.hunger>=2){ const v=killResident(); log.push(`<span class="bad">☠ ${v} не пережил голод.</span>`); }
-  } else S.hunger=0;
+  // Вор тайком таскает еду
+  people(p=>p.trait==='thief').forEach(()=>{ if(chance(.4) && r.food>0){ r.food-=2; S.flags.stolen=(S.flags.stolen||0)+2; } });
+  if((S.flags.stolen||0)>=4) log.push('<span class="warn">🦝 Запасов меньше, чем должно быть…</span>');
 
-  // Радиация
-  if(r.rad>=60){ r.morale-=6; log.push('<span class="warn">☢ Высокая радиация. У людей кровоточат дёсны.</span>'); }
-  if(r.rad>=90 && S.residents.length){ const v=killResident(); r.rad-=15; log.push(`<span class="bad">☠ ${v} умер от лучевой болезни.</span>`); }
+  // Голод
+  const hungry = r.food<0 || r.water<0;
+  if(hungry){
+    r.food=Math.max(0,r.food); r.water=Math.max(0,r.water); r.morale-=8;
+    people().forEach(p=>hurt(p,15));
+    log.push('<span class="bad">Еды или воды не хватило. Все теряют по 15 ❤.</span>');
+  }
+  // Радиация бьёт по здоровью
+  if(r.rad>=50){
+    const dmg=Math.round((r.rad-40)/6);
+    people().forEach(p=>hurt(p,dmg));
+    log.push(`<span class="warn">☢ Радиация ${r.rad}: все теряют до ${dmg} ❤.</span>`);
+    if(r.rad>=60) r.morale-=4;
+  }
+  // Болезни: урон, заражение, выздоровление
+  people(p=>p.sick).forEach(p=>{
+    hurt(p,10);
+    if(!p.isolated && chance(.12)){
+      const t=rnd(people(q=>!q.sick && q!==p && (q.trait==='sickly' || chance(.6))));
+      if(t){ t.sick=true; log.push(`<span class="bad">🤒 ${p.name} заразил(а) ${t.name}.</span>`); }
+    }
+    if(chance(p.trait==='sickly'?0.12:0.25)){ p.sick=false; p.isolated=false; log.push(`<span class="good">${p.name} поправился сам.</span>`); }
+  });
+  // Медпункт лечит
+  let H=d.heal;
+  if(H>0){
+    const medicIn = assigned('medbay').some(p=>p.prof==='medic');
+    people().sort((a,b)=>(b.sick-a.sick)||(a.hp-b.hp)).forEach(p=>{
+      if(H<=0) return;
+      if(p.sick && chance(medicIn?0.75:0.4)){ p.sick=false; p.isolated=false; H-=8; log.push(`<span class="good">➕ ${p.name} вылечен(а) в медпункте.</span>`); }
+      const need=100-p.hp, give=Math.min(need,H); p.hp+=give; H-=give;
+    });
+  }
+  // Отдых: здоровые восстанавливаются сами
+  if(!hungry && r.rad<35) people(p=>!p.sick).forEach(p=>p.hp+=4);
 
+  clamp();
+  // Смерти
+  people(p=>p.hp<=0).forEach(p=>{
+    killResident(p.name); r.morale-=7;
+    log.push(`<span class="bad">☠ ${p.name} умер(ла). Мораль −7.</span>`);
+  });
+  people(p=>p.hp>0 && p.hp<30).forEach(p=>log.push(`<span class="warn">${p.name} очень слаб(а): ❤ ${p.hp}.</span>`));
   clamp();
   S.log=log;
   S.day++;
@@ -382,13 +658,15 @@ function descend(){
     if(id==='food') S.res.food+=15;
     if(id==='water') S.res.water+=15;
     if(id==='tools') S.res.materials+=10;
-    if(id==='meds') S.res.morale+=15;
+    if(id==='meds'){ S.res.morale+=15; S.flags.medkit=1; }
     if(id==='radio') S.rooms.radio.lvl=1;
     if(id==='filter') S.rooms.filter.lvl=2;
   });
+  bgm.stop();
   playIntro(startMorning);
 }
 function startMorning(){
+  bgm.play();
   S.eventId = pickEvent();
   S.ctx = {};
   const e=EVENTS[S.eventId];
@@ -397,20 +675,25 @@ function startMorning(){
 }
 function choose(i){
   haptic('medium');
-  const e=EVENTS[S.eventId], c=e.choices[i];
+  const e=EVENTS[S.eventId], c=choicesOf(e)[i];
+  if(!c) return;
+  if(S.eventId==='idea') S.flags['idea_'+S.ctx.name]=1;
   if(c.req && !c.req()) return;
   S.resultText = c.go();
+  S.journal = S.journal || [];
+  S.journal.push({d:S.day, t:e.title, c:c.t, r:S.resultText});
+  if(S.journal.length>40) S.journal.shift();
   if(e.once || S.eventId==='knock') S.seen.push(S.eventId);
   S.lastEvent = S.eventId;
   clamp(); checkEnding();
   if(S.ending) return go('ending');
   go('result');
 }
-function addWorker(id, delta){
-  const r=S.rooms[id];
-  if(delta>0 && (freeWorkers()<=0 || r.w>=r.lvl*2)) return;
-  if(delta<0 && r.w<=0) return;
-  haptic(); r.w+=delta; save(); render();
+function setJob(name, id){
+  const p=P(name); if(!p || p.sick) return;
+  id = id || null;
+  if(id && p.job!==id && assigned(id).length>=cap(id)) return;
+  haptic(); p.job=id; save(); render();
 }
 function upgrade(id){
   const r=S.rooms[id];
@@ -422,286 +705,883 @@ function finishDay(){ haptic('medium'); endDay(); go(S.ending ? 'ending' : 'summ
 function restart(){ wipe(); S=newState(); S.screen='pick'; go('pick'); }
 
 /* =========================================================
-   7. ОТРИСОВКА ЭКРАНОВ
+   6.5 БУНКЕР В РАЗРЕЗЕ (SVG-картинка)
+   ========================================================= */
+const LAYOUT = { generator:[0,0], water:[1,0], filter:[2,0], radio:[3,0],
+                 farm:[0,1], workshop:[1,1], medbay:[2,1], living:[3,1] };
+const SHORT = { generator:'ГЕНЕРАТОР', water:'ВОДА', filter:'ФИЛЬТР', radio:'РАДИО',
+                farm:'ФЕРМА', workshop:'МАСТЕРСКАЯ', medbay:'МЕДПУНКТ', living:'ЖИЛОЙ' };
+const SHIRTS = ['#c9e265','#6aa6d8','#d87a5a','#b58ad8','#e8c23a','#7fd0b0','#d8d8d8','#d85a8a'];
+const RW=76, RH=92, FLOOR=78;
+
+function person(x, y, color, delay){
+  return `<g class="bob" style="animation-delay:${delay}s">
+    <circle cx="${x}" cy="${y-13}" r="3" fill="#e2c9a0"/>
+    <rect x="${x-3}" y="${y-10}" width="6" height="7" rx="1.5" fill="${color}"/>
+    <rect x="${x-3}" y="${y-3}" width="2" height="4" fill="#1a1a1a"/><rect x="${x+1}" y="${y-3}" width="2" height="4" fill="#1a1a1a"/></g>`;
+}
+
+function roomProps(id, r, eff){
+  const L=r.lvl;
+  switch(id){
+    case 'generator': return `
+      <rect x="6" y="38" width="32" height="40" rx="2" fill="#4b4f45" stroke="#6b705f"/>
+      <rect x="10" y="44" width="24" height="4" fill="#2a2c25"/><rect x="10" y="52" width="24" height="4" fill="#2a2c25"/>
+      <circle cx="14" cy="64" r="2.5" class="blinkf" fill="${eff<1?'#e05a47':'#7be36a'}"/>
+      <g class="spin"><circle cx="56" cy="58" r="13" fill="none" stroke="#8a8f7d" stroke-width="3"/>
+        <line x1="43" y1="58" x2="69" y2="58" stroke="#8a8f7d" stroke-width="2"/><line x1="56" y1="45" x2="56" y2="71" stroke="#8a8f7d" stroke-width="2"/></g>
+      <path d="M38 50 H44" stroke="#e8c23a" stroke-width="2"/>`;
+    case 'water': {
+      const lvl=Math.min(1, S.res.water/40), h=46*lvl;
+      return `
+      <rect x="8" y="28" width="28" height="50" rx="7" fill="#1e2a30" stroke="#6b8a96"/>
+      <rect x="10" y="${76-h}" width="24" height="${h}" rx="5" fill="#3b7a99" opacity=".85"/>
+      <circle cx="17" cy="72" r="1.6" fill="#bfe6f5" class="bubble"/>
+      <circle cx="25" cy="72" r="1.2" fill="#bfe6f5" class="bubble" style="animation-delay:.7s"/>
+      <circle cx="21" cy="72" r="1.4" fill="#bfe6f5" class="bubble" style="animation-delay:1.4s"/>
+      <path d="M36 40 H58 V78" stroke="#6b8a96" stroke-width="3" fill="none"/>
+      <rect x="52" y="64" width="14" height="14" fill="#2e3d44" stroke="#6b8a96"/>`;
+    }
+    case 'filter': {
+      const hot=S.res.rad>=35;
+      return `
+      <rect x="22" y="8" width="32" height="8" fill="#3a3c34"/>
+      <circle cx="38" cy="42" r="21" fill="#1a1d17" stroke="${hot?'#7be36a':'#6b705f'}" stroke-width="2"/>
+      <g class="spin ${L>1?'':'slow'}">
+        <ellipse cx="38" cy="32" rx="5" ry="10" fill="#8a8f7d"/>
+        <ellipse cx="38" cy="32" rx="5" ry="10" fill="#8a8f7d" transform="rotate(120 38 42)"/>
+        <ellipse cx="38" cy="32" rx="5" ry="10" fill="#8a8f7d" transform="rotate(240 38 42)"/>
+        <circle cx="38" cy="42" r="3" fill="#4b4f45"/></g>`;
+    }
+    case 'radio': return `
+      <line x1="64" y1="22" x2="64" y2="78" stroke="#8a8f7d" stroke-width="2"/>
+      <circle cx="64" cy="20" r="2.5" fill="#e05a47" class="blinkf"/>
+      <rect x="6" y="52" width="48" height="26" fill="#3c3f35" stroke="#5b5f52"/>
+      <rect x="10" y="56" width="22" height="13" fill="#0c1a0c"/>
+      <polyline points="11,63 15,59 18,66 22,58 25,65 31,62" fill="none" stroke="#7be36a" stroke-width="1" class="blinkf"/>
+      <circle cx="40" cy="60" r="3" fill="#2a2c25" stroke="#8a8f7d"/><circle cx="48" cy="60" r="3" fill="#2a2c25" stroke="#8a8f7d"/>
+      ${S.flags.signal?`<text x="8" y="44" font-size="8" fill="#c9e265">📡 ${S.res.signal}/10</text>`:''}`;
+    case 'farm': {
+      let g=`<rect x="6" y="14" width="64" height="3" fill="#b58ad8" opacity=".8"/>
+             <rect x="6" y="17" width="64" height="40" fill="#b58ad8" opacity=".06"/>`;
+      [44,66].forEach((ty,ti)=>{
+        g+=`<rect x="6" y="${ty}" width="64" height="5" fill="#5a4630"/>`;
+        for(let i=0;i<6;i++){ const ph=4+L*3+(i%2)*2;
+          g+=`<ellipse class="sway" style="animation-delay:${(i+ti)*.3}s" cx="${11+i*11}" cy="${ty-ph/2}" rx="3" ry="${ph/2}" fill="${i%3?'#5fae4a':'#7bd06a'}"/>`; }
+      });
+      return g;
+    }
+    case 'workshop': return `
+      <line x1="10" y1="22" x2="10" y2="36" stroke="#8a8f7d" stroke-width="2"/><line x1="18" y1="24" x2="22" y2="36" stroke="#8a8f7d" stroke-width="2"/>
+      <rect x="28" y="22" width="12" height="6" fill="#6b705f"/>
+      <rect x="6" y="58" width="56" height="5" fill="#6b4a2e"/>
+      <rect x="9" y="63" width="3" height="15" fill="#4a331f"/><rect x="56" y="63" width="3" height="15" fill="#4a331f"/>
+      <rect x="20" y="52" width="10" height="6" fill="#8a8f7d"/>
+      <circle cx="36" cy="55" r="1.3" fill="#ffd27a" class="blinkf"/><circle cx="39" cy="52" r="1" fill="#ffd27a" class="blinkf" style="animation-delay:.4s"/>`;
+    case 'medbay': return `
+      <rect x="12" y="24" width="14" height="4" fill="#e05a47"/><rect x="17" y="19" width="4" height="14" fill="#e05a47"/>
+      <rect x="34" y="62" width="36" height="8" rx="2" fill="#cfd6c4"/><rect x="62" y="58" width="8" height="5" rx="2" fill="#eef2e6"/>
+      <rect x="36" y="70" width="2" height="8" fill="#6b705f"/><rect x="66" y="70" width="2" height="8" fill="#6b705f"/>
+      <rect x="46" y="32" width="18" height="12" fill="#0c1a0c" stroke="#5b5f52"/>
+      <polyline points="47,38 51,38 53,34 55,42 57,38 63,38" fill="none" stroke="#7be36a" stroke-width="1"/>`;
+  }
+  return '';
+}
+
+function livingRoom(){
+  let g=`<rect x="4" y="38" width="26" height="5" fill="#6b4a2e"/><rect x="4" y="58" width="26" height="5" fill="#6b4a2e"/>
+         <rect x="4" y="34" width="26" height="4" fill="#8a7a5a"/><rect x="4" y="54" width="26" height="4" fill="#8a7a5a"/>
+         <rect x="4" y="38" width="2" height="40" fill="#4a331f"/><rect x="28" y="38" width="2" height="40" fill="#4a331f"/>`;
+  const crates=Math.min(6, Math.ceil(S.res.food/6)), cans=Math.min(4, Math.ceil(S.res.water/8));
+  for(let i=0;i<crates;i++){ const cx=36+(i%3)*12, cy=70-Math.floor(i/3)*9; g+=`<rect x="${cx}" y="${cy}" width="11" height="8" fill="#7a5a32" stroke="#4a331f"/>`; }
+  for(let i=0;i<cans;i++){ g+=`<rect x="${36+i*9}" y="${crates>3?44:54}" width="7" height="9" rx="1" fill="#3b7a99"/>`; }
+  return g;
+}
+
+function bunkerSVG(){
+  const {eff}=compute();
+  const out=[]; let shirt=0;
+  // Поверхность
+  out.push(`<defs>
+    <linearGradient id="ashsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2420"/><stop offset="1" stop-color="#5a3f2a"/></linearGradient>
+    <radialGradient id="lamp"><stop offset="0" stop-color="#ffd27a" stop-opacity=".45"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="radg"><stop offset="0" stop-color="#7be36a" stop-opacity=".0"/><stop offset="1" stop-color="#7be36a" stop-opacity=".55"/></radialGradient>
+  </defs>
+  <rect x="0" y="0" width="362" height="48" fill="url(#ashsky)"/>
+  <path d="M60 48 V30 H72 V22 H80 V48 M110 48 V34 l6 -4 6 6 V48 M170 48 V18 H186 V26 H192 V48 M240 48 V28 l10 -8 V48 M290 48 V32 H310 V24 H318 V48" fill="#14110e"/>`);
+  for(let i=0;i<14;i++) out.push(`<circle class="ash" style="animation-delay:${(i*0.43)%6}s" cx="${20+i*25}" cy="${(i*7)%40}" r="${i%3?0.8:1.2}" fill="#b8ada0" opacity=".6"/>`);
+  out.push(`<rect x="0" y="48" width="362" height="222" fill="#1d1a14"/>`);
+  for(let i=0;i<5;i++) out.push(`<line x1="0" y1="${56+i*44}" x2="362" y2="${60+i*44}" stroke="#25211a" stroke-width="2"/>`);
+  // Люк и шахта
+  out.push(`<rect x="14" y="42" width="30" height="6" fill="#6a6d5e"/><rect x="18" y="40" width="22" height="3" fill="#8a8f7d"/>
+    <rect x="20" y="48" width="18" height="210" fill="#0f0e0b"/>`);
+  for(let y=54;y<256;y+=8) out.push(`<line x1="22" y1="${y}" x2="36" y2="${y}" stroke="#4b4f45" stroke-width="1.5"/>`);
+  out.push(`<line x1="23" y1="50" x2="23" y2="258" stroke="#4b4f45"/><line x1="35" y1="50" x2="35" y2="258" stroke="#4b4f45"/>`);
+  // Перекрытия
+  out.push(`<rect x="38" y="56" width="324" height="6" fill="#3a3a32"/><rect x="38" y="154" width="324" height="8" fill="#3a3a32"/><rect x="38" y="254" width="324" height="6" fill="#3a3a32"/>`);
+
+  // Отсеки
+  for(const id in LAYOUT){
+    const [c,row]=LAYOUT[id], x=44+c*79, y=62+row*100;
+    const isLiving = id==='living';
+    const r = isLiving ? {lvl:1,w:0} : S.rooms[id];
+    let g=`<g class="room" transform="translate(${x},${y})" ${isLiving?'':`onclick="focusRoom('${id}')"`}>`;
+    if(!r.lvl){
+      g+=`<rect width="${RW}" height="${RH}" fill="#12130e" stroke="#2c3324"/>
+          <line x1="4" y1="20" x2="72" y2="70" stroke="#3a2f22" stroke-width="5"/><line x1="4" y1="70" x2="72" y2="20" stroke="#3a2f22" stroke-width="5"/>
+          <text x="38" y="44" font-size="7.5" fill="#8a937a" text-anchor="middle">не построен</text>
+          <text x="38" y="56" font-size="8" fill="#c9e265" text-anchor="middle">${ROOMS[id].cost} 🛠</text>`;
+    } else {
+      const lit = isLiving ? Math.max(0.5,eff) : eff;
+      g+=`<rect width="${RW}" height="${RH}" fill="#2a2e22" stroke="#3d4434"/>
+          <rect y="${FLOOR}" width="${RW}" height="2" fill="#4b4f45"/>
+          <g class="${eff<1?'flicker':''}"><ellipse cx="38" cy="32" rx="37" ry="31" fill="url(#lamp)" opacity="${lit}" pointer-events="none"/>
+          <rect x="33" y="2" width="10" height="3" fill="${lit>0.3?'#ffd27a':'#5b5040'}"/></g>`;
+      g+= isLiving ? livingRoom() : roomProps(id, r, eff);
+      // люди
+      const n = isLiving ? Math.max(0, freeWorkers()) : r.w;
+      for(let i=0;i<Math.min(n,6);i++){ const px = isLiving ? 40+i*6 : 12+i*10.5; g+=person(px, FLOOR, SHIRTS[shirt++%SHIRTS.length], i*0.23); }
+      if(isLiving && n>6) g+=`<text x="70" y="64" font-size="7" fill="#d8e0c8" text-anchor="end">+${n-6}</text>`;
+    }
+    // подпись и уровень
+    g+=`<rect y="${FLOOR+2}" width="${RW}" height="${RH-FLOOR-2}" fill="#0e0f0c" opacity=".85"/>
+        <text x="4" y="${RH-3}" font-size="7.5" fill="${r.lvl?'#d8e0c8':'#5b6050'}" font-family="Courier New" font-weight="bold">${SHORT[id]}</text>`;
+    if(!isLiving && r.lvl) for(let i=0;i<MAX_LVL;i++) g+=`<rect x="${RW-5-(MAX_LVL-1-i)*6}" y="${RH-8}" width="4" height="4" fill="${i<r.lvl?'#c9e265':'#3a3a32'}"/>`;
+    g+=`</g>`;
+    out.push(g);
+  }
+
+  // Радиация: зелёная дымка
+  if(S.res.rad>=35) out.push(`<rect x="38" y="56" width="324" height="204" fill="url(#radg)" opacity="${Math.min(1,(S.res.rad-30)/50)}" pointer-events="none"/>`);
+  return `<svg viewBox="0 0 362 266" xmlns="http://www.w3.org/2000/svg" font-family="Courier New">${out.join('')}</svg>`;
+}
+
+function focusRoom(id){
+  haptic();
+  if(S.tab!=='people' && S.rooms[id].lvl>0){ S.tab='people'; render(); }
+  else if(S.rooms[id].lvl===0){ S.tab='build'; render(); id='b-'+id; }
+  const el=document.getElementById('room-'+id); if(!el) return;
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+  el.classList.add('hl'); setTimeout(()=>el.classList.remove('hl'), 1400);
+}
+
+/* =========================================================
+   7. ОТРИСОВКА ЭКРАНОВ (стиль: современная мобильная игра)
    ========================================================= */
 const app = document.getElementById('app');
+const ICONS = { generator:'⚡', water:'💧', filter:'🌀', farm:'🌱', workshop:'🛠', medbay:'➕', radio:'📻' };
+const EVENT_ART = {
+  knock:['🚪','#4a2a18'], rats:['🐀','#3a2a1e'], filter_noise:['🌀','#1f3a3a'], quarrel:['👊','#4a1e1e'],
+  sick:['🤒','#2a3a24'], generator_burn:['⚡','#4a3a10'], sortie:['🎒','#3a2c1a'], docs:['📁','#2a2a3e'],
+  radio_voice:['📻','#1e2e44'], idea:['💡','#3a3414'], pantry:['🥫','#3a2a14'], thief_judge:['⚖️','#2e2440'], stranger:['🥽','#3a2418'], birthday:['🎂','#4a2440'], quiet:['☕','#24283a'], final:['📡','#1a3a44'],
+};
 
-function hud(){
-  const r=S.res, {prodE,useE}=compute();
-  const radCls = r.rad>=60?'bad':r.rad>=35?'warn':'';
-  const morCls = r.morale<=20?'bad':r.morale<=40?'warn':'';
-  return `<div class="hud">
-    <div class="day"><span>ДЕНЬ ${S.day}</span><span>👥 ${S.residents.length}</span></div>
-    <div>🍞 ${r.food}</div><div>💧 ${r.water}</div><div>🛠 ${r.materials}</div>
-    <div class="${prodE<useE?'warn':''}">⚡ ${prodE}/${useE}</div>
-    <div class="${radCls}">☢ ${r.rad}</div><div class="${morCls}">🙂 ${r.morale}</div>
-    <div>${S.flags.signal?'📡 '+r.signal+'/10':'📡 —'}</div>
-    <div class="dim">${freeWorkers()} своб.</div>
-  </div>`;
+function ring(ico,val,label,pct,color,cls=''){
+  const p=Math.max(0,Math.min(100,pct));
+  return `<div class="ring ${cls}"><div class="rg" style="background:conic-gradient(${color} 0 ${p}%,#2a2c35 0)"><i>${ico}</i></div><div><b>${val}</b><span>${label}</span></div></div>`;
 }
+function hud(){
+  const r=S.res, {prodE,useE}=compute(), n=S.residents.length;
+  const lvl=(v,warnAt,badAt)=> v<=badAt?'bad':v<=warnAt?'warn':'';
+  return `<div class="hud">
+    <div class="topbar"><b>День ${S.day}</b>
+      <div class="chips"><span class="chip">👥 ${n}${freeWorkers()>0?` · ${freeWorkers()} своб.`:''}${people(p=>p.sick).length?` · 🤒${people(p=>p.sick).length}`:''}</span>
+      ${S.flags.signal?`<span class="chip">📡 ${r.signal}/10</span>`:''}
+      <button class="chip btn" onclick="toggleMusic()">${musicOn()?'🔊':'🔇'}</button></div></div>
+    <div class="rings">
+      ${ring('🍞',r.food,'еда',r.food/40*100,'#ffb340',lvl(r.food,n*2,n))}
+      ${ring('💧',r.water,'вода',r.water/40*100,'#4ab8ff',lvl(r.water,n*2,n))}
+      ${ring('🛠',r.materials,'матер.',r.materials/30*100,'#c8c8d8')}
+      ${ring('☢',r.rad,'радиация',r.rad,'#7be36a',r.rad>=60?'bad':r.rad>=35?'warn':'')}
+      ${ring('🙂',r.morale,'мораль',r.morale,'#ff7aa8',lvl(r.morale,40,20))}
+      ${ring('⚡',prodE+'/'+useE,'энергия',useE?prodE/useE*100:100,'#28dcbe',prodE<useE?'warn':'')}
+    </div></div>`;
+}
+// «Текст (−2 🛠)» → кнопка с ярлыком цены справа
+function choiceBtn(c,i){
+  const m=c.t.match(/^(.*?)\s*\(([^)]+)\)\s*$/), label=m?m[1]:c.t, tag=m?m[2]:'';
+  return `<button ${c.req&&!c.req()?'disabled':''} onclick="choose(${i})"><span>${label}</span>${tag?`<span class="tag">${tag}</span>`:''}</button>`;
+}
+function dock(){
+  const tabs=[['bunker','🏠','Бункер'],['people','👥','Люди'],['build','🛠','Стройка'],['journal','📖','Журнал']];
+  return `<div class="dock"><div class="inner">
+    <button class="main" onclick="finishDay()">🌙 Закончить день</button>
+    <div class="tabbar">${tabs.map(([id,ic,t])=>`<div class="${S.tab===id?'on':''}" onclick="setTab('${id}')"><b>${ic}</b>${t}</div>`).join('')}</div>
+  </div></div>`;
+}
+function setTab(t){ haptic(); S.tab=t; save(); render(); window.scrollTo(0,0); }
+function roomEffect(id){
+  const {out}=compute(), R=ROOMS[id], r=S.rooms[id];
+  if(id==='generator') return `+${r.lvl*4+r.w*R.per} ⚡`;
+  if(id==='filter') return `−${out[id]} ☢`;
+  return `+${out[id]} ${({food:'🍞',water:'💧',materials:'🛠',morale:'🙂',signal:'📡'})[R.res]}`;
+}
+function pips(l){ let s='<span class="pips">'; for(let i=0;i<MAX_LVL;i++) s+=`<i class="${i<l?'on':''}"></i>`; return s+'</span>'; }
 
 function render(){
   const sc=S.screen;
+  app.classList.toggle('tabs-on', sc==='manage');
 
   if(sc==='title'){
     app.innerHTML = `
-      <h1>БУНКЕР</h1><p class="dim">ядерная зима · день первый</p>
+      <h1>БУНКЕР</h1><p class="dim">ядерная зима · убежище №7</p>
       <div class="card"><p>Ты — тот, кто успел спуститься. Теперь от твоих решений зависит, кто доживёт до весны.</p></div>
-      <button class="main" onclick="go(S.screen_prev||'event')">Продолжить</button>
-      <button onclick="restart()">Новая игра</button>`;
+      <button class="main" onclick="bgm.play();go(S.screen_prev||'event')">Продолжить · день ${S.day}</button>
+      <button onclick="restart()"><span>Новая игра</span><span class="tag">сбросит прогресс</span></button>`;
     return;
   }
 
   if(sc==='pick'){
     app.innerHTML = `
       <h1>БУНКЕР</h1>
-      <p class="bad blink">⚠ ВОЗДУШНАЯ ТРЕВОГА</p>
-      <div class="card">
-        <p>До удара пятнадцать минут. Ты, сосед-электрик Пётр и медсестра Вера бежите к недостроенному бункеру под гаражами.</p>
-        <p>Унести можно только <b>три</b> вещи.</p>
-      </div>
-      ${ITEMS.map(it=>`<button class="${S.picked.includes(it.id)?'sel':''}" onclick="togglePick('${it.id}')">${it.name}<br><span class="small dim">${it.desc}</span></button>`).join('')}
-      <button class="main" ${S.picked.length<3?'disabled':''} onclick="descend()">Спуститься в бункер (${S.picked.length}/3)</button>`;
+      <p class="bad blink" style="font-weight:800">⚠ ВОЗДУШНАЯ ТРЕВОГА</p>
+      <div class="card"><p>До удара пятнадцать минут. Ты, сосед-электрик Пётр и медсестра Вера бежите к недостроенному бункеру под гаражами.</p>
+        <p>Унести можно только <b>три</b> вещи.</p></div>
+      ${ITEMS.map(it=>`<button class="${S.picked.includes(it.id)?'sel':''}" onclick="togglePick('${it.id}')"><span>${it.name}</span><span class="tag">${S.picked.includes(it.id)?'✓ ':''}${it.desc}</span></button>`).join('')}
+      <button class="main" style="margin-top:12px" ${S.picked.length<3?'disabled':''} onclick="descend()">Спуститься в бункер · ${S.picked.length}/3</button>`;
     return;
   }
 
   if(sc==='event'){
-    const e=EVENTS[S.eventId];
+    const e=EVENTS[S.eventId], [ico,col]=EVENT_ART[S.eventId]||['❔','#2a2a3a'];
     app.innerHTML = hud() + `
-      <h2>☀ Утро · ${e.title}</h2>
-      <div class="card"><p>${e.text()}</p></div>
-      ${e.choices.map((c,i)=>`<button ${c.req&&!c.req()?'disabled':''} onclick="choose(${i})">› ${c.t}</button>`).join('')}`;
+      <div class="ev"><div class="art" style="background:radial-gradient(circle at 50% 60%,${col},#14161e 75%)"><em>☀ УТРО · СОБЫТИЕ</em><span>${ico}</span></div>
+        <div class="body"><h3>${e.title}</h3><p>${e.text()}</p></div></div>
+      ${choicesOf(e).map(choiceBtn).join('')}`;
     return;
   }
 
   if(sc==='result'){
+    const [ico,col]=EVENT_ART[S.eventId]||['❔','#2a2a3a'];
     app.innerHTML = hud() + `
-      <h2>${EVENTS[S.eventId].title}</h2>
-      <div class="card"><p>${S.resultText}</p></div>
-      <button class="main" onclick="go('manage')">К работе</button>`;
+      <div class="ev"><div class="art" style="height:110px;background:radial-gradient(circle at 50% 60%,${col},#14161e 75%)"><em>ИТОГ</em><span style="font-size:48px">${ico}</span></div>
+        <div class="body"><h3>${EVENTS[S.eventId].title}</h3><p>${S.resultText}</p></div></div>
+      <button class="main" onclick="S.tab='bunker';go('manage')">Перейти к работе</button>`;
     return;
   }
 
   if(sc==='manage'){
-    const {d,out,eff}=compute();
-    const sign=v=>(v>=0?'+':'')+v;
-    const cards = Object.keys(ROOMS).map(id=>{
-      const R=ROOMS[id], r=S.rooms[id];
-      if(r.lvl===0){
-        return `<div class="card"><b>${R.name}</b> <span class="dim small">не построен</span><br><span class="small dim">${R.desc}</span>
-          <button ${S.res.materials<R.cost?'disabled':''} onclick="upgrade('${id}')">Построить (−${R.cost} 🛠)</button></div>`;
-      }
-      const effect = id==='generator' ? `+${r.lvl*4 + r.w*R.per} ⚡` : (id==='filter' ? `−${out[id]} ☢` : `+${out[id]} ${({food:'🍞',water:'💧',materials:'🛠',morale:'🙂',signal:'📡'})[R.res]}`);
-      const upCost=r.lvl*8;
-      return `<div class="card"><b>${R.name}</b> <span class="dim small">ур. ${r.lvl}${R.use?' · −'+R.use+'⚡':''}</span>
-        <div class="row"><span>👥 ${r.w}/${r.lvl*2}</span>
-          <span><button onclick="addWorker('${id}',-1)">−</button> <button onclick="addWorker('${id}',1)">+</button></span>
-          <span class="good">${effect}</span></div>
-        ${r.lvl<MAX_LVL?`<button ${S.res.materials<upCost?'disabled':''} onclick="upgrade('${id}')">Улучшить до ур. ${r.lvl+1} (−${upCost} 🛠)</button>`:'<p class="small dim">Максимальный уровень</p>'}
-      </div>`;
-    }).join('');
-    app.innerHTML = hud() + `
-      <h2>🔧 День · Работа</h2>
-      <p class="small dim">Распредели людей по отсекам. Каждый житель ест 1 🍞 и пьёт 1 💧 в день.</p>
-      <div class="card small">Прогноз на вечер:
-        <span class="${d.food<0?'bad':'good'}">🍞 ${sign(d.food)}</span>
-        <span class="${d.water<0?'bad':'good'}">💧 ${sign(d.water)}</span>
-        <span>🛠 ${sign(d.materials)}</span>
-        <span class="${d.rad>0?'warn':'good'}">☢ ${sign(d.rad)}</span>
-        <span class="${d.morale<0?'warn':'good'}">🙂 ${sign(d.morale)}</span>
-        ${eff<1?`<br><span class="warn">⚡ Энергии хватает только на ${Math.round(eff*100)}%</span>`:''}
-      </div>
-      ${cards}
-      <button class="main" onclick="finishDay()">🌙 Закончить день</button>`;
+    const tab=S.tab||'bunker';
+    let body='';
+    if(tab==='bunker'){
+      const {d,eff}=compute(), sign=v=>(v>=0?'+':'')+v;
+      const fc=(ico,v,badNeg)=>`<span class="chip ${v<0&&badNeg?'bad':v<0?'warn':'good'}">${ico} <b>${sign(v)}</b></span>`;
+      body=`<h2>Убежище №7</h2>
+        <div class="bunker">${bunkerSVG()}</div>
+        <div class="card"><div class="small dim" style="margin-bottom:8px">Прогноз на вечер</div>
+          <div class="forecast">${fc('🍞',d.food,1)}${fc('💧',d.water,1)}${fc('🛠',d.materials)}<span class="chip ${d.rad>0?'warn':'good'}">☢ <b>${sign(d.rad)}</b></span>${fc('🙂',d.morale)}</div>
+          ${eff<1?`<p class="warn small" style="margin-top:8px">⚡ Энергии хватает только на ${Math.round(eff*100)}% — поставь людей на генератор.</p>`:''}
+          ${freeWorkers()>0?`<p class="small" style="margin-top:8px">👥 ${freeWorkers()} без дела — распредели их во вкладке «Люди».</p>`:''}
+        </div>
+        <div class="card small"><span class="dim">Жители:</span> ${S.residents.map(p=>`${PROFS[p.prof].i} ${p.name}${p.sick?' 🤒':''} <span class="dim">❤${p.hp}</span>`).join(' · ')}</div>`;
+    }
+    if(tab==='people'){
+      const built=Object.keys(ROOMS).filter(id=>S.rooms[id].lvl>0);
+      const {out}=compute();
+      const roomChips = built.map(id=>`<span class="chip" id="room-${id}">${ICONS[id]} ${assigned(id).length}/${cap(id)} <b class="good">${roomEffect(id)}</b></span>`).join('');
+      body=`<h2>Люди</h2>
+        <div class="forecast" style="margin-bottom:6px">${roomChips}</div>
+        <p class="small dim">Без дела: <b class="${freeWorkers()>0?'warn':''}">${freeWorkers()}</b> из ${S.residents.length}. ★ — работа по профессии, ×1.5. Больные не работают.</p>`+
+        S.residents.map((p,i)=>{
+          const pr=PROFS[p.prof], tr=TRAITS[p.trait], known=traitKnown(p);
+          const hpCol=p.hp>=60?'#7be36a':p.hp>=30?'#ffb340':'#ff5d5d';
+          const opts=['<option value="">💤 Отдых</option>'].concat(built.map(id=>{
+            const full=assigned(id).length>=cap(id) && p.job!==id;
+            return `<option value="${id}" ${p.job===id?'selected':''} ${full?'disabled':''}>${ICONS[id]} ${ROOMS[id].name.replace(/^\S+\s/,'')} ${assigned(id).length}/${cap(id)}${pr.room===id?' ★':''}</option>`;
+          })).join('');
+          return `<div class="card person">
+            <div class="av" style="background:${AV_COLORS[i%AV_COLORS.length]}">${pr.i}</div>
+            <div class="pinfo">
+              <div class="pname"><b>${p.name}</b><span class="dim small">${pr.n}${pr.room?' · ★ '+ICONS[pr.room]:''}</span></div>
+              <div class="ptags"><span class="ptag">${known?tr.i+' '+tr.n:'❔ ???'}</span>${p.sick?'<span class="ptag bad">🤒 болен</span>':''}${p.isolated?'<span class="ptag">🚪 изолирован</span>':''}</div>
+              <div class="small dim">${known?tr.d:'Характер пока не ясен'}</div>
+              <div class="hpbar"><i style="width:${p.hp}%;background:${hpCol}"></i></div>
+              <select class="job" onchange="setJob('${p.name}',this.value)" ${p.sick?'disabled':''}>${p.sick?'<option>🤒 Болеет</option>':opts}</select>
+            </div>
+            <div class="hp" style="color:${hpCol}">❤ ${p.hp}</div>
+          </div>`;
+        }).join('');
+    }
+    if(tab==='build'){
+      body=`<h2>Стройка</h2><p class="small dim">Материалы: <b>${S.res.materials} 🛠</b></p>`+
+        Object.keys(ROOMS).map(id=>{ const R=ROOMS[id], r=S.rooms[id];
+          const cost=r.lvl===0?R.cost:r.lvl*8, max=r.lvl>=MAX_LVL;
+          return `<div class="card" id="room-b-${id}"><div class="room-card"><div class="room-ico">${ICONS[id]}</div>
+            <div class="room-info"><b>${R.name.replace(/^\S+\s/,'')}${r.lvl?pips(r.lvl):''}</b><span>${r.lvl?`${R.desc}${R.use?' · потребляет '+R.use+' ⚡':''}`:'Не построен · '+R.desc.toLowerCase()}</span></div></div>
+            ${max?'<p class="small dim" style="margin-top:8px">Максимальный уровень</p>':
+              `<button ${S.res.materials<cost?'disabled':''} onclick="upgrade('${id}')" style="margin-top:10px"><span>${r.lvl?'Улучшить до ур. '+(r.lvl+1):'Построить'}</span><span class="tag">−${cost} 🛠</span></button>`}</div>`;
+        }).join('');
+    }
+    if(tab==='journal'){
+      const J=(S.journal||[]).slice().reverse();
+      body=`<h2>Журнал</h2>`+(J.length?J.map(j=>`<div class="jr"><small>ДЕНЬ ${j.d} · ${j.t.toUpperCase()}</small><b>› ${j.c.replace(/\s*\([^)]*\)\s*$/,'')}</b><p>${j.r}</p></div>`).join(''):'<p class="dim">Пока пусто.</p>');
+    }
+    app.innerHTML = hud() + body + dock();
     return;
   }
 
   if(sc==='summary'){
     app.innerHTML = hud() + `
-      <h2>🌙 Вечер · Итоги дня ${S.day-1}</h2>
+      <h2>🌙 Итоги дня ${S.day-1}</h2>
+      <div class="bunker">${bunkerSVG()}</div>
       <div class="card"><ul class="log">${S.log.map(l=>`<li>${l}</li>`).join('')}</ul></div>
-      <p class="small dim">Жители: ${S.residents.join(', ')}</p>
-      <button class="main" onclick="startMorning()">Новый день</button>`;
+      <button class="main" onclick="startMorning()">☀ Новый день</button>`;
     return;
   }
 
   if(sc==='ending'){
     const E=ENDINGS[S.ending];
     app.innerHTML = `
-      <h1 style="font-size:22px">${E.title}</h1>
-      <p class="dim">Концовка · день ${S.day}</p>
+      <p class="dim" style="margin-top:40px;font-weight:700;letter-spacing:2px;font-size:12px">КОНЦОВКА · ДЕНЬ ${S.day}</p>
+      <h1 style="font-size:24px;margin-top:6px">${E.title}</h1>
       <div class="card"><p>${E.text}</p></div>
-      <div class="card small dim">Выжило: ${S.residents.length} · Мораль: ${S.res.morale} · Радиация: ${S.res.rad}</div>
-      <button class="main" onclick="restart()">Начать заново</button>`;
+      <div class="rings">${ring('👥',S.residents.length,'выжило',S.residents.length*12,'#ff8a3d')}${ring('🙂',S.res.morale,'мораль',S.res.morale,'#ff7aa8')}${ring('☢',S.res.rad,'радиация',S.res.rad,'#7be36a')}</div>
+      <button class="main" style="margin-top:14px" onclick="restart()">Начать заново</button>`;
+    bgm.stop();
     return;
   }
 }
 
 /* =========================================================
-   7.5 ЗАСТАВКА: бег в бункер (canvas + звук)
+   7.2 ФОНОВАЯ МУЗЫКА: тёмный эмбиент (синтезируется в браузере)
    ========================================================= */
+const bgm = (()=>{
+  let AC=null, master=null, revIn=null, stopFn=null, playing=false;
+  const mtof=m=>440*Math.pow(2,(m-69)/12);
+  function ensure(){
+    if(AC){ if(AC.state==='suspended' && !document.hidden) AC.resume(); return; }
+    try{
+      AC=new (window.AudioContext||window.webkitAudioContext)();
+      master=AC.createGain(); master.gain.value=0; master.connect(AC.destination);
+      const conv=AC.createConvolver(), len=AC.sampleRate*3.5, b=AC.createBuffer(2,len,AC.sampleRate);
+      for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6); }
+      conv.buffer=b; revIn=AC.createGain(); const rg=AC.createGain(); rg.gain.value=0.6; revIn.connect(conv).connect(rg).connect(master);
+    }catch(e){ AC=null; }
+  }
+  function note(f,t,o){
+    const os=AC.createOscillator(); os.type=o.type||'sine'; os.frequency.value=f;
+    const fl=AC.createBiquadFilter(); fl.frequency.value=o.cut||8000;
+    const g=AC.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(o.g,t+o.a); g.gain.exponentialRampToValueAtTime(0.0001,t+o.a+o.r);
+    os.connect(fl).connect(g); g.connect(master); if(o.rev){ const s=AC.createGain(); s.gain.value=o.rev; g.connect(s).connect(revIn); }
+    os.start(t); os.stop(t+o.a+o.r+0.05);
+  }
+  function start(){
+    const nodes=[];
+    const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=380; lp.connect(master);
+    const lfo=AC.createOscillator(), lg=AC.createGain(); lfo.frequency.value=0.05; lg.gain.value=220; lfo.connect(lg).connect(lp.frequency); lfo.start(); nodes.push(lfo);
+    [[33,0],[33,7],[40,-5],[45,4]].forEach(([m,d])=>{ const o=AC.createOscillator(); o.type='sawtooth'; o.frequency.value=mtof(m); o.detune.value=d; const g=AC.createGain(); g.gain.value=0.05; o.connect(g).connect(lp); o.start(); nodes.push(o); });
+    const nb=AC.createBuffer(1,AC.sampleRate,AC.sampleRate), nd=nb.getChannelData(0); for(let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
+    const click=t=>{ const n=AC.createBufferSource(); n.buffer=nb; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=4000; f.Q.value=3; const g=AC.createGain(); g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.012); n.connect(f).connect(g).connect(master); n.start(t); n.stop(t+0.03); };
+    const chords=[[57,60,64,71],[53,57,60,67],[55,59,62,69],[52,55,59,64]];
+    let next=AC.currentTime+0.1, i=0;
+    const id=setInterval(()=>{
+      while(next<AC.currentTime+0.3){
+        const t=next;
+        if(i%16===0) chords[(i/16)%4].forEach((m,k)=>note(mtof(m),t+k*0.15,{type:'triangle',a:2.5,r:5,g:0.035,cut:1400,rev:0.8}));
+        if(Math.random()<0.07) note(mtof(84+Math.floor(Math.random()*8)),t,{a:0.005,r:3,g:0.03,rev:1.2});
+        if(Math.random()<0.3){ const n=1+Math.floor(Math.random()*3); for(let k=0;k<n;k++) click(t+Math.random()*0.5); }
+        next+=0.5; i++;
+      }
+    },50);
+    return ()=>{ clearInterval(id); nodes.forEach(o=>{ try{o.stop()}catch(e){} }); lp.disconnect(); };
+  }
+  return {
+    ensure,
+    play(){ ensure(); if(!AC || playing || !musicOn()) return; playing=true; stopFn=start(); master.gain.cancelScheduledValues(AC.currentTime); master.gain.setTargetAtTime(0.5,AC.currentTime,1.2); },
+    stop(){ if(!AC || !playing) return; playing=false; master.gain.setTargetAtTime(0,AC.currentTime,0.4); const f=stopFn; stopFn=null; setTimeout(()=>f&&f(),1500); },
+    isPlaying:()=>playing,
+    suspend(){ if(AC && AC.state==='running') AC.suspend(); },
+  };
+})();
+function musicOn(){ try{ return localStorage.getItem('bunker_music')!=='off'; }catch(e){ return true; } }
+function toggleMusic(){
+  haptic(); const on=!musicOn();
+  try{ localStorage.setItem('bunker_music', on?'on':'off'); }catch(e){}
+  if(on) bgm.play(); else bgm.stop();
+  render();
+}
+// аудио можно запускать только после касания экрана
+document.addEventListener('pointerdown', ()=>bgm.ensure(), {capture:true});
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) bgm.suspend(); else bgm.ensure(); });
+
+/* =========================================================
+   7.5 ЗАСТАВКА: бег в бункер (canvas + звук)
+   Сцена рисуется в «сценических» координатах 360×640 и
+   масштабируется под любой экран.
+   ========================================================= */
+const INTRO_LEN = 17.2;
+const iCl  = v => Math.max(0, Math.min(1, v));
+const iEase= k => k*k*(3-2*k);
+const iSm  = (a,b,t) => iEase(iCl((t-a)/(b-a)));
+const iPulse=(t,a,d) => t>=a ? Math.max(0, 1-(t-a)/d) : 0;
+function iHex(h){ const n=parseInt(h.slice(1),16); return [n>>16,(n>>8)&255,n&255]; }
+function iMix(a,b,k){ const A=iHex(a),B=iHex(b); return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')})`; }
+function iRand(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+let IDATA=null;
+function introData(){
+  if(IDATA) return IDATA;
+  const r=iRand(7);
+  const layer=(x0,x1,minW,maxW,minH,maxH,winP)=>{
+    const a=[]; let x=x0;
+    while(x<x1){
+      const w=minW+r()*(maxW-minW), h=minH+r()*(maxH-minH), win=[];
+      if(winP) for(let wy=10; wy<h-10; wy+=12) for(let wx=5; wx<w-7; wx+=9)
+        if(r()<winP) win.push({x:wx, y:wy, off:1+r()*7, c:r()<.8?'#e8c070':'#a8c4e0', f:r()<.08});
+      a.push({x,w,h,win,ant:r()<.25,tank:r()<.2}); x+=w+r()*5;
+    }
+    return a;
+  };
+  IDATA={
+    far:  layer(-800,1300,18,42,110,230,0.22),
+    mid:  layer(-800,1300,28,58,70,170,0.32),
+    near: layer(-800,1300,40,80,40,100,0.12),
+    clouds: Array.from({length:8},()=>({x:-300+r()*900, y:40+r()*170, w:90+r()*150, h:14+r()*18, s:3+r()*6})),
+    stars: Array.from({length:40},()=>({x:-200+r()*760, y:r()*300, b:r()})),
+    debris: Array.from({length:22},()=>({x:r(), y:r(), s:2+r()*5, rot:r()*6, vr:(r()-.5)*14})),
+    edge: Array.from({length:16},()=>({y:r(), rr:24+r()*40, o:r()*30})),
+    dust: Array.from({length:50},()=>({x:r()*360, y:r()*640, s:.6+r()*1.6, v:10+r()*24, ph:r()*6})),
+  };
+  return IDATA;
+}
+
+/* ---------- бегущий человек: детальный силуэт ---------- */
+// kind: 0 — Ты (рюкзак), 1 — Пётр (кепка, ящик), 2 — Вера (пучок, сумка)
+function iFigure(c, x, y, h, ph, kind, fill){
+  c.save(); c.translate(x,y); const s=h/100; c.scale(s,s);
+  c.fillStyle=fill; c.strokeStyle=fill; c.lineCap='round'; c.lineJoin='round';
+  c.translate(0, -Math.abs(Math.cos(ph))*3);
+  const hip=[0,-48], sh=[8,-80];
+  const leg=(a)=>{
+    const th=Math.sin(ph+a)*0.75, kn=Math.max(0,Math.cos(ph+a+0.6))*1.25+0.15;
+    const k=[hip[0]+Math.sin(th)*25, hip[1]+Math.cos(th)*25], sa=th-kn;
+    const f=[k[0]+Math.sin(sa)*24, k[1]+Math.cos(sa)*24];
+    c.lineWidth=11; c.beginPath(); c.moveTo(hip[0],hip[1]); c.lineTo(k[0],k[1]); c.stroke();
+    c.lineWidth=9;  c.beginPath(); c.moveTo(k[0],k[1]); c.lineTo(f[0],f[1]); c.stroke();
+    c.lineWidth=6;  c.beginPath(); c.moveTo(f[0]-2,f[1]); c.lineTo(f[0]+9,f[1]+1); c.stroke();
+  };
+  const arm=(a)=>{
+    const ua=-Math.sin(ph+a)*0.9, el=[sh[0]+Math.sin(ua)*18, sh[1]+Math.cos(ua)*18], fa=ua+1.3;
+    const hd=[el[0]+Math.sin(fa)*16, el[1]+Math.cos(fa)*16];
+    c.lineWidth=8; c.beginPath(); c.moveTo(sh[0],sh[1]); c.lineTo(el[0],el[1]); c.stroke();
+    c.lineWidth=7; c.beginPath(); c.moveTo(el[0],el[1]); c.lineTo(hd[0],hd[1]); c.stroke();
+    return hd;
+  };
+  leg(Math.PI); const farHand=arm(Math.PI);
+  if(kind===1){ c.fillRect(farHand[0]-8, farHand[1]-2, 16, 10); }            // ящик с инструментами
+  c.beginPath(); c.moveTo(-7,-44); c.lineTo(8,-44); c.lineTo(16,-82); c.lineTo(-1,-87); c.closePath(); c.fill(); // торс
+  c.lineWidth=7; c.beginPath(); c.moveTo(9,-84); c.lineTo(13,-90); c.stroke();  // шея
+  c.beginPath(); c.arc(15,-97,9,0,7); c.fill();                                // голова
+  if(kind===0){ c.fillRect(-14,-86,14,28); c.fillRect(-12,-60,10,4); }          // рюкзак
+  if(kind===1){ c.fillRect(7,-108,18,5); c.fillRect(20,-105,8,3); }             // кепка
+  if(kind===2){ c.beginPath(); c.arc(7,-103,5.5,0,7); c.fill(); c.fillRect(-6,-62,12,13); } // пучок и сумка
+  leg(0); arm(0);
+  c.restore();
+}
+// Силуэт + контур света (rim) со стороны источника
+function iRunner(c,x,y,h,ph,kind,rimCol,rx,ry){
+  if(rimCol){ iFigure(c,x+rx,y+ry,h,ph,kind,rimCol); }
+  iFigure(c,x,y,h,ph,kind,'#050505');
+}
+// Тень на земле: силуэт «положенный» на пол
+function iShadow(c,x,y,h,ph,kind,skew,squash,alpha){
+  c.save(); c.translate(x,y); c.transform(1,0,-skew,-squash,0,0);
+  iFigure(c,0,0,h,ph,kind,`rgba(0,0,0,${alpha})`);
+  c.restore();
+  c.fillStyle=`rgba(0,0,0,${alpha*0.9})`; c.beginPath(); c.ellipse(x+4,y,h*0.17,h*0.035,0,0,7); c.fill();
+}
+
+/* ---------- окружение ---------- */
+function iSky(c,E,top,bot,y1){
+  const g=c.createLinearGradient(0,0,0,y1); g.addColorStop(0,top); g.addColorStop(1,bot);
+  c.fillStyle=g; c.fillRect(-E,-500,360+E*2,y1+500);
+}
+function iCity(c,arr,base,color,t,windows,blink){
+  for(const b of arr){
+    c.fillStyle=color; c.fillRect(b.x, base-b.h, b.w, b.h+1);
+    if(b.tank){ c.fillRect(b.x+b.w*0.3, base-b.h-9, 9, 9); c.fillRect(b.x+b.w*0.3+1, base-b.h-14, 7, 5); }
+    if(b.ant){
+      c.fillRect(b.x+b.w*0.5, base-b.h-16, 1.5, 16);
+      if(blink && Math.sin(t*4+b.x)>0){ c.fillStyle='#ff3b2a'; c.beginPath(); c.arc(b.x+b.w*0.5+0.7, base-b.h-17, 1.6, 0, 7); c.fill(); }
+    }
+    if(windows) for(const w of b.win){
+      if(t>=w.off) continue;
+      let a=1; if(w.f) a = Math.sin(t*13+b.x+w.y)>0 ? 1 : 0.35;
+      c.globalAlpha=a*0.9; c.fillStyle=w.c; c.fillRect(b.x+w.x, base-b.h+w.y, 4, 5); c.globalAlpha=1;
+    }
+  }
+}
+function iBeam(c,x,y,ang,len,wd,a){
+  c.save(); c.translate(x,y); c.rotate(ang);
+  const g=c.createLinearGradient(0,0,0,-len); g.addColorStop(0,`rgba(205,215,255,${a})`); g.addColorStop(1,'rgba(205,215,255,0)');
+  c.fillStyle=g; c.beginPath(); c.moveTo(-3,0); c.lineTo(3,0); c.lineTo(wd,-len); c.lineTo(-wd,-len); c.closePath(); c.fill();
+  c.restore();
+}
+function iMushroom(c,x,base,a,s){
+  if(a<0) return;
+  const k=iEase(iCl(a/6)), top=base-(130+250*k)*s, cw=(46+118*k)*s;
+  const gg=c.createRadialGradient(x,top+cw*0.2,5,x,top+cw*0.2,cw*2.4);
+  gg.addColorStop(0,'rgba(255,175,90,.55)'); gg.addColorStop(1,'rgba(255,120,40,0)');
+  c.fillStyle=gg; c.fillRect(x-cw*2.6,top-cw*2.2,cw*5.2,cw*5.4);
+  const sg=c.createLinearGradient(x-cw*0.3,0,x+cw*0.3,0);
+  sg.addColorStop(0,'#4a1c0c'); sg.addColorStop(.5,'#ffb860'); sg.addColorStop(1,'#4a1c0c');
+  c.fillStyle=sg; c.beginPath();
+  c.moveTo(x-cw*0.34,base); c.quadraticCurveTo(x-cw*0.1,(base+top)/2,x-cw*0.17,top+cw*0.22);
+  c.lineTo(x+cw*0.17,top+cw*0.22); c.quadraticCurveTo(x+cw*0.1,(base+top)/2,x+cw*0.34,base); c.closePath(); c.fill();
+  c.strokeStyle='rgba(255,215,175,.35)'; c.lineWidth=4*s; c.beginPath(); c.ellipse(x,(base+top)/2+12*s,cw*0.6,cw*0.1,0,0,7); c.stroke();
+  for(let i=0;i<14;i++){
+    const ang=i/14*Math.PI*2+a*0.12, rr=cw*(0.55+0.1*Math.sin(i*3.1));
+    const px=x+Math.cos(ang)*rr*0.82, py=top+Math.sin(ang)*rr*0.34;
+    const g=c.createRadialGradient(px,py-cw*0.12,2,px,py,cw*0.42);
+    g.addColorStop(0,'#ffe2a0'); g.addColorStop(.45,'#ff8a32'); g.addColorStop(1,'rgba(80,28,14,.95)');
+    c.fillStyle=g; c.beginPath(); c.arc(px,py,cw*0.36,0,7); c.fill();
+  }
+  const cg=c.createRadialGradient(x,top,2,x,top,cw*0.55); cg.addColorStop(0,'#fff8d8'); cg.addColorStop(1,'rgba(255,170,60,0)');
+  c.fillStyle=cg; c.beginPath(); c.arc(x,top,cw*0.55,0,7); c.fill();
+  c.fillStyle='rgba(40,22,16,.5)'; c.beginPath(); c.ellipse(x,top-cw*0.3,cw*0.72,cw*0.2,0,0,7); c.fill();
+}
+
+/* ---------- Кадр 1: город, тревога ---------- */
+function iShotCity(c,t,D,E){
+  const z=1+t*0.03; c.save(); c.translate(180,420); c.scale(z,z); c.translate(-180,-420);
+  iSky(c,E*1.2,'#03050b','#2a1622',470);
+  for(const s of D.stars){ c.fillStyle=`rgba(220,220,255,${0.2+0.5*s.b*(0.6+0.4*Math.sin(t*3+s.x))})`; c.fillRect(s.x,s.y,1.2,1.2); }
+  c.save(); c.shadowColor='rgba(225,215,185,.7)'; c.shadowBlur=34; c.fillStyle='#ddd6bc';
+  c.beginPath(); c.arc(278,120,20,0,7); c.fill(); c.restore();
+  c.fillStyle='rgba(0,0,0,.08)'; c.beginPath(); c.arc(272,115,5,0,7); c.arc(285,126,3,0,7); c.fill();
+  for(const cl of D.clouds){
+    const x=cl.x+t*cl.s;
+    c.fillStyle='rgba(18,14,24,.88)'; c.beginPath(); c.ellipse(x,cl.y,cl.w/2,cl.h/2,0,0,7); c.fill();
+    c.fillStyle='rgba(150,120,140,.12)'; c.beginPath(); c.ellipse(x,cl.y-cl.h*0.32,cl.w*0.42,cl.h*0.18,0,0,7); c.fill();
+  }
+  [[50,0],[205,2.1],[330,4.2]].forEach(([bx,p],i)=> iBeam(c,bx,470,Math.sin(t*0.9+p)*0.45+(i-1)*0.18,600,28,0.14));
+  c.fillStyle=`rgba(190,30,25,${0.07+0.09*(0.5+0.5*Math.sin(t*5))})`; c.fillRect(-E*1.2,-500,360+E*2.4,970);
+  iCity(c,D.far,470,'#12131b',t,true,true);
+  iCity(c,D.mid,470,'#0b0c11',t,true,true);
+  iCity(c,D.near,470,'#060609',t,true,false);
+  c.fillStyle='#07080a'; c.fillRect(-E*1.2,470,360+E*2.4,700);
+  for(let x=-E; x<360+E; x+=26){ c.fillStyle='rgba(232,192,112,.25)'; c.fillRect(x,478,10,1.5); } // огни дороги
+  c.restore();
+  // громкоговоритель на переднем плане
+  c.fillStyle='#020203'; c.fillRect(34,300,7,400); c.fillRect(22,300,31,5);
+  c.beginPath(); c.moveTo(24,296); c.lineTo(4,284); c.lineTo(4,318); c.lineTo(24,308); c.fill();
+  c.beginPath(); c.moveTo(51,296); c.lineTo(71,284); c.lineTo(71,318); c.lineTo(51,308); c.fill();
+  for(let k=0;k<3;k++){
+    const rr=((t*55+k*26)%78)+8;
+    c.strokeStyle=`rgba(255,90,70,${(1-rr/86)*0.55})`; c.lineWidth=2;
+    c.beginPath(); c.arc(72,301,rr,-0.6,0.6); c.stroke();
+  }
+}
+
+/* ---------- Кадр 2: бег по улице, вспышка ---------- */
+function iShotStreet(c,t,D,E){
+  const u=t-3.4, post=t>=7.4, pk=iSm(7.4,8.0,t);
+  const lead=60+u*70, cam=lead-215;
+  iSky(c,E,iMix('#04060c','#2a1208',pk),iMix('#2b1824','#c0581c',pk),470);
+  if(!post){ for(const s of D.stars) if(s.y<250){ c.fillStyle=`rgba(220,220,255,${0.15+0.4*s.b})`; c.fillRect(s.x,s.y,1.2,1.2);} }
+  if(post) iMushroom(c, 70-cam*0.03, 470, t-7.4, 1);
+  c.save(); c.translate(-cam*0.1,0); iCity(c,D.far,470,post?'#1c0f08':'#11121a',t,!post,!post); c.restore();
+  c.save(); c.translate(-cam*0.35,0); iCity(c,D.mid,470,post?'#140a06':'#0a0b10',t,!post,!post); c.restore();
+
+  // гаражи (параллакс 0.8)
+  c.save(); c.translate(-cam*0.8,0);
+  for(let i=0;i<24;i++){
+    const gx=-100+i*64;
+    c.fillStyle=post?'#1d130d':'#131418'; c.fillRect(gx,420,60,50);
+    c.fillStyle=post?'#2a1a10':'#1a1b20'; c.fillRect(gx-2,416,64,6);
+    c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(gx,422,60,4);
+    c.strokeStyle='rgba(255,255,255,.05)'; c.lineWidth=1;
+    for(let l=0;l<6;l++){ c.beginPath(); c.moveTo(gx+8,432+l*6); c.lineTo(gx+52,432+l*6); c.stroke(); }
+    if(post){ c.fillStyle='rgba(255,140,60,.18)'; c.fillRect(gx,420,3,50); }
+  }
+  c.restore();
+
+  // тротуар и дорога
+  c.fillStyle=post?'#2a1d14':'#1b1c1f'; c.fillRect(-E,470,360+2*E,24);
+  c.fillStyle=post?'#3a281a':'#2a2b2e'; c.fillRect(-E,492,360+2*E,3);
+  c.fillStyle=post?'#170f0a':'#0e0f11'; c.fillRect(-E,495,360+2*E,300);
+  c.fillStyle=post?'rgba(255,190,120,.35)':'rgba(200,200,190,.25)';
+  for(let wx=Math.floor((cam-E)/70)*70; wx<cam+360+E; wx+=70) c.fillRect(wx-cam,575,34,3);
+  if(post){ const g=c.createLinearGradient(-E,0,300,0); g.addColorStop(0,'rgba(255,140,60,.35)'); g.addColorStop(1,'rgba(255,140,60,0)'); c.fillStyle=g; c.fillRect(-E,470,360+2*E,330); }
+
+  // фонари
+  const lamps=[];
+  for(let i=0;i<7;i++){
+    const lx=40+i*190, sx=lx-cam; lamps.push(lx);
+    const on = !post && Math.sin(t*29+i*7)>-0.92;
+    if(on){
+      const cg=c.createLinearGradient(0,338,0,500); cg.addColorStop(0,'rgba(240,200,120,.32)'); cg.addColorStop(1,'rgba(240,200,120,.03)');
+      c.fillStyle=cg; c.beginPath(); c.moveTo(sx+18,340); c.lineTo(sx+30,340); c.lineTo(sx+76,500); c.lineTo(sx-28,500); c.closePath(); c.fill();
+      c.fillStyle='rgba(240,200,120,.16)'; c.beginPath(); c.ellipse(sx+24,494,56,9,0,0,7); c.fill();
+    }
+    c.fillStyle='#0a0a0b'; c.fillRect(sx-2,330,5,165); c.fillRect(sx-2,330,30,4); c.fillRect(sx+16,333,16,6);
+    if(on){ c.save(); c.shadowColor='#ffd890'; c.shadowBlur=14; c.fillStyle='#ffe6b0'; c.fillRect(sx+18,338,12,3); c.restore(); }
+  }
+
+  // брошенная машина
+  const cx=470-cam;
+  c.fillStyle='rgba(0,0,0,.45)'; c.beginPath(); c.ellipse(cx+48,546,62,7,0,0,7); c.fill();
+  c.fillStyle='#16171b';
+  c.beginPath(); c.moveTo(cx,540); c.lineTo(cx,518); c.lineTo(cx+20,514); c.lineTo(cx+34,498); c.lineTo(cx+70,498); c.lineTo(cx+86,514); c.lineTo(cx+100,518); c.lineTo(cx+100,540); c.closePath(); c.fill();
+  c.fillStyle=post?'#ffb070':'#2c3440'; c.globalAlpha=post?0.35:0.8; c.fillRect(cx+37,502,14,12); c.fillRect(cx+54,502,14,12); c.globalAlpha=1;
+  c.fillStyle='#0b0b0d'; c.fillRect(cx+18,512,4,26); c.beginPath(); c.moveTo(cx+20,514); c.lineTo(cx+4,500); c.lineTo(cx+2,526); c.closePath(); c.fill(); // открытая дверь
+  c.fillStyle='#050505'; c.beginPath(); c.arc(cx+22,540,9,0,7); c.arc(cx+80,540,9,0,7); c.fill();
+  if(!post && Math.sin(t*7)>0){ c.save(); c.shadowColor='#ffae2a'; c.shadowBlur=12; c.fillStyle='#ffae2a'; c.fillRect(cx+96,520,4,4); c.fillRect(cx,520,4,4); c.restore(); }
+
+  // бегущие (сзади вперёд)
+  const R=[0,1,2].map(i=>({i, x:lead-i*36+Math.sin(u*1.3+i)*4, y:512-i*8, h:76-i*4, ph:u*11+i*1.9}));
+  for(const r of R.slice().reverse()){
+    const sx=r.x-cam;
+    for(let j=0;j<4;j++){ const ag=(u*3+j/4+r.i*.37)%1; c.fillStyle=`rgba(${post?'150,100,70':'120,115,110'},${(1-ag)*0.22})`; c.beginPath(); c.arc(sx-ag*22,r.y-2-ag*6,2+ag*6,0,7); c.fill(); }
+    if(!post){
+      let near=lamps[0]; for(const lx of lamps) if(Math.abs(lx+24-r.x)<Math.abs(near+24-r.x)) near=lx;
+      const sk=Math.max(-1.6,Math.min(1.6,(r.x-(near+24))/70));
+      iShadow(c,sx,r.y,r.h,r.ph,r.i,sk,0.3,0.4);
+      iRunner(c,sx,r.y,r.h,r.ph,r.i,'rgba(240,200,120,.55)',(near+24-r.x)>0?1.3:-1.3,-0.8);
+    } else {
+      iShadow(c,sx,r.y,r.h,r.ph,r.i,2.6,0.16,0.62);
+      iRunner(c,sx,r.y,r.h,r.ph,r.i,`rgba(255,${Math.round(220-60*pk)},140,.9)`,-1.8,-0.6);
+    }
+    if(r.i===0 && t<6.6){ c.fillStyle='#c9e265'; c.font='bold 11px Courier New'; c.textAlign='center'; c.fillText('▼ ТЫ', sx+10, r.y-r.h-22); }
+  }
+  // передний план: столбики
+  for(let i=0;i<8;i++){ const fx=i*150-cam*1.35%150; c.fillStyle='#030303'; c.fillRect(fx,598,10,60); c.fillRect(fx-2,596,14,5); }
+  if(post){ c.fillStyle=`rgba(255,120,40,${0.08*pk})`; c.fillRect(-E,-500,360+2*E,1300); }
+}
+
+/* ---------- Кадр 3: вход в бункер, ударная волна ---------- */
+function iFacade(c,E,x0,x1){
+  c.save(); c.beginPath(); c.rect(x0,0,x1-x0,640); c.clip();
+  const fg=c.createLinearGradient(190,0,360,0); fg.addColorStop(0,'#8a6a50'); fg.addColorStop(.35,'#585a4f'); fg.addColorStop(1,'#3a3c35');
+  c.fillStyle=fg; c.fillRect(190,362,170+E,120);
+  c.strokeStyle='rgba(0,0,0,.25)'; c.lineWidth=1;
+  for(let y=382;y<480;y+=24){ c.beginPath(); c.moveTo(190,y); c.lineTo(360+E,y); c.stroke(); }
+  for(let x=200;x<360+E;x+=44){ c.beginPath(); c.moveTo(x,362); c.lineTo(x,480); c.stroke(); }
+  c.fillStyle='#6c6e62'; c.fillRect(180,350,180+E,14);
+  c.fillStyle='rgba(0,0,0,.4)'; c.fillRect(190,364,170+E,10);
+  c.fillStyle='rgba(225,215,180,.75)'; c.font='bold 10px Courier New'; c.textAlign='center'; c.fillText('УБЕЖИЩЕ №7', 318, 392);
+  c.fillStyle='#e8c23a'; c.beginPath(); c.moveTo(318,412); c.lineTo(332,436); c.lineTo(304,436); c.closePath(); c.fill();
+  c.fillStyle='#111'; c.font='bold 13px sans-serif'; c.textAlign='center'; c.fillText('☢',318,433);
+  // рама с жёлто-чёрными полосами
+  c.save(); c.beginPath(); c.rect(208,390,68,90); c.rect(214,396,56,84); c.clip('evenodd');
+  c.fillStyle='#e8c23a'; c.fillRect(208,390,68,90);
+  c.fillStyle='#151515'; for(let k=-100;k<120;k+=14){ c.beginPath(); c.moveTo(208+k,390); c.lineTo(216+k,390); c.lineTo(216+k-90,480); c.lineTo(208+k-90,480); c.closePath(); c.fill(); }
+  c.restore();
+  c.restore();
+}
+function iShotBunker(c,t,D,E){
+  const u=t-9.6;
+  const z=1+u*0.025; c.save(); c.translate(240,450); c.scale(z,z); c.translate(-240,-450);
+  iSky(c,E*1.2,'#2a1208','#b8561e',480);
+  iMushroom(c,-20,480,t-7.4,0.8);
+  c.save(); c.translate(0,12); iCity(c,D.far,480,'#1c0e07',99,false,false); c.restore();
+  const gg=c.createLinearGradient(0,480,0,640); gg.addColorStop(0,'#3e2818'); gg.addColorStop(1,'#120a06');
+  c.fillStyle=gg; c.fillRect(-E*1.2,480,360+E*2.4,400);
+  const lg=c.createLinearGradient(-E,0,260,0); lg.addColorStop(0,'rgba(255,150,70,.3)'); lg.addColorStop(1,'rgba(255,150,70,0)');
+  c.fillStyle=lg; c.fillRect(-E*1.2,480,360+E*2.4,400);
+  // насыпь над бункером
+  c.fillStyle='#24170e'; c.beginPath(); c.moveTo(130,482); c.quadraticCurveTo(170,330,240,318); c.lineTo(360+E*1.2,312); c.lineTo(360+E*1.2,482); c.closePath(); c.fill();
+  c.strokeStyle='#3a2a18'; c.lineWidth=1.5;
+  for(let i=0;i<22;i++){ const gx=150+i*12; const gy=gx<240?482-(gx-130)*1.4:316; c.beginPath(); c.moveTo(gx,gy+3); c.lineTo(gx+3,gy-5); c.stroke(); }
+  // тень бункера на землю (вправо от вспышки)
+  c.fillStyle='rgba(0,0,0,.35)'; c.beginPath(); c.moveTo(190,482); c.lineTo(360+E*1.2,482); c.lineTo(360+E*1.2,520); c.lineTo(240,520); c.closePath(); c.fill();
+  iFacade(c,E*1.2,0,272);
+  // проём изнутри
+  const ig=c.createRadialGradient(250,430,4,250,430,60); ig.addColorStop(0,'#4a3414'); ig.addColorStop(1,'#000');
+  c.fillStyle=ig; c.fillRect(214,396,56,84);
+  // мешки с песком
+  for(let row=0;row<3;row++) for(let k=0;k<4-row;k++){
+    const bx=148+k*16+row*8, by=476-row*9;
+    c.fillStyle='#6a5236'; c.beginPath(); c.ellipse(bx,by,9,5,0,0,7); c.fill();
+    c.fillStyle='rgba(255,170,90,.18)'; c.beginPath(); c.ellipse(bx-3,by-2,5,2,0,0,7); c.fill();
+  }
+  // бегущие
+  const R=[0,1,2].map(i=>({i, x:60+u*110-i*36, y:482, h:80-i*3, ph:u*12+i*1.9}));
+  for(const r of R.slice().reverse()){
+    if(r.x<-40 || r.x>300) continue;
+    const inside=iSm(214,252,r.x);
+    if(r.x<214) iShadow(c,r.x,r.y,r.h,r.ph,r.i,2.2,0.18,0.55);
+    iRunner(c,r.x,r.y,r.h,r.ph,r.i,`rgba(255,190,120,${0.9*(1-inside)})`,-1.8,-0.6);
+  }
+  // гермодверь выезжает из стены
+  const p=iSm(11.95,12.45,t);
+  if(p>0){
+    const dx=270-56*p;
+    const dg=c.createLinearGradient(dx,0,dx+56,0); dg.addColorStop(0,'#8a8d7e'); dg.addColorStop(1,'#4d5046');
+    c.fillStyle=dg; c.fillRect(dx,396,56,84);
+    c.fillStyle='#2e3029'; for(let ry=402;ry<478;ry+=12){ c.fillRect(dx+4,ry,2,2); c.fillRect(dx+50,ry,2,2); }
+    c.save(); c.translate(dx+30,438); c.rotate(-p*4);
+    c.strokeStyle='#2a2c25'; c.lineWidth=3; c.beginPath(); c.arc(0,0,11,0,7); c.stroke();
+    for(let a=0;a<3;a++){ c.beginPath(); c.moveTo(0,0); c.lineTo(Math.cos(a*2.1)*11,Math.sin(a*2.1)*11); c.stroke(); }
+    c.restore();
+    for(let k=0;k<6;k++){ c.fillStyle=k%2?'#151515':'#e8c23a'; c.fillRect(dx,396+k*14,4,14); }
+  }
+  iFacade(c,E*1.2,272,360+E*1.2);
+  // стена пыли
+  const F=-140+Math.max(0,u-0.6)*178;
+  if(F>-200){
+    const wg=c.createLinearGradient(F-200,0,F+30,0); wg.addColorStop(0,'rgba(95,62,40,.97)'); wg.addColorStop(1,'rgba(110,72,46,0)');
+    c.fillStyle=wg; c.fillRect(-E*1.2,-500,F+30+E*1.2,1300);
+    for(const e of D.edge){
+      const ey=160+e.y*480, ex=F-6+Math.sin(t*2.3+e.y*9)*e.o*0.5, rr=e.rr*1.6;
+      const pg=c.createRadialGradient(ex,ey,0,ex,ey,rr); pg.addColorStop(0,'rgba(125,84,55,.55)'); pg.addColorStop(1,'rgba(125,84,55,0)');
+      c.fillStyle=pg; c.fillRect(ex-rr,ey-rr,rr*2,rr*2);
+    }
+    if(F>-60) for(const d of D.debris){
+      const dx2=F+20+d.x*90, dy=260+d.y*230+Math.sin(t*4+d.x*9)*8;
+      c.save(); c.translate(dx2,dy); c.rotate(d.rot+t*d.vr); c.fillStyle='#1a120c'; c.fillRect(-d.s,-d.s*0.4,d.s*2,d.s*0.8); c.restore();
+    }
+  }
+  c.restore();
+}
+
+/* ---------- Кадр 4: внутри, качается лампа ---------- */
+// сидит у стены, обхватив колени; kind как у бегущих
+function iSeated(c,x,y,s,br,kind,fill){
+  c.save(); c.translate(x,y); c.scale(s,s); c.fillStyle=fill; c.strokeStyle=fill; c.lineCap='round'; c.lineJoin='round';
+  const lift=br*1.2;
+  c.beginPath(); c.moveTo(-14,0); c.lineTo(8,0); c.lineTo(6,-48-lift); c.lineTo(-12,-52-lift); c.closePath(); c.fill();   // спина у стены
+  c.beginPath(); c.arc(4,-60-lift,9,0,7); c.fill();                                                                    // голова, опущена
+  c.lineWidth=11; c.beginPath(); c.moveTo(0,-6); c.lineTo(26,-30); c.stroke();                                         // бедро
+  c.lineWidth=9;  c.beginPath(); c.moveTo(26,-30); c.lineTo(32,-2); c.stroke();                                        // голень
+  c.lineWidth=7;  c.beginPath(); c.moveTo(30,-1); c.lineTo(40,0); c.stroke();
+  c.lineWidth=7;  c.beginPath(); c.moveTo(0,-44-lift); c.lineTo(20,-38); c.lineTo(28,-26); c.stroke();                 // рука на колене
+  if(kind===0){ c.fillRect(-26,-28,14,28); }                       // рюкзак рядом
+  if(kind===1){ c.fillRect(40,-10,18,10); c.fillRect(46,-14,6,4); c.fillRect(-4,-72-lift,18,4); } // ящик, кепка
+  if(kind===2){ c.beginPath(); c.arc(-3,-66-lift,5,0,7); c.fill(); }
+  c.restore();
+}
+function iShotInside(c,t,D,E){
+  const u=t-12.8;
+  const sw=0.55*Math.exp(-u*0.35)*Math.sin(u*2.4+0.6);
+  const px=180, py=40, bx=px+Math.sin(sw)*120, by=py+Math.cos(sw)*120;
+  c.fillStyle='#14130f'; c.fillRect(-E,-500,360+2*E,970);
+  c.strokeStyle='rgba(0,0,0,.35)'; c.lineWidth=1.5;
+  for(let y=60;y<470;y+=48){ c.beginPath(); c.moveTo(-E,y); c.lineTo(360+E,y); c.stroke(); }
+  for(let x=-E+20;x<360+E;x+=72){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,470); c.stroke(); }
+  c.fillStyle='#2c2a24'; c.fillRect(-E,200,360+2*E,9); c.fillRect(-E,216,360+2*E,6);
+  c.fillStyle='#0d0c0a'; c.fillRect(-E,470,360+2*E,400);
+  c.fillStyle='#2a2822'; c.fillRect(-E,468,360+2*E,4);
+  // гермодверь изнутри
+  c.fillStyle='#45473e'; c.fillRect(262,320,76,150); c.fillStyle='#e8c23a'; c.fillRect(258,316,4,154);
+  c.strokeStyle='#26281f'; c.lineWidth=3; c.beginPath(); c.arc(300,394,14,0,7); c.stroke();
+  // тени людей на стене — от лампы
+  const P=[{x:46,s:1.25,k:0},{x:120,s:1.2,k:1},{x:196,s:1.12,k:2}];
+  // тени на стене: падают от лампы, растут и смещаются при её качании (мягкий край — 3 слоя)
+  P.forEach((p,i)=>{
+    const off=(p.x+14-bx)*0.9;
+    for(let l=0;l<3;l++){ c.save(); c.globalAlpha=0.16; iSeated(c,p.x+off+(l-1)*3,470-2,p.s*(1.5+l*0.04),Math.sin(u*3+i*2),p.k,'#000'); c.restore(); }
+  });
+  P.forEach((p,i)=> iSeated(c,p.x,470,p.s,Math.sin(u*3+i*2),p.k,'#050404'));
+  // свет лампы
+  c.save(); c.globalCompositeOperation='lighter';
+  const lg=c.createRadialGradient(bx,by,4,bx,by,330); lg.addColorStop(0,'rgba(255,210,140,.6)'); lg.addColorStop(.3,'rgba(200,150,85,.22)'); lg.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=lg; c.fillRect(-E,-500,360+2*E,1300); c.restore();
+  P.forEach((p,i)=>{ c.save(); c.globalCompositeOperation='lighter'; c.globalAlpha=0.18;
+    iSeated(c,p.x+(bx>p.x?1.2:-1.2),469,p.s,Math.sin(u*3+i*2),p.k,'#ffcf8a'); c.restore();
+    iSeated(c,p.x,470,p.s,Math.sin(u*3+i*2),p.k,'#050404'); });
+  // провод и лампа
+  c.strokeStyle='#0a0a0a'; c.lineWidth=1.5; c.beginPath(); c.moveTo(px,py-100); c.lineTo(bx,by); c.stroke();
+  c.save(); c.shadowColor='#ffd890'; c.shadowBlur=26; c.fillStyle='#fff0c8'; c.beginPath(); c.arc(bx,by+4,6,0,7); c.fill(); c.restore();
+  // пыль в луче
+  for(const d of D.dust){
+    const y=(d.y+u*d.v)%560, x=d.x+Math.sin(u+d.ph)*4, dist=Math.hypot(x-bx,y-by);
+    const a=Math.max(0,1-dist/200)*0.7; if(a<=0) continue;
+    c.fillStyle=`rgba(255,225,170,${a})`; c.fillRect(x,y,d.s,d.s);
+  }
+  // виньетка
+  const vg=c.createRadialGradient(180,330,120,180,330,460); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.85)');
+  c.fillStyle=vg; c.fillRect(-E,-500,360+2*E,1300);
+  // текст
+  c.font='bold 17px Courier New'; c.textAlign='center'; c.fillStyle='#c9e265';
+  const l1='Гермодверь закрыта.', l2='Наверху остался весь мир.';
+  if(u>0.8) c.fillText(l1.slice(0,Math.floor((u-0.8)*16)),180,560);
+  if(u>2.2) c.fillText(l2.slice(0,Math.floor((u-2.2)*16)),180,588);
+}
+
+/* ---------- Сборка кадра ---------- */
+function drawIntro(c,t,V){
+  const D=introData(), {W,H,SC,OX,OY}=V, E=OX/SC+40;
+  c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H);
+  let amp = 5*iPulse(t,7.4,1.0) + 12*iPulse(t,8.6,1.6) + 14*iPulse(t,12.45,0.6);
+  if(t>10.4 && t<12.45) amp += 4*iSm(10.4,12.4,t);
+  const sx=(Math.sin(t*91.3)+Math.sin(t*53.7))*0.5*amp, sy=(Math.sin(t*77.1)+Math.sin(t*61.9))*0.5*amp;
+  c.translate(OX+sx*SC, OY+sy*SC); c.scale(SC,SC);
+  if(t<3.4) iShotCity(c,t,D,E);
+  else if(t<9.6) iShotStreet(c,t,D,E);
+  else if(t<12.8) iShotBunker(c,t,D,E);
+  else iShotInside(c,t,D,E);
+  c.restore();
+  // вспышка
+  if(t>7.3 && t<8.8){ const a = t<7.4 ? (t-7.3)/0.1 : 1-(t-7.4)/1.4; c.fillStyle=`rgba(255,248,230,${iCl(a)})`; c.fillRect(0,0,W,H); }
+  // склейки через затемнение
+  const dip = Math.max(0, ...[3.4,9.6,12.8].map(x=>1-Math.abs(t-x)/0.22), 1-iSm(0,0.8,t), iSm(16.5,17.2,t));
+  if(dip>0){ c.fillStyle=`rgba(0,0,0,${dip})`; c.fillRect(0,0,W,H); }
+  // кинополосы
+  const bh=Math.round(H*0.075); c.fillStyle='#000'; c.fillRect(0,0,W,bh); c.fillRect(0,H-bh,W,bh);
+  // субтитры
+  let cap=null, col='#d8e0c8';
+  if(t>0.4 && t<3.3 && Math.floor(t*2)%2===0){ cap='22:47 · ВОЗДУШНАЯ ТРЕВОГА'; col='#ff5a47'; }
+  else if(t>3.7 && t<7.3) cap='До бункера — двести метров';
+  else if(t>8.1 && t<9.5){ cap='БЕГОМ!'; col='#e8a23a'; }
+  else if(t>10.9 && t<12.6){ cap='Закрывай дверь!'; col='#e8a23a'; }
+  if(cap){ c.font=`bold ${Math.round(Math.min(18,W/22))}px "Courier New"`; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle=col; c.fillText(cap,W/2,H-bh/2); c.textBaseline='alphabetic'; }
+}
+
+/* ---------- Звук ---------- */
+function introAudio(){
+  let ac=null;
+  try{
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    const T=ac.currentTime;
+    const noise=len=>{ const b=ac.createBuffer(1,ac.sampleRate*len,ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; const n=ac.createBufferSource(); n.buffer=b; return n; };
+    const env=(node,at,peak,dur)=>{ const g=ac.createGain(); g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(peak,at+0.02); g.gain.exponentialRampToValueAtTime(0.0001,at+dur); node.connect(g).connect(ac.destination); };
+    const filt=(type,f)=>{ const b=ac.createBiquadFilter(); b.type=type; b.frequency.value=f; return b; };
+    // сирена (обрывается на вспышке)
+    const o=ac.createOscillator(), lfo=ac.createOscillator(), lg=ac.createGain(), g=ac.createGain(), f=filt('lowpass',1600);
+    o.type='sawtooth'; o.frequency.value=620; lfo.frequency.value=0.25; lg.gain.value=230;
+    lfo.connect(lg).connect(o.frequency); o.connect(f).connect(g).connect(ac.destination);
+    g.gain.setValueAtTime(0,T); g.gain.linearRampToValueAtTime(0.045,T+0.8); g.gain.setValueAtTime(0.045,T+7.38); g.gain.linearRampToValueAtTime(0,T+7.42);
+    o.start(T); lfo.start(T); o.stop(T+7.5); lfo.stop(T+7.5);
+    // шаги
+    for(let s=T+3.5; s<T+12.2; s+=0.19){ const n=noise(0.06), lp=filt('lowpass',900); n.connect(lp); env(lp,s,0.06,0.06); n.start(s); }
+    // взрыв (звук приходит позже вспышки)
+    const n1=noise(4), lp1=filt('lowpass',380); n1.connect(lp1); env(lp1,T+8.6,0.9,3.8); n1.start(T+8.6);
+    const th=ac.createOscillator(); th.frequency.setValueAtTime(55,T+8.6); th.frequency.exponentialRampToValueAtTime(25,T+10.2); env(th,T+8.6,0.6,1.8); th.start(T+8.6); th.stop(T+10.6);
+    // ветер ударной волны
+    const nw=noise(3.2), bw=filt('bandpass',320), gw=ac.createGain();
+    gw.gain.setValueAtTime(0.0001,T+9.6); gw.gain.exponentialRampToValueAtTime(0.35,T+12.3); gw.gain.exponentialRampToValueAtTime(0.0001,T+12.6);
+    nw.connect(bw).connect(gw).connect(ac.destination); nw.start(T+9.6);
+    // гермодверь
+    const n2=noise(0.6), lp2=filt('lowpass',700); n2.connect(lp2); env(lp2,T+12.45,0.8,0.5); n2.start(T+12.45);
+    const cl=ac.createOscillator(); cl.type='triangle'; cl.frequency.value=140; env(cl,T+12.45,0.4,0.7); cl.start(T+12.45); cl.stop(T+13.3);
+    // приглушённый гул внутри
+    const n3=noise(4.5), lp3=filt('lowpass',120); n3.connect(lp3); env(lp3,T+12.6,0.35,4.4); n3.start(T+12.6);
+  }catch(e){ ac=null; }
+  return ac;
+}
+
 function playIntro(done){
   const cv=document.createElement('canvas'); cv.id='cut';
   const skipBtn=document.createElement('button'); skipBtn.id='skip'; skipBtn.textContent='Пропустить ›';
   document.body.append(cv, skipBtn);
   const ctx=cv.getContext('2d');
-  let W=0,H=0;
-  function resize(){ const d=window.devicePixelRatio||1; W=innerWidth; H=innerHeight; cv.width=W*d; cv.height=H*d; ctx.setTransform(d,0,0,d,0,0); }
+  const V={};
+  function resize(){
+    const d=Math.min(2, window.devicePixelRatio||1);
+    V.W=innerWidth; V.H=innerHeight; cv.width=V.W*d; cv.height=V.H*d; ctx.setTransform(d,0,0,d,0,0);
+    V.SC=Math.min(V.W/360, V.H/640); V.OX=(V.W-360*V.SC)/2; V.OY=(V.H-640*V.SC)/2;
+  }
   resize(); addEventListener('resize', resize);
-
-  // --- город на горизонте (координаты в долях ширины/высоты) ---
-  const blds=[]; let bx=-0.02;
-  while(bx<1.05){
-    const w=0.04+Math.random()*0.07, h=0.08+Math.random()*0.22, win=[];
-    for(let wy=0.02; wy<h-0.02; wy+=0.03) for(let wx=0.008; wx<w-0.01; wx+=0.016)
-      if(Math.random()<0.45) win.push({x:wx,y:wy,off:1+Math.random()*6});
-    blds.push({x:bx,w,h,win}); bx+=w+0.004;
-  }
-  const lerp=(a,b,k)=>a+(b-a)*k, cl=v=>Math.max(0,Math.min(1,v)), ease=k=>k*k*(3-2*k);
-
-  // --- звук (рисуется синтезатором, файлов не нужно) ---
-  let ac=null;
-  try{
-    ac=new (window.AudioContext||window.webkitAudioContext)();
-    const T=ac.currentTime;
-    const noise=(len)=>{ const b=ac.createBuffer(1, ac.sampleRate*len, ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; const n=ac.createBufferSource(); n.buffer=b; return n; };
-    const env=(node, at, peak, dur)=>{ const g=ac.createGain(); g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(peak,at+0.02); g.gain.exponentialRampToValueAtTime(0.0001,at+dur); node.connect(g).connect(ac.destination); };
-    // сирена
-    const o=ac.createOscillator(), lfo=ac.createOscillator(), lg=ac.createGain(), f=ac.createBiquadFilter(), g=ac.createGain();
-    o.type='sawtooth'; o.frequency.value=620; lfo.frequency.value=0.25; lg.gain.value=230; f.type='lowpass'; f.frequency.value=1600;
-    lfo.connect(lg).connect(o.frequency); o.connect(f).connect(g).connect(ac.destination);
-    g.gain.setValueAtTime(0,T); g.gain.linearRampToValueAtTime(0.045,T+0.6); g.gain.setValueAtTime(0.045,T+7.1); g.gain.linearRampToValueAtTime(0,T+7.3);
-    o.start(T); lfo.start(T); o.stop(T+7.5); lfo.stop(T+7.5);
-    // взрыв: звук приходит позже вспышки
-    const n1=noise(4), lp1=ac.createBiquadFilter(); lp1.type='lowpass'; lp1.frequency.value=380; n1.connect(lp1); env(lp1, T+8.4, 0.9, 3.8); n1.start(T+8.4);
-    const th=ac.createOscillator(); th.frequency.setValueAtTime(55,T+8.4); th.frequency.exponentialRampToValueAtTime(25,T+10); env(th, T+8.4, 0.6, 1.8); th.start(T+8.4); th.stop(T+10.5);
-    // гермодверь
-    const n2=noise(0.6), lp2=ac.createBiquadFilter(); lp2.type='lowpass'; lp2.frequency.value=700; n2.connect(lp2); env(lp2, T+11.0, 0.7, 0.5); n2.start(T+11.0);
-    const cl1=ac.createOscillator(); cl1.type='triangle'; cl1.frequency.value=150; env(cl1, T+11.0, 0.35, 0.6); cl1.start(T+11.0); cl1.stop(T+11.8);
-  }catch(e){ ac=null; }
-
-  // --- бегущий человечек ---
-  function runner(x, y, h, ph, label){
-    ctx.save(); ctx.strokeStyle='#050505'; ctx.fillStyle='#050505'; ctx.lineCap='round'; ctx.lineWidth=h*0.1;
-    const hipY=y-h*0.45, shY=y-h*0.8, sw=Math.sin(ph)*0.7, lean=h*0.08;
-    const leg=(a)=>{ ctx.beginPath(); ctx.moveTo(x,hipY); const kx=x+Math.sin(a)*h*0.22, ky=hipY+Math.cos(a)*h*0.22; ctx.lineTo(kx,ky); ctx.lineTo(kx+Math.sin(a-0.6)*h*0.22, ky+Math.cos(a-0.6)*h*0.22); ctx.stroke(); };
-    leg(sw); leg(-sw);
-    ctx.beginPath(); ctx.moveTo(x,hipY); ctx.lineTo(x+lean,shY); ctx.stroke();
-    const arm=(a)=>{ ctx.beginPath(); ctx.moveTo(x+lean,shY); ctx.lineTo(x+lean+Math.sin(a)*h*0.25, shY+Math.cos(a)*h*0.25); ctx.stroke(); };
-    arm(-sw*1.2); arm(sw*1.2);
-    ctx.fillRect(x-h*0.2, shY-h*0.02, h*0.18, h*0.25);                 // рюкзак с вещами
-    ctx.beginPath(); ctx.arc(x+lean*1.4, shY-h*0.13, h*0.1, 0, 7); ctx.fill(); // голова
-    if(label){ ctx.fillStyle='#c9e265'; ctx.font='bold 12px Courier New'; ctx.textAlign='center'; ctx.fillText('ТЫ', x+lean, shY-h*0.32); }
-    ctx.restore();
-  }
-
-  let start=performance.now(), raf=0, finished=false, buzz={};
-  function once(key,fn){ if(!buzz[key]){ buzz[key]=1; fn(); } }
-
+  const ac=introAudio();
+  const start=performance.now(), buzz={}; let raf=0, finished=false;
   function frame(now){
     const t=(now-start)/1000;
-    const HZ=H*0.6, GY=H*0.82;            // горизонт и земля
-    const flash=t>=7.2;
-
-    // тряска камеры
-    let amp=0;
-    if(t>7.2) amp+=8*Math.max(0,1-(t-7.2)/1.2);
-    if(t>8.4) amp+=16*Math.max(0,1-(t-8.4)/1.8);
-    if(t>11.0) amp+=9*Math.max(0,1-(t-11.0)/0.5);
-    ctx.save(); ctx.translate((Math.random()-.5)*amp, (Math.random()-.5)*amp);
-
-    // небо
-    const sky=ctx.createLinearGradient(0,0,0,HZ);
-    sky.addColorStop(0, flash?'#1a0d06':'#05070d'); sky.addColorStop(1, flash?'#7a3410':'#1a1420');
-    ctx.fillStyle=sky; ctx.fillRect(-20,-20,W+40,HZ+20);
-    // красная пульсация сирены
-    if(t<7.2){ ctx.fillStyle=`rgba(200,30,20,${0.12+0.1*Math.sin(t*6)})`; ctx.fillRect(-20,-20,W+40,HZ+20); }
-
-    // ядерный гриб
-    if(flash){
-      const k=cl((t-7.2)/5), mx=W*0.2, top=HZ-H*0.42*ease(k), cw=W*(0.08+0.16*ease(k));
-      ctx.save(); ctx.shadowColor='#ff7a1a'; ctx.shadowBlur=40;
-      const st=ctx.createLinearGradient(0,top,0,HZ); st.addColorStop(0,'#ffb04a'); st.addColorStop(1,'#5a1a08');
-      ctx.fillStyle=st; ctx.beginPath(); ctx.moveTo(mx-cw*0.12,HZ); ctx.lineTo(mx-cw*0.07,top+cw*0.3); ctx.lineTo(mx+cw*0.07,top+cw*0.3); ctx.lineTo(mx+cw*0.12,HZ); ctx.fill();
-      for(let i=0;i<7;i++){ const a=i/7*Math.PI*2+t*0.3; ctx.fillStyle=i%2?'#ff8a2a':'#ffcf6a';
-        ctx.beginPath(); ctx.ellipse(mx+Math.cos(a)*cw*0.3, top+Math.sin(a)*cw*0.12, cw*0.32, cw*0.2, 0, 0, 7); ctx.fill(); }
-      ctx.restore();
-    }
-
-    // город
-    blds.forEach(b=>{
-      const x=b.x*W, w=b.w*W, h=b.h*H;
-      ctx.fillStyle='#0b0b10'; ctx.fillRect(x, HZ-h, w, h+2);
-      b.win.forEach(wn=>{ if(t<wn.off && !flash){ ctx.fillStyle=Math.random()<0.02?'#6b5a2a':'#d8b25a'; ctx.fillRect(x+wn.x*W, HZ-h+wn.y*H, W*0.006, H*0.008); } });
-    });
-
-    // земля
-    const gr=ctx.createLinearGradient(0,HZ,0,H);
-    gr.addColorStop(0, flash?'#5a3a22':'#34352c'); gr.addColorStop(1,'#121310');
-    ctx.fillStyle=gr; ctx.fillRect(-20,HZ,W+40,H-HZ+20);
-    // фонарь
-    const lampX=W*0.45, lampOn = t<6.5 && Math.random()>0.06;
-    ctx.fillStyle='#111'; ctx.fillRect(lampX-2, GY-H*0.24, 4, H*0.24); ctx.fillRect(lampX-2, GY-H*0.24, W*0.05, 4);
-    if(lampOn){ const lg=ctx.createRadialGradient(lampX+W*0.045,GY,5,lampX+W*0.045,GY,W*0.18); lg.addColorStop(0,'rgba(230,190,110,.35)'); lg.addColorStop(1,'rgba(230,190,110,0)'); ctx.fillStyle=lg; ctx.fillRect(lampX-W*0.2,GY-H*0.25,W*0.45,H*0.3); }
-
-    // бункер
-    const bx0=W*0.68, bw=W*0.26, bh=H*0.13, dx=W*0.74, dw=W*0.08, dh=H*0.1;
-    ctx.fillStyle='#4a4c40'; ctx.fillRect(bx0, GY-bh, bw, bh);
-    ctx.fillStyle='#3a3c32'; ctx.fillRect(bx0-W*0.02, GY-bh-6, bw+W*0.04, 8);
-    ctx.fillStyle='#2a2c24'; ctx.fillRect(bx0+bw*0.75, GY-bh-H*0.06, W*0.02, H*0.06);    // вентиляция
-    ctx.fillStyle='#e8c23a'; ctx.font=`bold ${Math.round(H*0.035)}px sans-serif`; ctx.textAlign='center'; ctx.fillText('☢', bx0+bw*0.78, GY-bh*0.4);
-    ctx.fillStyle='#000'; ctx.fillRect(dx, GY-dh, dw, dh);                                   // проём
-    const glow=ctx.createLinearGradient(dx,0,dx+dw,0); glow.addColorStop(0,'rgba(120,90,30,.5)'); glow.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=glow; ctx.fillRect(dx,GY-dh,dw,dh);
-
-    // бегущие: Ты, Пётр, Вера
-    const rh=H*0.11;
-    [0,1,2].forEach(i=>{
-      const s0=3+i*0.45, s1=9.4+i*0.35, k=(t-s0)/(s1-s0);
-      if(k<0||k>1) return;
-      const x=lerp(-W*0.08, dx+dw*0.5, ease(cl(k))*0.4+cl(k)*0.6);
-      ctx.save(); ctx.globalAlpha = k>0.93 ? (1-k)/0.07 : 1;
-      runner(x, GY - i*2, rh*(1-i*0.06), t*14+i*1.7, i===0 && t<7);
-      ctx.restore();
-    });
-
-    // гермодверь закрывается
-    const p=ease(cl((t-10.4)/0.6));
-    if(p>0){
-      ctx.fillStyle='#6a6d5e'; ctx.fillRect(dx+dw*(1-p), GY-dh, dw*p, dh);
-      for(let i=0;i<5;i++){ ctx.fillStyle=i%2?'#111':'#e8c23a'; ctx.fillRect(dx+dw*(1-p), GY-dh+i*dh/5, 4, dh/5); }
-    }
-
-    // ударная волна: пыль
-    if(t>8.4 && t<11){ ctx.fillStyle=`rgba(120,80,50,${0.35*Math.max(0,1-(t-8.4)/2.6)})`; ctx.fillRect(-20,-20,W+40,H+40); }
-    ctx.restore();
-
-    // вспышка
-    if(t>7.1 && t<8.6){ const a = t<7.2 ? (t-7.1)/0.1 : 1-(t-7.2)/1.4; ctx.fillStyle=`rgba(255,250,235,${cl(a)})`; ctx.fillRect(0,0,W,H); }
-
-    // подписи
-    ctx.textAlign='center'; ctx.font=`bold ${Math.max(14,Math.round(W*0.04))}px Courier New`;
-    if(t<3 && Math.floor(t*2)%2===0){ ctx.fillStyle='#e05a47'; ctx.fillText('22:47 · ВОЗДУШНАЯ ТРЕВОГА', W/2, H*0.1); }
-    if(t>3.2 && t<6.8){ ctx.fillStyle='#d8e0c8'; ctx.fillText('До бункера — двести метров', W/2, H*0.1); }
-    if(t>8.6 && t<10.4){ ctx.fillStyle='#e8a23a'; ctx.fillText('БЕГОМ!', W/2, H*0.1); }
-
-    // затемнение и финальный текст
-    if(t>11.3){
-      ctx.fillStyle=`rgba(0,0,0,${cl((t-11.3)/0.4)})`; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle='#c9e265';
-      const l1='Гермодверь закрыта.', l2='Наверху остался весь мир.';
-      if(t>12) ctx.fillText(l1.slice(0, Math.floor((t-12)*18)), W/2, H*0.46);
-      if(t>13.3) ctx.fillText(l2.slice(0, Math.floor((t-13.3)*18)), W/2, H*0.54);
-    }
-
-    // вибрация в Telegram
-    if(t>7.2) once('f',()=>haptic('heavy'));
-    if(t>8.4) once('w',()=>haptic('heavy'));
-    if(t>11.0) once('d',()=>haptic('heavy'));
-
-    if(t>16) return finish();
+    drawIntro(ctx,t,V);
+    [[7.4,'f'],[8.6,'w'],[12.45,'d']].forEach(([at,k])=>{ if(t>at && !buzz[k]){ buzz[k]=1; haptic('heavy'); } });
+    if(t>INTRO_LEN) return finish();
     raf=requestAnimationFrame(frame);
   }
-
   function finish(){
     if(finished) return; finished=true;
     cancelAnimationFrame(raf); removeEventListener('resize', resize);
@@ -720,7 +1600,7 @@ load(raw=>{
   let saved=null;
   try{ saved = raw ? JSON.parse(raw) : null; }catch(e){}
   if(saved && saved.screen && saved.screen!=='ending' && saved.screen!=='pick'){
-    S = saved; S.screen_prev = saved.screen; S.screen='title';
+    S = migrate(saved); S.screen_prev = saved.screen; S.screen='title';
   } else {
     S = newState();
   }
