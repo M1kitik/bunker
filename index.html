@@ -1411,7 +1411,7 @@ document.addEventListener('visibilitychange', ()=>{ if(document.hidden) bgm.susp
    Сцена рисуется в «сценических» координатах 360×640 и
    масштабируется под любой экран.
    ========================================================= */
-const INTRO_LEN = 17.2;
+const INTRO_LEN = 18.6;
 const iCl  = v => Math.max(0, Math.min(1, v));
 const iEase= k => k*k*(3-2*k);
 const iSm  = (a,b,t) => iEase(iCl((t-a)/(b-a)));
@@ -1631,7 +1631,7 @@ function iShotStreet(c,t,D,E){
   if(!post && Math.sin(t*7)>0){ c.save(); c.shadowColor='#ffae2a'; c.shadowBlur=12; c.fillStyle='#ffae2a'; c.fillRect(cx+96,520,4,4); c.fillRect(cx,520,4,4); c.restore(); }
 
   // бегущие (сзади вперёд)
-  const R=[0,1,2].map(i=>({i, x:lead-i*36+Math.sin(u*1.3+i)*4, y:512-i*8, h:76-i*4, ph:u*11+i*1.9}));
+  const R=[1,0,2].map((k,i)=>({i:k, x:lead-i*36+Math.sin(u*1.3+i)*4, y:512-i*8, h:76-i*4, ph:u*11+i*1.9}));
   for(const r of R.slice().reverse()){
     const sx=r.x-cam;
     for(let j=0;j<4;j++){ const ag=(u*3+j/4+r.i*.37)%1; c.fillStyle=`rgba(${post?'150,100,70':'120,115,110'},${(1-ag)*0.22})`; c.beginPath(); c.arc(sx-ag*22,r.y-2-ag*6,2+ag*6,0,7); c.fill(); }
@@ -1661,7 +1661,7 @@ function iFacade(c,E,x0,x1){
   for(let x=200;x<360+E;x+=44){ c.beginPath(); c.moveTo(x,362); c.lineTo(x,480); c.stroke(); }
   c.fillStyle='#6c6e62'; c.fillRect(180,350,180+E,14);
   c.fillStyle='rgba(0,0,0,.4)'; c.fillRect(190,364,170+E,10);
-  c.fillStyle='rgba(225,215,180,.75)'; c.font='bold 10px Courier New'; c.textAlign='center'; c.fillText('УБЕЖИЩЕ №7', 318, 392);
+  c.fillStyle='rgba(225,215,180,.75)'; c.font='bold 10px Courier New'; c.textAlign='center'; c.globalAlpha=0.6; c.fillText('ОБЪЕКТ 7', 318, 392); c.globalAlpha=1;
   c.fillStyle='#e8c23a'; c.beginPath(); c.moveTo(318,412); c.lineTo(332,436); c.lineTo(304,436); c.closePath(); c.fill();
   c.fillStyle='#111'; c.font='bold 13px sans-serif'; c.textAlign='center'; c.fillText('☢',318,433);
   // рама с жёлто-чёрными полосами
@@ -1698,7 +1698,7 @@ function iShotBunker(c,t,D,E){
     c.fillStyle='rgba(255,170,90,.18)'; c.beginPath(); c.ellipse(bx-3,by-2,5,2,0,0,7); c.fill();
   }
   // бегущие
-  const R=[0,1,2].map(i=>({i, x:60+u*110-i*36, y:482, h:80-i*3, ph:u*12+i*1.9}));
+  const R=[1,0,2].map((k,i)=>({i:k, x:60+u*110-i*36, y:482, h:80-i*3, ph:u*12+i*1.9}));
   for(const r of R.slice().reverse()){
     if(r.x<-40 || r.x>300) continue;
     const inside=iSm(214,252,r.x);
@@ -1719,6 +1719,11 @@ function iShotBunker(c,t,D,E){
     for(let k=0;k<6;k++){ c.fillStyle=k%2?'#151515':'#e8c23a'; c.fillRect(dx,396+k*14,4,14); }
   }
   iFacade(c,E*1.2,272,360+E*1.2);
+  // кодовый замок: Пётр набирает код
+  c.fillStyle='#22241e'; c.fillRect(279,416,12,18); c.strokeStyle='#5b5f52'; c.lineWidth=1; c.strokeRect(279,416,12,18);
+  for(let ky=0;ky<3;ky++) for(let kx=0;kx<3;kx++){ c.fillStyle='#6b705f'; c.fillRect(281+kx*3.4,423+ky*3.4,2.2,2.2); }
+  const ok=t>11.15;
+  c.save(); c.shadowColor=ok?'#7be36a':'#ff3b2a'; c.shadowBlur=8; c.fillStyle=ok?'#7be36a':(Math.sin(t*8)>0?'#ff3b2a':'#5a1a14'); c.fillRect(283,418,4,3); c.restore();
   // стена пыли
   const F=-140+Math.max(0,u-0.6)*178;
   if(F>-200){
@@ -1768,7 +1773,9 @@ function iShotInside(c,t,D,E){
   c.fillStyle='#45473e'; c.fillRect(262,320,76,150); c.fillStyle='#e8c23a'; c.fillRect(258,316,4,154);
   c.strokeStyle='#26281f'; c.lineWidth=3; c.beginPath(); c.arc(300,394,14,0,7); c.stroke();
   // тени людей на стене — от лампы
-  const P=[{x:46,s:1.25,k:0},{x:120,s:1.2,k:1},{x:196,s:1.12,k:2}];
+  const P=[{x:62,s:1.25,k:0},{x:150,s:1.15,k:2}];
+  const PX=232, pOff=(PX-bx)*0.9;
+  for(let l=0;l<3;l++){ c.save(); c.globalAlpha=0.16; iStanding(c,PX+pOff+(l-1)*3,468,96*1.5,1,'#000'); c.restore(); }
   // тени на стене: падают от лампы, растут и смещаются при её качании (мягкий край — 3 слоя)
   P.forEach((p,i)=>{
     const off=(p.x+14-bx)*0.9;
@@ -1782,6 +1789,9 @@ function iShotInside(c,t,D,E){
   P.forEach((p,i)=>{ c.save(); c.globalCompositeOperation='lighter'; c.globalAlpha=0.18;
     iSeated(c,p.x+(bx>p.x?1.2:-1.2),469,p.s,Math.sin(u*3+i*2),p.k,'#ffcf8a'); c.restore();
     iSeated(c,p.x,470,p.s,Math.sin(u*3+i*2),p.k,'#050404'); });
+  c.save(); c.globalCompositeOperation='lighter'; c.globalAlpha=0.18; iStanding(c,PX+(bx>PX?1.2:-1.2),469,96,1,'#ffcf8a'); c.restore();
+  iStanding(c,PX,470,96,1,'#050404');
+  if(Math.sin(t*6)>0){ c.save(); c.shadowColor='#ff3b2a'; c.shadowBlur=8; c.fillStyle='#ff3b2a'; c.beginPath(); c.arc(PX-13.5,430,1.8,0,7); c.fill(); c.restore(); }
   // провод и лампа
   c.strokeStyle='#0a0a0a'; c.lineWidth=1.5; c.beginPath(); c.moveTo(px,py-100); c.lineTo(bx,by); c.stroke();
   c.save(); c.shadowColor='#ffd890'; c.shadowBlur=26; c.fillStyle='#fff0c8'; c.beginPath(); c.arc(bx,by+4,6,0,7); c.fill(); c.restore();
@@ -1796,9 +1806,9 @@ function iShotInside(c,t,D,E){
   c.fillStyle=vg; c.fillRect(-E,-500,360+2*E,1300);
   // текст
   c.font='bold 17px Courier New'; c.textAlign='center'; c.fillStyle='#c9e265';
-  const l1='Гермодверь закрыта.', l2='Наверху остался весь мир.';
-  if(u>0.8) c.fillText(l1.slice(0,Math.floor((u-0.8)*16)),180,560);
-  if(u>2.2) c.fillText(l2.slice(0,Math.floor((u-2.2)*16)),180,588);
+  iType(c,'Гермодверь закрыта.',180,540,12.8+0.8,t,16);
+  iType(c,'Пётр знал код от двери.',180,566,12.8+2.1,t,16);
+  c.fillStyle='#ff8a3d'; iType(c,'А ты знал, где этот бункер.',180,592,12.8+3.5,t,16);
 }
 
 /* ---------- Сборка кадра ---------- */
@@ -1817,16 +1827,22 @@ function drawIntro(c,t,V){
   // вспышка
   if(t>7.3 && t<8.8){ const a = t<7.4 ? (t-7.3)/0.1 : 1-(t-7.4)/1.4; c.fillStyle=`rgba(255,248,230,${iCl(a)})`; c.fillRect(0,0,W,H); }
   // склейки через затемнение
-  const dip = Math.max(0, ...[3.4,9.6,12.8].map(x=>1-Math.abs(t-x)/0.22), 1-iSm(0,0.8,t), iSm(16.5,17.2,t));
+  const dip = Math.max(0, ...[3.4,9.6,12.8].map(x=>1-Math.abs(t-x)/0.22), 1-iSm(0,0.8,t), iSm(17.9,18.6,t));
   if(dip>0){ c.fillStyle=`rgba(0,0,0,${dip})`; c.fillRect(0,0,W,H); }
+  [[10.05,'УЗЕЛ 7'],[15.6,'СВЯЗИСТ-7']].forEach(([ft,txt])=>{ if(t>ft && t<ft+0.13){
+    c.fillStyle='rgba(235,240,245,.92)'; c.fillRect(0,0,W,H);
+    c.fillStyle='#1a1d22'; c.textAlign='center'; c.font=`bold ${Math.round(W/9)}px "Courier New", monospace`;
+    c.fillText(txt,W/2+Math.sin(t*90)*6,H/2);
+    for(let i=0;i<14;i++){ c.fillStyle='rgba(0,0,0,.25)'; c.fillRect(0,(i*53+t*900)%H,W,2); }
+  }});
   // кинополосы
   const bh=Math.round(H*0.075); c.fillStyle='#000'; c.fillRect(0,0,W,bh); c.fillRect(0,H-bh,W,bh);
   // субтитры
   let cap=null, col='#d8e0c8';
   if(t>0.4 && t<3.3 && Math.floor(t*2)%2===0){ cap='22:47 · ВОЗДУШНАЯ ТРЕВОГА'; col='#ff5a47'; }
-  else if(t>3.7 && t<7.3) cap='До бункера — двести метров';
+  else if(t>3.7 && t<7.3){ cap='Пётр: «Сюда! За гаражи!»'; col='#ffb340'; }
   else if(t>8.1 && t<9.5){ cap='БЕГОМ!'; col='#e8a23a'; }
-  else if(t>10.9 && t<12.6){ cap='Закрывай дверь!'; col='#e8a23a'; }
+  else if(t>10.9 && t<12.6){ cap='Пётр набирает код. Не глядя.'; col='#e8a23a'; }
   if(cap){ c.font=`bold ${Math.round(Math.min(18,W/22))}px "Courier New"`; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle=col; c.fillText(cap,W/2,H-bh/2); c.textBaseline='alphabetic'; }
 }
 
