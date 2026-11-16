@@ -39,7 +39,8 @@
 
   /* шапка и кольца ресурсов */
   .hud{position:sticky;top:0;z-index:5;padding:10px 0 8px;background:linear-gradient(var(--bg) 75%,rgba(9,11,17,0))}
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:6px;flex-wrap:wrap}
+  .chips{flex-wrap:wrap;justify-content:flex-end}
   .topbar b{font-family:Unbounded;font-size:17px}
   .chips{display:flex;gap:6px;align-items:center}
   .chip{background:var(--glass);border:1px solid var(--gline);border-radius:20px;padding:4px 10px;font-size:12px;white-space:nowrap}
@@ -98,9 +99,9 @@
   .hpbar{height:5px;border-radius:3px;background:#2a2c35;margin:8px 0;overflow:hidden}
   .hpbar i{display:block;height:100%;border-radius:3px}
   .hp{position:absolute;right:14px;top:14px;font-size:12px;font-weight:800}
-  select.job{width:100%;font-family:inherit;font-size:14px;font-weight:600;color:var(--text);background:rgba(255,255,255,.07);border:1px solid var(--gline);border-radius:12px;padding:9px 10px;appearance:none;-webkit-appearance:none}
+  select.job{width:100%;font-family:inherit;font-size:14px;font-weight:600;color:var(--text);background:rgba(255,255,255,.07) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ff8a3d' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:30px!important;border:1px solid var(--gline);border-radius:12px;padding:9px 10px;appearance:none;-webkit-appearance:none}
   select.job option{background:#14161e;color:#eef0f6}
-  .startscr{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;position:relative}
+  .startscr{min-height:var(--tg-viewport-stable-height,100vh);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;position:relative}
   .startscr .glow{position:absolute;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(255,90,40,.35),transparent 70%);animation:pulse 2.4s ease-in-out infinite}
   @keyframes pulse{50%{transform:scale(1.15);opacity:.6}}
   .startscr .kicker{font-size:11px;font-weight:800;letter-spacing:6px;color:var(--dim);position:relative}
@@ -161,29 +162,60 @@
    ========================================================= */
 const tg = window.Telegram && window.Telegram.WebApp;
 const inTG = !!(tg && tg.initData);           // true только если игра открыта внутри Telegram
-if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
+if (tg) {
+  try { tg.ready(); tg.expand(); } catch(e){}
+  try { if(tg.isVersionAtLeast('6.1')){ tg.setHeaderColor('#090b11'); tg.setBackgroundColor('#090b11'); } } catch(e){}
+  try { if(tg.isVersionAtLeast('7.10')) tg.setBottomBarColor('#0e1017'); } catch(e){}
+  try { if(tg.isVersionAtLeast('7.7')) tg.disableVerticalSwipes(); } catch(e){}   // чтобы прокрутка не сворачивала игру
+}
 
 function haptic(type){ try{ if(inTG) tg.HapticFeedback.impactOccurred(type||'light'); }catch(e){} }
 
 const SAVE_KEY = 'bunker_save_v1';
+const CHUNK = 3800;                 // в облаке Telegram одно значение — не больше 4096 символов
+let cloudTimer = null;
 function lsGet(){ try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; } }
+function hasCloud(){ try{ return inTG && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9'); }catch(e){ return false; } }
 function save(){
+  S.savedAt = Date.now();
   const data = JSON.stringify(S);
   try{ localStorage.setItem(SAVE_KEY, data); }catch(e){}
-  try{ if(inTG && tg.CloudStorage) tg.CloudStorage.setItem(SAVE_KEY, data, ()=>{}); }catch(e){}
+  if(!hasCloud()) return;
+  // в облако пишем не чаще раза в 1.5 сек и по частям
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(()=>{
+    try{
+      const parts=[]; for(let i=0;i<data.length;i+=CHUNK) parts.push(data.slice(i,i+CHUNK));
+      let left=parts.length;
+      parts.forEach((part,i)=> tg.CloudStorage.setItem(SAVE_KEY+'_'+i, part, ()=>{ if(--left===0) tg.CloudStorage.setItem(SAVE_KEY+'_n', String(parts.length), ()=>{}); }));
+    }catch(e){}
+  }, 1500);
+}
+function newest(a, b){
+  const t = x => { try{ return x ? (JSON.parse(x).savedAt||0) : -1; }catch(e){ return -1; } };
+  return t(a) >= t(b) ? a : b;
 }
 function load(cb){
+  const local = lsGet();
+  if(!hasCloud()) return cb(local);
+  let done=false; const finish = v => { if(done) return; done=true; cb(v); };
+  setTimeout(()=>finish(local), 2500);                 // если облако не ответило — играем с локальным
   try{
-    if(inTG && tg.CloudStorage){
-      tg.CloudStorage.getItem(SAVE_KEY, (err, val)=> cb(!err && val ? val : lsGet()));
-      return;
-    }
-  }catch(e){}
-  cb(lsGet());
+    tg.CloudStorage.getItem(SAVE_KEY+'_n', (err, n)=>{
+      n = parseInt(n)||0;
+      if(err || !n) return finish(local);
+      const keys=[...Array(n)].map((_,i)=>SAVE_KEY+'_'+i);
+      tg.CloudStorage.getItems(keys, (e2, vals)=>{
+        let cloud=null;
+        try{ if(!e2){ cloud = keys.map(k=>vals[k]||'').join(''); JSON.parse(cloud); } }catch(x){ cloud=null; }
+        finish(newest(cloud, local));
+      });
+    });
+  }catch(e){ finish(local); }
 }
 function wipe(){
   try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
-  try{ if(inTG && tg.CloudStorage) tg.CloudStorage.removeItem(SAVE_KEY, ()=>{}); }catch(e){}
+  try{ if(hasCloud()) tg.CloudStorage.setItem(SAVE_KEY+'_n', '0', ()=>{}); }catch(e){}
 }
 
 /* =========================================================
@@ -196,7 +228,7 @@ const ROOMS = {
   farm:     {name:'🌱 Гидропоника',    desc:'Выращивает еду',             cost:8,  per:4,  res:'food',      use:2},
   workshop: {name:'🛠 Мастерская',     desc:'Делает материалы',           cost:4,  per:3,  res:'materials', use:1},
   medbay:   {name:'➕ Медпункт',       desc:'Лечит больных и раненых',    cost:12, per:15, res:'heal',      use:1},
-  radio:    {name:'📻 Радиорубка',     desc:'Связь с внешним миром',   cost:15, per:1,  res:'signal',    use:1},
+  radio:    {name:'📻 Радиорубка',     desc:'Копит 📡 связь — понадобится для расшифровки',   cost:15, per:1,  res:'signal',    use:1},
 };
 const MAX_LVL = 3;
 
@@ -236,6 +268,7 @@ const ITEMS = [
 ];
 
 const ENDINGS = {
+  fallen: {title:'БЕЗ КОМАНДИРА', text:'Ты не дожил до полудня. Тебя завернули в брезент у гермодвери. Пётр долго сидел у рации, потом тихо сказал в неё несколько слов — и бункер перестал быть твоим.'},
   silence:{title:'ТИШИНА', text:'Последний фонарь погас. В бункере больше никто не дышит. Через много лет его найдут — по записям в журнале, который ты вёл до конца.'},
   mutiny: {title:'БУНТ',   text:'Ночью они пришли все вместе. Тебя вывели за шлюз и закрыли дверь. Бункер теперь принадлежит другим — и, может быть, они справятся лучше.'},
   surface:{title:'ВЫХОД НА ПОВЕРХНОСТЬ', text:'Шлюз открывается впервые за много дней. Серое небо, пепел под ногами. Вы идёте на север — туда, где «Заря» держит для вас огонь.'},
@@ -297,8 +330,8 @@ function killResident(name){
 const lucid = () => !S.flags.onPills;
 function trustP(n){ S.trust = Math.max(0, Math.min(100, (S.trust==null?50:S.trust) + n)); }
 function clue(id, txt){ S.clues=S.clues||[]; if(!S.clues.find(c=>c.id===id)) S.clues.push({id, t:txt, d:S.day}); }
-function remember(txt){ S.memories=S.memories||[]; if(S.memories.includes(txt)) return; S.memories.push(txt); S.memory=(S.memory||0)+1; const me=P('Ты'); if(me) me.migraine=2; }
-function hurt(p, n){ p.hp = Math.max(0, p.hp - (p.trait==='tough' ? Math.ceil(n/2) : n)); }
+function remember(txt, key){ S.memories=S.memories||[]; if(S.memories.includes(txt)) return; S.memories.push(txt); S.memKeys=S.memKeys||[]; S.memKeys.push(key||null); S.memory=(S.memory||0)+1; const me=P('Ты'); if(me) me.migraine=2; if(key) S.pendingFlash=key; }
+function hurt(p, n){ if(p.name==='Ты') n=Math.ceil(n*0.55); p.hp = Math.max(0, p.hp - (p.trait==='tough' ? Math.ceil(n/2) : n)); }   // герой выносливее остальных
 function syncW(){
   for(const id in S.rooms){
     const a=assigned(id);
@@ -489,7 +522,7 @@ const EVENTS = {
     text:()=>'Нужно обыскать разрушенный магазин неподалёку. Наверху радиация — кто пойдёт, вернётся облучённым. Кого отправить?',
     choices:()=>[
       ...S.ctx.cands.filter(n=>P(n)).map(n=>{ const p=P(n), t=traitKnown(p)?TRAITS[p.trait].i:'❔';
-        return {t:`Отправить: ${p.name} ${PROFS[p.prof].i} (❤${p.hp} ${t})`, go:()=>sortieGo(n)}; }),
+        return {t:`${p.name==='Ты'?'Пойти самому':'Отправить: '+p.name} ${PROFS[p.prof].i} (❤${p.hp} ${t})`, go:()=>sortieGo(n)}; }),
       {t:'Слишком опасно', go:()=>{ S.res.morale-=2; return 'Все остаются внизу. Безопасно — и тоскливо.'; }},
     ]
   },
@@ -539,9 +572,9 @@ const EVENTS = {
       ? 'Ночью вырубает свет. Все мечутся в темноте, а твоя рука сама находит щиток — за трубой, на высоте плеча, третий рубильник слева. Ты щёлкаешь им раньше, чем успеваешь подумать. Пётр стоит рядом и почему-то совсем не удивлён.'
       : 'Ночью вырубает свет. Пётр уверенно находит щиток за трубой и щёлкает рубильником. «Повезло», — говорит он. Тебе почему-то кажется, что везение тут ни при чём.',
     choices:()=> lucid() ? [
-      {t:'Спросить Петра, откуда он знает', go:()=>{ trustP(-5); clue('p_layout','Пётр слишком хорошо знает бункер — и не удивился, что ты тоже.'); remember('Щиток за трубой, третий рубильник слева. Ты уже бывал в этом бункере — и не раз.');
+      {t:'Спросить Петра, откуда он знает', go:()=>{ trustP(-5); clue('p_layout','Пётр слишком хорошо знает бункер — и не удивился, что ты тоже.'); remember('Щиток за трубой, третий рубильник слева. Ты уже бывал в этом бункере — и не раз.','fb1');
         return 'Пётр пожимает плечами: «Строители все щитки так вешают». Ответил слишком быстро. 🧠 Воспоминание: ты уже бывал здесь.'; }},
-      {t:'Промолчать', go:()=>{ remember('Щиток за трубой, третий рубильник слева. Ты уже бывал в этом бункере — и не раз.');
+      {t:'Промолчать', go:()=>{ remember('Щиток за трубой, третий рубильник слева. Ты уже бывал в этом бункере — и не раз.','fb1');
         return 'Ты молчишь. Ночью снится длинный бетонный коридор и табличка, которую не получается прочитать. 🧠 Воспоминание получено.'; }},
     ] : [
       {t:'Поблагодарить Петра', go:()=>{ trustP(3); return 'Пётр смущённо машет рукой. Свет горит ровно.'; }},
@@ -634,7 +667,7 @@ const EVENTS = {
     text:()=> lucid()
       ? 'Все динамики бункера оживают разом. Низкий спокойный голос: «Узел 7, назовите позывной». Пауза. «Как самочувствие, Связист? Голова не болит?» И тебя накрывает: белый коридор, табличка «УЗЕЛ 7», пропуск на шнурке — и ты сам за этим самым пультом. Тебя здесь ждали.'
       : 'Все динамики бункера оживают разом. Низкий спокойный голос: «Узел 7, назовите позывной». Пауза. «Как самочувствие, Связист? Голова не болит?» Ты не понимаешь, о чём он. Но рука сама тянется к виску.',
-    pre:()=>{ if(lucid()) remember('Белый коридор, табличка «УЗЕЛ 7», твой пропуск. Этот бункер — часть чего-то большего, и ты здесь работал.'); },
+    pre:()=>{ if(lucid()) remember('Белый коридор, табличка «УЗЕЛ 7», твой пропуск. Этот бункер — часть чего-то большего, и ты здесь работал.','fb2'); },
     choices:[
       {t:'Назвать позывной: «Связист-7»', req:()=>lucid() && (S.memory||0)>=1, go:()=>{ S.flags.answeredRakitin=1; S.pendingAct=2;
         return `Слово вылетает само. Пауза. «С возвращением, Связист. Это полковник Ракитин. Отдыхайте — до полудня ещё много времени». Связь обрывается.${P('Пётр')?' Пётр смотрит на тебя так, будто увидел призрака.':''}`; }},
@@ -690,7 +723,7 @@ function compute(){
   }
   d.food  -= people().reduce((s,p)=>s+(p.trait==='glutton'?2:1),0);
   d.water -= S.residents.length;
-  d.rad   += 5;                                                    // радиация просачивается с поверхности
+  d.rad   += 4;                                                    // радиация просачивается с поверхности
   d.morale += people(p=>p.trait==='leader' && !p.sick && p.hp>=40).length;   // лидеры
   if(S.residents.length>5 && !S.rooms.medbay.lvl) d.morale -= 1;  // теснота без медпункта
   return {d, prodE, useE, eff, out};
@@ -752,7 +785,7 @@ function endDay(){
     killResident(p.name); r.morale-=7;
     log.push(`<span class="bad">☠ ${p.name} умер(ла). Мораль −7.</span>`);
   });
-  people(p=>p.hp>0 && p.hp<30).forEach(p=>log.push(`<span class="warn">${p.name} очень слаб(а): ❤ ${p.hp}.</span>`));
+  people(p=>p.hp>0 && p.hp<30).forEach(p=>log.push(p.name==='Ты' ? `<span class="bad">⚠ Ты на грани: ❤ ${p.hp}. Если ты умрёшь — игра окончена.</span>` : `<span class="warn">${p.name} очень слаб(а): ❤ ${p.hp}.</span>`));
   clamp();
   S.log=log;
   S.day++;
@@ -762,6 +795,7 @@ function endDay(){
 function checkEnding(){
   if(S.ending) return;
   if(S.residents.length===0) S.ending='silence';
+  else if(!P('Ты')) S.ending='fallen';
   else if(S.res.morale<=0) S.ending='mutiny';
   else if(S.day>40) S.ending = (S.residents.length>=6 && S.res.morale>=40) ? 'city' : 'endure';
 }
@@ -798,6 +832,7 @@ function startMorning(){
   S.ctx = {};
   const e=EVENTS[S.eventId];
   if(e.pre) e.pre();
+  if(S.pendingFlash){ const k=S.pendingFlash; S.pendingFlash=null; save(); return playFlashback(k, ()=>go('event')); }
   go('event');
 }
 function choose(i){
@@ -814,6 +849,7 @@ function choose(i){
   S.lastEvent = S.eventId;
   clamp(); checkEnding();
   if(S.ending) return go('ending');
+  if(S.pendingFlash){ const k=S.pendingFlash; S.pendingFlash=null; S.screen='result'; save(); return playFlashback(k, ()=>go('result')); }
   go('result');
 }
 function afterResult(){
@@ -951,7 +987,7 @@ function propsFilter(r){
     ${parts}`;
 }
 function propsRadio(r){
-  const bars=S.flags.signal ? Math.min(5, Math.round(S.res.signal/2)) : 0;
+  const bars=Math.min(5, Math.round(S.res.signal/3));
   let sb=''; for(let i=0;i<5;i++) sb+=`<rect x="${67+i*3.2}" y="${58-i*3}" width="2.4" height="${4+i*3}" fill="${i<bars?'#7be36a':'#3a3d34'}"/>`;
   return `<rect x="46" y="14" width="34" height="24" fill="#c9b98a"/><path d="M48 22 Q58 18 66 26 T78 24 M50 32 Q60 28 76 34" stroke="#8a7a5a" stroke-width=".8" fill="none"/>
     <circle cx="63" cy="26" r="1.6" fill="#c03020"/><line x1="63" y1="26" x2="70" y2="20" stroke="#c03020" stroke-width=".5"/>
@@ -1099,7 +1135,7 @@ function bunkerSVG(){
     let g=`<g class="room" transform="translate(${x},${y})" ${isLiving?'':`onclick="focusRoom('${id}')"`}><g clip-path="url(#rc)">`;
     if(!r.lvl){ g+=constructionSite(id); }
     else {
-      const crew = isLiving ? people(p=>!p.job && !p.sick) : assigned(id).filter(p=>!p.sick);
+      const crew = isLiving ? people(p=>(!p.job || p.migraine>0) && !p.sick) : assigned(id).filter(p=>!p.sick && !(p.migraine>0));
       const idle = !isLiving && crew.length===0 && id!=='filter';
       const lit = (isLiving ? Math.max(0.6,eff) : eff) * (idle ? 0.45 : 1);
       g+=roomBase(id);
@@ -1160,6 +1196,7 @@ function hud(){
   return `<div class="hud">
     <div class="topbar"><b>День ${S.day}</b>
       <div class="chips"><span class="chip">👥 ${n}${freeWorkers()>0?` · ${freeWorkers()} своб.`:''}${people(p=>p.sick).length?` · 🤒${people(p=>p.sick).length}`:''}</span>
+      ${S.rooms.radio.lvl>0?`<span class="chip">📡 ${r.signal}</span>`:''}
       ${S.flags.countdown?`<span class="chip" style="color:#ff8a7a">⏳ ${Math.max(0,40-S.day)}</span>`:''}
       <button class="chip btn" onclick="toggleMusic()">${musicOn()?'🔊':'🔇'}</button></div></div>
     <div class="rings">
@@ -1314,7 +1351,7 @@ function render(){
       const J=(S.journal||[]).slice().reverse();
       const M=S.memories||[], C=S.clues||[];
       body=`<h2>Журнал</h2>
-        <div class="card"><b>🧠 Воспоминания · ${M.length}</b>${M.length?M.map(m=>`<p class="small" style="margin-top:6px">— ${m}</p>`).join(''):`<p class="small dim">${S.flags.onPills?'Таблетки держат память в тумане.':'Пока ничего. Но что-то царапается изнутри.'}</p>`}</div>
+        <div class="card"><b>🧠 Воспоминания · ${M.length}</b>${M.length?M.map((m,i)=>{ const k=(S.memKeys||[])[i]; return `<p class="small" style="margin-top:6px">— ${m}</p>${k&&FLASH[k]?`<button onclick="playFlashback('${k}',()=>render())" style="padding:7px 12px;margin:4px 0 8px;width:auto;font-size:13px">▶ Пересмотреть: «${FLASH[k].title}»</button>`:''}`; }).join(''):`<p class="small dim">${S.flags.onPills?'Таблетки держат память в тумане.':'Пока ничего. Но что-то царапается изнутри.'}</p>`}</div>
         <div class="card"><b>🔍 Улики · ${C.length}</b>${C.length?C.map(c=>`<p class="small" style="margin-top:6px"><span class="dim">День ${c.d}.</span> ${c.t}</p>`).join(''):'<p class="small dim">Пока ничего подозрительного.</p>'}</div>
         <h2 style="font-size:15px">Решения</h2>`+(J.length?J.map(j=>`<div class="jr"><small>ДЕНЬ ${j.d} · ${j.t.toUpperCase()}</small><b>› ${j.c.replace(/\s*\([^)]*\)\s*$/,'')}</b><p>${j.r}</p></div>`).join(''):'<p class="dim">Пока пусто.</p>');
     }
@@ -2139,6 +2176,199 @@ function runCutscene(draw, len, audioFn, buzzAt, done){
 function playIntro(done){ runCutscene(drawIntro, INTRO_LEN, introAudio, [7.4,8.6,12.45], done); }
 function playPrologue(done){ bgm.stop(); runCutscene(drawPrologue, PRO_LEN, prologueAudio, [10.8,14.5,18], done); }
 function startPrologue(){ haptic('medium'); S.seenPrologue=1; playPrologue(()=>{ S.screen='pick'; go('pick'); }); }
+
+/* =========================================================
+   7.7 ФЛЕШБЭКИ: ролик на каждое воспоминание
+   ========================================================= */
+const FLASH = { fb1:{len:9.6, title:'Щиток'}, fb2:{len:12.2, title:'Узел 7'} };
+
+// белый коридор в перспективе; move — движение камеры вперёд, lights — сколько ламп горит
+function fbCorridor(c,E,t,move,lights,sign){
+  const vx=180, vy=300;
+  const bg=c.createLinearGradient(0,0,0,640); bg.addColorStop(0,'#eef1f4'); bg.addColorStop(.47,'#d9dee3'); bg.addColorStop(1,'#bcc3ca');
+  c.fillStyle=bg; c.fillRect(-E,-500,360+2*E,1640);
+  c.fillStyle='#e8ebee'; c.beginPath(); c.moveTo(vx,vy); c.lineTo(-E,-500); c.lineTo(360+E,-500); c.closePath(); c.fill();
+  c.fillStyle='#b9c0c7'; c.beginPath(); c.moveTo(vx,vy); c.lineTo(-E,1140); c.lineTo(360+E,1140); c.closePath(); c.fill();
+  c.fillStyle='#d3d8dd'; c.beginPath(); c.moveTo(vx,vy); c.lineTo(-E,-500); c.lineTo(-E,1140); c.closePath(); c.fill();
+  c.fillStyle='#cdd3d8'; c.beginPath(); c.moveTo(vx,vy); c.lineTo(360+E,-500); c.lineTo(360+E,1140); c.closePath(); c.fill();
+  // дальняя стена
+  const zf=14, fw=200/zf, fh=260/zf;
+  c.fillStyle='#c4cad0'; c.fillRect(vx-fw,vy-fh,fw*2,fh*2);
+  if(sign>0){ const sw=46*sign, sh=16*sign;
+    c.fillStyle='#f6f7f8'; c.fillRect(vx-sw/2,vy-fh*0.5-sh/2,sw,sh); c.fillStyle='#c0392b'; c.fillRect(vx-sw/2,vy-fh*0.5+sh/2-sh*0.18,sw,sh*0.18);
+    c.fillStyle='#1d2228'; c.font=`bold ${Math.max(2,sh*0.5)}px "Courier New", monospace`; c.textAlign='center'; c.fillText('УЗЕЛ 7',vx,vy-fh*0.5+sh*0.12); }
+  // рёбра-рамы и лампы
+  const ribs=[];
+  for(let k=0;k<9;k++){ const z=1+((k*1.5-move)%13.5+13.5)%13.5; ribs.push({k,z}); }
+  ribs.sort((a,b)=>b.z-a.z).forEach(({k,z})=>{
+    const w=200/z, h=260/z;
+    c.strokeStyle=`rgba(120,130,140,${Math.min(0.7,0.9/z)})`; c.lineWidth=Math.max(0.6,9/z); c.strokeRect(vx-w,vy-h,w*2,h*2);
+    const on = k < lights;
+    const lw=70/z, lh=Math.max(1,7/z);
+    if(on){ c.save(); c.shadowColor='#fff'; c.shadowBlur=30/z+4; c.fillStyle='#ffffff'; c.fillRect(vx-lw/2,vy-h+8/z,lw,lh); c.restore();
+      const g=c.createRadialGradient(vx,vy-h+10/z,1,vx,vy-h+10/z,160/z); g.addColorStop(0,'rgba(255,255,255,.35)'); g.addColorStop(1,'rgba(255,255,255,0)'); c.fillStyle=g; c.fillRect(vx-200/z,vy-h,400/z,320/z); }
+    else { c.fillStyle='#9aa3ab'; c.fillRect(vx-lw/2,vy-h+8/z,lw,lh); }
+    if(k%3===1){ c.fillStyle=`rgba(150,160,170,${Math.min(.6,1.2/z)})`; c.fillRect(vx-w+4/z,vy-h*0.15,26/z,h*1.15); }
+  });
+}
+function fbFilter(c,t,W,H,len){
+  c.save(); c.globalCompositeOperation='multiply'; c.fillStyle='rgb(205,218,236)'; c.fillRect(0,0,W,H); c.restore();
+  c.fillStyle='rgba(255,255,255,.07)'; c.fillRect(0,0,W,H);
+  const fr=Math.floor(t*24);
+  for(let i=0;i<160;i++){ const h=Math.sin(i*127.1+fr*311.7)*43758.5453, x=(h-Math.floor(h))*W, y=((h*9.7)-Math.floor(h*9.7))*H; c.fillStyle=i%2?'rgba(0,0,0,.18)':'rgba(255,255,255,.22)'; c.fillRect(x,y,1.6,1.6); }
+  if(Math.sin(t*7.3)>0.9 || t<0.35 || t>len-0.6){ for(let i=0;i<3;i++){ const y=((Math.sin(fr*3.1+i*9)+1)/2)*H; c.fillStyle='rgba(255,255,255,.55)'; c.fillRect(0,y,W,2+i*2); c.fillStyle='rgba(0,0,0,.2)'; c.fillRect(0,y+6,W,1); } }
+  const vg=c.createRadialGradient(W/2,H/2,Math.min(W,H)*0.25,W/2,H/2,Math.max(W,H)*0.75); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(10,14,20,.78)');
+  c.fillStyle=vg; c.fillRect(0,0,W,H);
+}
+function fbHand(c,x,y,rot,sleeve){
+  c.save(); c.translate(x,y); c.rotate(rot);
+  c.fillStyle=sleeve; c.beginPath(); c.moveTo(0,-26); c.lineTo(180,-34); c.lineTo(180,34); c.lineTo(0,22); c.closePath(); c.fill();
+  c.fillStyle='rgba(0,0,0,.12)'; c.fillRect(0,-26,14,48);
+  c.fillStyle='#d9b896'; c.beginPath(); c.ellipse(-18,-2,26,20,0,0,7); c.fill();
+  c.fillRect(-58,-12,40,12); c.beginPath(); c.arc(-58,-6,6,0,7); c.fill();
+  c.fillStyle='#c9a684'; c.fillRect(-40,4,24,9);
+  c.restore();
+}
+
+function drawFB1(c,t,V){
+  const {W,H,SC,OX,OY}=V, E=OX/SC+40, len=FLASH.fb1.len;
+  c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H);
+  const amp=(t<0.4?6:0)+(t>len-0.7?8:0), sx=Math.sin(t*93)*amp, sy=Math.sin(t*71)*amp;
+  c.translate(OX+sx*SC,OY+sy*SC); c.scale(SC,SC);
+  if(t<3.4){ fbCorridor(c,E,t,t*0.9,Math.floor(t*3.2),0); }
+  else {
+    const u=t-3.4, z=1+u*0.02; c.save(); c.translate(180,320); c.scale(z,z); c.translate(-180,-320);
+    c.fillStyle='#d5dade'; c.fillRect(-E,-500,360+2*E,1640);
+    for(let x=-E;x<360+E;x+=40){ c.fillStyle='rgba(0,0,0,.04)'; c.fillRect(x,0,2,640); }
+    c.fillStyle='#8e979f'; c.fillRect(40,150,280,330); c.fillStyle='#a8b0b7'; c.fillRect(48,158,264,314);
+    c.fillStyle='#e9e3c6'; c.fillRect(70,176,150,24); c.fillStyle='#2a2e33'; c.font='bold 14px "Courier New", monospace'; c.textAlign='left'; c.fillText('У-7 · РЕЗЕРВ',78,193);
+    for(let i=0;i<3;i++){
+      const x=90+i*80, flip = i===2 && t>5.0 ? iSm(5.0,5.2,t) : 0;
+      c.fillStyle='#5f676e'; c.fillRect(x-22,250,44,140); c.fillStyle='#2e3338'; c.fillRect(x-8,270,16,100);
+      const ly = 360 - flip*80; c.fillStyle=i===2?'#c0392b':'#3a3f45'; c.fillRect(x-18,ly-14,36,24);
+      c.fillStyle='#e9e3c6'; c.fillRect(x-14,404,28,14); c.fillStyle='#2a2e33'; c.font='bold 11px sans-serif'; c.textAlign='center'; c.fillText(String(i+1),x,415);
+      if(i===2 && t>5.0 && t<5.35){ c.save(); c.shadowColor='#fff8c0'; c.shadowBlur=20; c.fillStyle='#fffbe0'; c.beginPath(); c.arc(x+22,ly,6,0,7); c.fill(); c.restore(); }
+    }
+    const hx = 250+80*(1-iSm(3.6,4.9,t)) + (t>5.0?-6*iSm(5,5.2,t):0), hy = 372 - (t>5.0 ? 80*iSm(5.0,5.2,t) : 0);
+    fbHand(c,hx+30,hy,-0.12,'#f2f4f6');
+    c.restore();
+    c.fillStyle='#1d2228'; c.font='bold 15px "Courier New", monospace'; c.textAlign='center';
+    iType(c,'«Третий слева, Связист.',180,540,5.6,t,20); iType(c,'Запомни».',180,564,6.9,t,20);
+  }
+  c.restore();
+  fbFilter(c,t,W,H,len);
+  if(t<0.25){ c.fillStyle=`rgba(255,255,255,${1-t/0.25})`; c.fillRect(0,0,W,H); }
+  if(t>3.3 && t<3.5){ c.fillStyle='rgba(255,255,255,.85)'; c.fillRect(0,0,W,H); }
+  if(t>len-0.8){ c.fillStyle=`rgba(0,0,0,${iSm(len-0.8,len,t)})`; c.fillRect(0,0,W,H); }
+  fbBars(c,W,H,t, t<3.3?'Ты уже был здесь.':null);
+}
+
+function drawFB2(c,t,V){
+  const {W,H,SC,OX,OY}=V, E=OX/SC+40, len=FLASH.fb2.len;
+  c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H);
+  const amp=(t<0.4?6:0)+(t>len-0.8?9:0)+(t>10.4&&t<10.6?10:0), sx=Math.sin(t*93)*amp, sy=Math.sin(t*71)*amp;
+  c.translate(OX+sx*SC,OY+sy*SC); c.scale(SC,SC);
+  if(t<3.8){
+    const bob=Math.sin(t*7)*3; c.save(); c.translate(0,bob);
+    fbCorridor(c,E,t,t*2.4,9,0.6+iSm(0,3.8,t)*1.9); c.restore();
+  } else if(t<7.4){
+    const u=t-3.8;
+    c.fillStyle='#c9cfd5'; c.fillRect(-E,-500,360+2*E,1640);
+    const g=c.createRadialGradient(180,300,20,180,300,360); g.addColorStop(0,'rgba(255,255,255,.6)'); g.addColorStop(1,'rgba(255,255,255,0)'); c.fillStyle=g; c.fillRect(-E,-500,360+2*E,1640);
+    const ang=Math.sin(u*1.9)*0.13;
+    c.save(); c.translate(180,40); c.rotate(ang);
+    c.strokeStyle='#2c4a7a'; c.lineWidth=5; c.beginPath(); c.moveTo(-40,0); c.lineTo(-8,190); c.moveTo(40,0); c.lineTo(8,190); c.stroke();
+    c.fillStyle='#8a939b'; c.fillRect(-12,184,24,20);
+    c.translate(0,200);
+    c.save(); c.shadowColor='rgba(0,0,0,.35)'; c.shadowBlur=18; c.shadowOffsetY=8; c.fillStyle='#f4f5f6'; iRR(c,-110,0,220,300,10); c.fill(); c.restore();
+    c.fillStyle='#2c4a7a'; c.fillRect(-110,10,220,30); c.fillStyle='#fff'; c.font='bold 13px sans-serif'; c.textAlign='center'; c.fillText('ПРОПУСК № 0007',0,31);
+    c.fillStyle='#d6dbe0'; c.fillRect(-90,56,80,100); c.fillStyle='#4a5560'; c.beginPath(); c.arc(-50,92,20,0,7); c.fill(); c.beginPath(); c.ellipse(-50,148,32,24,0,Math.PI,0); c.fill();
+    c.fillStyle='rgba(30,30,30,.55)'; c.fillRect(-82,82,64,12);
+    c.textAlign='left'; c.fillStyle='#1d2228'; c.font='bold 15px "Courier New", monospace'; c.fillText('СВЯЗИСТ-7',0,80);
+    c.font='bold 11px "Courier New", monospace'; c.fillStyle='#4a5560'; c.fillText('ДОПУСК:',0,104); c.fillStyle='#c0392b'; c.fillText('ОСОБЫЙ',0,120);
+    c.fillStyle='#4a5560'; c.fillText('ОБЪЕКТ «П»',0,144); c.fillText('УЗЕЛ 7',0,160);
+    c.fillStyle='#1d2228'; for(let i=0;i<26;i++) c.fillRect(-90+i*7,190,(i%3?3:5),56);
+    c.save(); c.translate(60,250); c.rotate(-0.25); c.strokeStyle='rgba(192,57,43,.7)'; c.lineWidth=3; c.strokeRect(-46,-16,92,32); c.fillStyle='rgba(192,57,43,.7)'; c.font='bold 12px sans-serif'; c.textAlign='center'; c.fillText('СЕКРЕТНО',0,5); c.restore();
+    c.restore();
+  } else {
+    const u=t-7.4;
+    c.fillStyle='#b8c0c8'; c.fillRect(-E,-500,360+2*E,1640);
+    c.fillStyle='#2a3038'; c.fillRect(-E,130,360+2*E,230);
+    // экраны
+    c.fillStyle='#0d141c'; c.fillRect(20,150,110,90); c.fillRect(140,145,90,100); c.fillRect(240,150,100,90);
+    const nodes=[[40,170],[70,215],[100,180],[60,190],[110,225],[90,160],[75,200]];
+    c.strokeStyle='rgba(120,200,255,.5)'; c.lineWidth=1; c.beginPath(); nodes.forEach((n,i)=>{ i?c.lineTo(n[0],n[1]):c.moveTo(n[0],n[1]); }); c.stroke();
+    nodes.forEach((n,i)=>{ c.fillStyle= i===6 ? (Math.sin(t*8)>0?'#ff3b2a':'#5a1a14') : '#78c8ff'; c.beginPath(); c.arc(n[0],n[1],i===6?4:2.6,0,7); c.fill(); });
+    const secs=50+Math.min(9,Math.floor(u*3));
+    c.save(); c.shadowColor='#ff3b2a'; c.shadowBlur=10; c.fillStyle='#ff5040'; c.font='bold 22px "Courier New", monospace'; c.textAlign='center'; c.fillText(`11:59:${secs}`,185,202); c.restore();
+    c.fillStyle='#78c8ff'; c.font='bold 9px "Courier New", monospace'; c.fillText('ПОЛДЕНЬ',185,226);
+    c.strokeStyle='#7be36a'; c.lineWidth=1.5; c.beginPath(); for(let x=0;x<96;x+=3){ const y=195+Math.sin(x*0.3+t*6)*14*Math.sin(x*0.05); x?c.lineTo(244+x,y):c.moveTo(244,y);} c.stroke();
+    // пульт
+    c.fillStyle='#3a424c'; c.beginPath(); c.moveTo(-E,380); c.lineTo(360+E,380); c.lineTo(360+E,430); c.lineTo(-E,430); c.closePath(); c.fill();
+    for(let i=0;i<22;i++){ c.fillStyle=['#ff5040','#7be36a','#ffd23a','#78c8ff'][i%4]; c.globalAlpha=(Math.sin(t*5+i*1.7)>0)?1:.3; c.fillRect(14+i*15,392,6,4); } c.globalAlpha=1;
+    // герой со спины
+    c.fillStyle='#14181d'; c.beginPath(); c.moveTo(130,640); c.lineTo(135,470); c.quadraticCurveTo(180,430,225,470); c.lineTo(230,640); c.closePath(); c.fill();
+    c.beginPath(); c.arc(180,440,30,0,7); c.fill();
+    c.fillStyle='#f2f4f6'; c.fillRect(140,480,8,160); c.fillRect(212,480,8,160);
+    // рука на плече
+    if(t>9.0){ const k=iSm(9.0,9.6,t);
+      c.save(); c.translate(360+E-(170+E)*k,500); c.fillStyle='#1f3a2a'; c.fillRect(0,-14,300,30);
+      c.fillStyle='#c9a227'; c.fillRect(6,-14,6,30); c.fillRect(16,-14,3,30);
+      c.fillStyle='#d9b896'; c.beginPath(); c.ellipse(-8,-4,20,14,0,0,7); c.fill(); c.fillRect(-34,-10,26,10); c.restore(); }
+    c.fillStyle='#1d2228'; c.font='bold 15px "Courier New", monospace'; c.textAlign='center';
+    if(t>9.3){ c.fillStyle=`rgba(10,14,20,${0.6*iSm(9.3,9.6,t)})`; c.fillRect(-E,538,360+2*E,62); }
+    c.fillStyle='#f6f7f8'; iType(c,'«Отличная работа, Связист.',180,560,9.4,t,20); iType(c,'Остальное ты скоро забудешь».',180,586,10.8,t,20);
+  }
+  c.restore();
+  fbFilter(c,t,W,H,len);
+  if(t<0.25){ c.fillStyle=`rgba(255,255,255,${1-t/0.25})`; c.fillRect(0,0,W,H); }
+  if((t>3.7&&t<3.9)||(t>7.3&&t<7.5)){ c.fillStyle='rgba(255,255,255,.85)'; c.fillRect(0,0,W,H); }
+  if(t>len-0.8){ c.fillStyle=`rgba(0,0,0,${iSm(len-0.8,len,t)})`; c.fillRect(0,0,W,H); }
+  fbBars(c,W,H,t, t<3.6?'Белый коридор. Ты знаешь, куда идёшь.': (t<7.3?'Твой пропуск.':null));
+}
+function fbBars(c,W,H,t,cap){
+  const bh=Math.round(H*0.075); c.fillStyle='#000'; c.fillRect(0,0,W,bh); c.fillRect(0,H-bh,W,bh);
+  c.textAlign='center'; c.textBaseline='middle';
+  c.font=`bold ${Math.round(Math.min(12,W/32))}px "Courier New", monospace`; c.fillStyle=`rgba(200,220,255,${0.5+0.3*Math.sin(t*3)})`;
+  c.fillText('◉ ВОСПОМИНАНИЕ', W/2, bh/2);
+  if(cap){ c.font=`bold ${Math.round(Math.min(16,W/24))}px "Courier New", monospace`; c.fillStyle='#c8dcff'; c.fillText(cap,W/2,H-bh/2); }
+  c.textBaseline='alphabetic';
+}
+function fbAudio(kind){
+  let ac=null;
+  try{
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    const T=ac.currentTime, len=FLASH[kind].len;
+    const noise=l=>{ const b=ac.createBuffer(1,ac.sampleRate*l,ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; const n=ac.createBufferSource(); n.buffer=b; return n; };
+    const env=(node,at,peak,dur)=>{ const g=ac.createGain(); g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(peak,at+0.02); g.gain.exponentialRampToValueAtTime(0.0001,at+dur); node.connect(g).connect(ac.destination); };
+    const filt=(type,f)=>{ const b=ac.createBiquadFilter(); b.type=type; b.frequency.value=f; return b; };
+    // звон в ушах
+    const tn=ac.createOscillator(), tg=ac.createGain(); tn.frequency.value=6800; tg.gain.setValueAtTime(0,T); tg.gain.linearRampToValueAtTime(0.012,T+1); tg.gain.setValueAtTime(0.012,T+len-1.5); tg.gain.linearRampToValueAtTime(0,T+len);
+    tn.connect(tg).connect(ac.destination); tn.start(T); tn.stop(T+len+0.1);
+    // «вдох» в начале
+    const wn=noise(1.2), wf=filt('bandpass',400); wf.frequency.setValueAtTime(200,T); wf.frequency.exponentialRampToValueAtTime(3000,T+1); wn.connect(wf); env(wf,T,0.25,1.1); wn.start(T);
+    // сердце
+    for(let s=0.6; s<len-0.5; s+=0.95){ [0,0.22].forEach((o,j)=>{ const h=ac.createOscillator(); h.frequency.setValueAtTime(70,T+s+o); h.frequency.exponentialRampToValueAtTime(35,T+s+o+0.12); env(h,T+s+o,j?0.25:0.4,0.18); h.start(T+s+o); h.stop(T+s+o+0.25); }); }
+    // гул
+    const dr=ac.createOscillator(), dl=filt('lowpass',180), dg=ac.createGain(); dr.type='sawtooth'; dr.frequency.value=kind==='fb1'?50:45; dg.gain.value=0.03; dr.connect(dl).connect(dg).connect(ac.destination); dr.start(T); dr.stop(T+len);
+    if(kind==='fb1'){
+      for(let i=0;i<10;i++){ const at=T+0.3+i*0.31; const n=noise(0.05), hp=filt('highpass',2000); n.connect(hp); env(hp,at,0.08,0.05); n.start(at); }
+      const k=noise(0.08), kf=filt('bandpass',1800); k.connect(kf); env(kf,T+5.0,0.5,0.08); k.start(T+5.0);
+      const th=ac.createOscillator(); th.frequency.value=90; env(th,T+5.02,0.3,0.25); th.start(T+5.02); th.stop(T+5.3);
+    } else {
+      for(let s=0.2; s<3.8; s+=0.46){ const n=noise(0.08), lp=filt('lowpass',700); n.connect(lp); env(lp,T+s,0.12,0.12); n.start(T+s); }
+      for(let s=7.5; s<len-1; s+=0.333){ const n=noise(0.02), hp=filt('highpass',3000); n.connect(hp); env(hp,T+s,0.06,0.02); n.start(T+s); }
+      const st=noise(0.4), sh=filt('highpass',900); st.connect(sh); env(sh,T+10.4,0.25,0.3); st.start(T+10.4);
+    }
+  }catch(e){ ac=null; }
+  return ac;
+}
+function playFlashback(key, done){
+  if(!FLASH[key]){ done(); return; }
+  bgm.stop();
+  const draw = key==='fb1' ? drawFB1 : drawFB2;
+  runCutscene(draw, FLASH[key].len, ()=>fbAudio(key), [0.1, key==='fb1'?5.0:10.4], ()=>{ bgm.play(); done(); });
+}
 
 /* =========================================================
    8. ЗАПУСК
