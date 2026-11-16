@@ -100,6 +100,13 @@
   .hp{position:absolute;right:14px;top:14px;font-size:12px;font-weight:800}
   select.job{width:100%;font-family:inherit;font-size:14px;font-weight:600;color:var(--text);background:rgba(255,255,255,.07);border:1px solid var(--gline);border-radius:12px;padding:9px 10px;appearance:none;-webkit-appearance:none}
   select.job option{background:#14161e;color:#eef0f6}
+  .startscr{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;position:relative}
+  .startscr .glow{position:absolute;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(255,90,40,.35),transparent 70%);animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{50%{transform:scale(1.15);opacity:.6}}
+  .startscr .kicker{font-size:11px;font-weight:800;letter-spacing:6px;color:var(--dim);position:relative}
+  .startscr .big{font-size:48px;letter-spacing:4px;margin:6px 0 10px;position:relative;text-shadow:0 0 30px rgba(255,138,61,.5)}
+  .startscr .tap{margin:36px 0 10px;font-weight:800;font-size:16px;color:#170c05;background:linear-gradient(90deg,#ff7a30,#ff9a4a);padding:14px 26px;border-radius:30px;position:relative;animation:tap 1.6s ease-in-out infinite;box-shadow:0 6px 24px rgba(255,122,48,.35)}
+  @keyframes tap{50%{transform:scale(1.05)}}
   .jr{border-left:2px solid var(--acc);padding:2px 0 2px 12px;margin:12px 0}
   .jr small{color:var(--dim);font-size:11px;font-weight:700;letter-spacing:1px}
   .jr b{display:block;margin:2px 0}
@@ -126,6 +133,22 @@
   @keyframes sway{50%{transform:rotate(6deg)}}
   .ash{animation:ash 6s linear infinite}
   @keyframes ash{from{transform:translate(0,-6px)}to{transform:translate(-14px,52px)}}
+  .arm{transform-box:fill-box;transform-origin:top center;animation:arm .7s ease-in-out infinite alternate}
+  @keyframes arm{to{transform:rotate(-55deg)}}
+  .needle{transform-box:fill-box;transform-origin:bottom center;animation:needle 2.6s ease-in-out infinite}
+  @keyframes needle{0%,100%{transform:rotate(-35deg)}50%{transform:rotate(30deg)}}
+  .drip{animation:drip 1.6s ease-in infinite}
+  @keyframes drip{0%{transform:translateY(0);opacity:1}80%{opacity:1}100%{transform:translateY(5px);opacity:0}}
+  .suck{animation:suck 2s linear infinite}
+  @keyframes suck{0%{transform:translate(0,0);opacity:0}20%{opacity:.9}100%{transform:translate(26px,-6px);opacity:0}}
+  .flow{animation:flow .8s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-14}}
+  .breath{transform-box:fill-box;transform-origin:bottom center;animation:breath 2.4s ease-in-out infinite}
+  @keyframes breath{50%{transform:scaleY(1.12)}}
+  .scan{animation:scan 1.6s linear infinite}
+  @keyframes scan{from{transform:translateX(0)}to{transform:translateX(-10px)}}
+  .vu{transform-box:fill-box;transform-origin:bottom center;animation:vu .5s ease-in-out infinite alternate}
+  @keyframes vu{from{transform:scaleY(.3)}to{transform:scaleY(1.4)}}
   .card.hl,.chip.hl{border-color:var(--acc);box-shadow:0 0 0 2px rgba(255,138,61,.4)}
 </style>
 </head>
@@ -705,155 +728,293 @@ function finishDay(){ haptic('medium'); endDay(); go(S.ending ? 'ending' : 'summ
 function restart(){ wipe(); S=newState(); S.screen='pick'; go('pick'); }
 
 /* =========================================================
-   6.5 БУНКЕР В РАЗРЕЗЕ (SVG-картинка)
+   6.5 БУНКЕР В РАЗРЕЗЕ (детальный SVG)
    ========================================================= */
-const LAYOUT = { generator:[0,0], water:[1,0], filter:[2,0], radio:[3,0],
-                 farm:[0,1], workshop:[1,1], medbay:[2,1], living:[3,1] };
+const ROOMPOS = { generator:[0,0], water:[1,0], filter:[2,0], radio:[3,0],
+                  farm:[0,1], workshop:[1,1], medbay:[2,1], living:[3,1] };
 const SHORT = { generator:'ГЕНЕРАТОР', water:'ВОДА', filter:'ФИЛЬТР', radio:'РАДИО',
                 farm:'ФЕРМА', workshop:'МАСТЕРСКАЯ', medbay:'МЕДПУНКТ', living:'ЖИЛОЙ' };
-const SHIRTS = ['#c9e265','#6aa6d8','#d87a5a','#b58ad8','#e8c23a','#7fd0b0','#d8d8d8','#d85a8a'];
-const RW=76, RH=92, FLOOR=78;
+const WALL = { generator:'#2b2d25', water:'#222b2f', filter:'#252a28', radio:'#29292f',
+               farm:'#232d1f', workshop:'#2d2923', medbay:'#2a2f31', living:'#2d2925' };
+const HAIR = ['#2a1d14','#5a3a20','#c9a060','#141414','#8a4a2a','#6b6b6b'];
+const RW=84, RH=96, FL=86;
+const nameHash = s => [...s].reduce((h,ch)=>(h*31+ch.charCodeAt(0))>>>0, 7);
+const personColor = p => AV_COLORS[Math.max(0,S.residents.indexOf(p))%AV_COLORS.length];
 
-function person(x, y, color, delay){
-  return `<g class="bob" style="animation-delay:${delay}s">
-    <circle cx="${x}" cy="${y-13}" r="3" fill="#e2c9a0"/>
-    <rect x="${x-3}" y="${y-10}" width="6" height="7" rx="1.5" fill="${color}"/>
-    <rect x="${x-3}" y="${y-3}" width="2" height="4" fill="#1a1a1a"/><rect x="${x+1}" y="${y-3}" width="2" height="4" fill="#1a1a1a"/></g>`;
+// человек стоит; work — машет рукой за работой
+function figure(x, y, p, delay, work){
+  const s = p.prof==='child' ? 0.72 : 1, col=personColor(p), hair=HAIR[nameHash(p.name)%HAIR.length];
+  let hat='';
+  if(p.prof==='electric') hat='<path d="M-4.8 -24.5 A4.8 4.8 0 0 1 4.8 -24.5 Z" fill="#e8c23a"/><rect x="-5.6" y="-25.2" width="11.2" height="1.6" rx=".8" fill="#e8c23a"/>';
+  else if(p.prof==='medic') hat='<rect x="-4" y="-29.5" width="8" height="4" rx="1" fill="#f2f2f2"/><rect x="-.6" y="-29" width="1.2" height="3" fill="#e05a47"/><rect x="-1.5" y="-28.1" width="3" height="1.2" fill="#e05a47"/>';
+  else if(p.prof==='mechanic') hat='<path d="M-4.6 -24 A4.6 4.6 0 0 1 4.6 -24 Z" fill="#4a5a6a"/><rect x="2" y="-25" width="5" height="1.6" rx=".8" fill="#4a5a6a"/>';
+  else if(p.prof==='farmer') hat='<ellipse cx="0" cy="-26" rx="7" ry="1.6" fill="#c9a24a"/><path d="M-3.6 -26 A3.6 3.2 0 0 1 3.6 -26 Z" fill="#c9a24a"/>';
+  else if(p.prof==='boss') hat='<path d="M-4.4 -24 A4.4 4.4 0 0 1 4.4 -24 Z" fill="'+hair+'"/><rect x="-4.2" y="-14" width="8.4" height="1.4" fill="#e8c23a"/>';
+  else hat='<path d="M-4.4 -23.6 A4.4 4.4 0 0 1 4.4 -23.6 Z" fill="'+hair+'"/>';
+  return `<g transform="translate(${x.toFixed(1)},${y}) scale(${s})"><g class="bob" style="animation-delay:${delay}s">
+    <ellipse cx="0" cy="0.5" rx="5" ry="1.2" fill="rgba(0,0,0,.35)"/>
+    <rect x="-3.2" y="-9" width="2.7" height="9" rx="1.2" fill="#2a2d36"/><rect x=".5" y="-9" width="2.7" height="9" rx="1.2" fill="#2a2d36"/>
+    <rect x="-5.4" y="-18" width="2.3" height="8" rx="1.1" fill="${col}" opacity=".8"/>
+    <rect x="-4" y="-19" width="8" height="11" rx="2.6" fill="${col}"/>
+    <g class="${work?'arm':''}" style="animation-delay:${delay}s"><rect x="3.1" y="-18" width="2.3" height="8" rx="1.1" fill="${col}"/><circle cx="4.3" cy="-9.6" r="1.2" fill="#e2c4a0"/></g>
+    <circle cx="0" cy="-23.4" r="4.3" fill="#e2c4a0"/>${hat}
+    <circle cx="1.6" cy="-23.2" r=".55" fill="#222"/>
+    ${p.hp<40?'<circle cx="6" cy="-30" r="2.2" fill="#ff5d5d" class="blinkf"/>':''}
+  </g></g>`;
+}
+// больной лежит на койке
+function lying(x, y, p){
+  const col=personColor(p), hair=HAIR[nameHash(p.name)%HAIR.length];
+  return `<g transform="translate(${x},${y})">
+    <circle cx="3" cy="-3.5" r="3.6" fill="#e2c4a0"/><path d="M-.6 -3.5 A3.6 3.6 0 0 1 6.6 -3.5 Z" fill="${hair}" transform="rotate(-90 3 -3.5)"/>
+    <g class="breath"><rect x="6" y="-6" width="20" height="5.5" rx="2.5" fill="${col}"/><rect x="11" y="-6.6" width="16" height="6.4" rx="2" fill="#cfd6e4"/></g>
+    <text x="4" y="-10" font-size="5" fill="#ff9c9c" class="blinkf">🤒</text></g>`;
 }
 
-function roomProps(id, r, eff){
-  const L=r.lvl;
-  switch(id){
-    case 'generator': return `
-      <rect x="6" y="38" width="32" height="40" rx="2" fill="#4b4f45" stroke="#6b705f"/>
-      <rect x="10" y="44" width="24" height="4" fill="#2a2c25"/><rect x="10" y="52" width="24" height="4" fill="#2a2c25"/>
-      <circle cx="14" cy="64" r="2.5" class="blinkf" fill="${eff<1?'#e05a47':'#7be36a'}"/>
-      <g class="spin"><circle cx="56" cy="58" r="13" fill="none" stroke="#8a8f7d" stroke-width="3"/>
-        <line x1="43" y1="58" x2="69" y2="58" stroke="#8a8f7d" stroke-width="2"/><line x1="56" y1="45" x2="56" y2="71" stroke="#8a8f7d" stroke-width="2"/></g>
-      <path d="M38 50 H44" stroke="#e8c23a" stroke-width="2"/>`;
-    case 'water': {
-      const lvl=Math.min(1, S.res.water/40), h=46*lvl;
-      return `
-      <rect x="8" y="28" width="28" height="50" rx="7" fill="#1e2a30" stroke="#6b8a96"/>
-      <rect x="10" y="${76-h}" width="24" height="${h}" rx="5" fill="#3b7a99" opacity=".85"/>
-      <circle cx="17" cy="72" r="1.6" fill="#bfe6f5" class="bubble"/>
-      <circle cx="25" cy="72" r="1.2" fill="#bfe6f5" class="bubble" style="animation-delay:.7s"/>
-      <circle cx="21" cy="72" r="1.4" fill="#bfe6f5" class="bubble" style="animation-delay:1.4s"/>
-      <path d="M36 40 H58 V78" stroke="#6b8a96" stroke-width="3" fill="none"/>
-      <rect x="52" y="64" width="14" height="14" fill="#2e3d44" stroke="#6b8a96"/>`;
-    }
-    case 'filter': {
-      const hot=S.res.rad>=35;
-      return `
-      <rect x="22" y="8" width="32" height="8" fill="#3a3c34"/>
-      <circle cx="38" cy="42" r="21" fill="#1a1d17" stroke="${hot?'#7be36a':'#6b705f'}" stroke-width="2"/>
-      <g class="spin ${L>1?'':'slow'}">
-        <ellipse cx="38" cy="32" rx="5" ry="10" fill="#8a8f7d"/>
-        <ellipse cx="38" cy="32" rx="5" ry="10" fill="#8a8f7d" transform="rotate(120 38 42)"/>
-        <ellipse cx="38" cy="32" rx="5" ry="10" fill="#8a8f7d" transform="rotate(240 38 42)"/>
-        <circle cx="38" cy="42" r="3" fill="#4b4f45"/></g>`;
-    }
-    case 'radio': return `
-      <line x1="64" y1="22" x2="64" y2="78" stroke="#8a8f7d" stroke-width="2"/>
-      <circle cx="64" cy="20" r="2.5" fill="#e05a47" class="blinkf"/>
-      <rect x="6" y="52" width="48" height="26" fill="#3c3f35" stroke="#5b5f52"/>
-      <rect x="10" y="56" width="22" height="13" fill="#0c1a0c"/>
-      <polyline points="11,63 15,59 18,66 22,58 25,65 31,62" fill="none" stroke="#7be36a" stroke-width="1" class="blinkf"/>
-      <circle cx="40" cy="60" r="3" fill="#2a2c25" stroke="#8a8f7d"/><circle cx="48" cy="60" r="3" fill="#2a2c25" stroke="#8a8f7d"/>
-      ${S.flags.signal?`<text x="8" y="44" font-size="8" fill="#c9e265">📡 ${S.res.signal}/10</text>`:''}`;
-    case 'farm': {
-      let g=`<rect x="6" y="14" width="64" height="3" fill="#b58ad8" opacity=".8"/>
-             <rect x="6" y="17" width="64" height="40" fill="#b58ad8" opacity=".06"/>`;
-      [44,66].forEach((ty,ti)=>{
-        g+=`<rect x="6" y="${ty}" width="64" height="5" fill="#5a4630"/>`;
-        for(let i=0;i<6;i++){ const ph=4+L*3+(i%2)*2;
-          g+=`<ellipse class="sway" style="animation-delay:${(i+ti)*.3}s" cx="${11+i*11}" cy="${ty-ph/2}" rx="3" ry="${ph/2}" fill="${i%3?'#5fae4a':'#7bd06a'}"/>`; }
-      });
-      return g;
-    }
-    case 'workshop': return `
-      <line x1="10" y1="22" x2="10" y2="36" stroke="#8a8f7d" stroke-width="2"/><line x1="18" y1="24" x2="22" y2="36" stroke="#8a8f7d" stroke-width="2"/>
-      <rect x="28" y="22" width="12" height="6" fill="#6b705f"/>
-      <rect x="6" y="58" width="56" height="5" fill="#6b4a2e"/>
-      <rect x="9" y="63" width="3" height="15" fill="#4a331f"/><rect x="56" y="63" width="3" height="15" fill="#4a331f"/>
-      <rect x="20" y="52" width="10" height="6" fill="#8a8f7d"/>
-      <circle cx="36" cy="55" r="1.3" fill="#ffd27a" class="blinkf"/><circle cx="39" cy="52" r="1" fill="#ffd27a" class="blinkf" style="animation-delay:.4s"/>`;
-    case 'medbay': return `
-      <rect x="12" y="24" width="14" height="4" fill="#e05a47"/><rect x="17" y="19" width="4" height="14" fill="#e05a47"/>
-      <rect x="34" y="62" width="36" height="8" rx="2" fill="#cfd6c4"/><rect x="62" y="58" width="8" height="5" rx="2" fill="#eef2e6"/>
-      <rect x="36" y="70" width="2" height="8" fill="#6b705f"/><rect x="66" y="70" width="2" height="8" fill="#6b705f"/>
-      <rect x="46" y="32" width="18" height="12" fill="#0c1a0c" stroke="#5b5f52"/>
-      <polyline points="47,38 51,38 53,34 55,42 57,38 63,38" fill="none" stroke="#7be36a" stroke-width="1"/>`;
-  }
-  return '';
-}
-
-function livingRoom(){
-  let g=`<rect x="4" y="38" width="26" height="5" fill="#6b4a2e"/><rect x="4" y="58" width="26" height="5" fill="#6b4a2e"/>
-         <rect x="4" y="34" width="26" height="4" fill="#8a7a5a"/><rect x="4" y="54" width="26" height="4" fill="#8a7a5a"/>
-         <rect x="4" y="38" width="2" height="40" fill="#4a331f"/><rect x="28" y="38" width="2" height="40" fill="#4a331f"/>`;
-  const crates=Math.min(6, Math.ceil(S.res.food/6)), cans=Math.min(4, Math.ceil(S.res.water/8));
-  for(let i=0;i<crates;i++){ const cx=36+(i%3)*12, cy=70-Math.floor(i/3)*9; g+=`<rect x="${cx}" y="${cy}" width="11" height="8" fill="#7a5a32" stroke="#4a331f"/>`; }
-  for(let i=0;i<cans;i++){ g+=`<rect x="${36+i*9}" y="${crates>3?44:54}" width="7" height="9" rx="1" fill="#3b7a99"/>`; }
+function roomBase(id, lit, dim){
+  let g=`<rect width="${RW}" height="${RH}" fill="${WALL[id]}"/>`;
+  for(let x=21;x<RW;x+=21) g+=`<line x1="${x}" y1="6" x2="${x}" y2="${FL}" stroke="rgba(0,0,0,.18)" stroke-width=".8"/>`;
+  g+=`<line x1="0" y1="34" x2="${RW}" y2="34" stroke="rgba(0,0,0,.14)" stroke-width=".8"/><line x1="0" y1="62" x2="${RW}" y2="62" stroke="rgba(0,0,0,.14)" stroke-width=".8"/>
+      <rect y="0" width="${RW}" height="5" fill="#34362e"/><rect y="5" width="${RW}" height="1" fill="rgba(0,0,0,.4)"/>
+      <rect y="${FL}" width="${RW}" height="${RH-FL}" fill="#1e201b"/>`;
+  for(let x=0;x<RW;x+=7) g+=`<line x1="${x}" y1="${FL}" x2="${x}" y2="${RH}" stroke="rgba(0,0,0,.25)" stroke-width=".6"/>`;
+  g+=`<rect y="${FL}" width="${RW}" height="1.2" fill="#3a3d34"/>`;
   return g;
+}
+function roomLight(lit, eff){
+  return `<g class="${eff<1?'flicker':''}" pointer-events="none">
+    <ellipse cx="42" cy="34" rx="44" ry="38" fill="url(#lamp)" opacity="${lit.toFixed(2)}"/>
+    <rect x="37" y="5.5" width="10" height="2.4" rx="1" fill="#1a1a16"/><ellipse cx="42" cy="8.6" rx="3.4" ry="1.8" fill="${lit>0.3?'#ffe2a0':'#5b5040'}"/>
+    <path d="M38.6 8.6 v1.4 M45.4 8.6 v1.4 M42 8.6 v2.2" stroke="#1a1a16" stroke-width=".6"/></g>`;
+}
+
+function propsGenerator(r, eff){
+  return `<rect x="4" y="80" width="38" height="6" fill="url(#hazard)" opacity=".7"/>
+    <rect x="12" y="0" width="6" height="46" fill="#3a3c34"/><rect x="11" y="18" width="8" height="2" fill="#2a2c25"/>
+    <rect x="4" y="44" width="34" height="38" rx="2.5" fill="#4d5246" stroke="#5f6556" stroke-width=".8"/>
+    <rect x="4" y="44" width="34" height="4" rx="2" fill="#5f6556"/>
+    <rect x="8" y="51" width="18" height="13" rx="1.5" fill="#1d1f1a"/>
+    <circle cx="12.5" cy="57.5" r="3.4" fill="#d8d2c0"/><line x1="12.5" y1="57.5" x2="12.5" y2="54.6" stroke="#c03020" stroke-width=".9" class="needle"/>
+    <circle cx="21.5" cy="57.5" r="3.4" fill="#d8d2c0"/><line x1="21.5" y1="57.5" x2="21.5" y2="54.6" stroke="#c03020" stroke-width=".9" class="needle" style="animation-delay:.9s"/>
+    <circle cx="31" cy="54" r="1.6" class="blinkf" fill="${eff<1?'#ff5d5d':'#7be36a'}"/><circle cx="31" cy="59" r="1.6" fill="#e8c23a"/>
+    <rect x="8" y="68" width="26" height="2" fill="#2a2c25"/><rect x="8" y="72" width="26" height="2" fill="#2a2c25"/>
+    <line x1="38" y1="58" x2="46" y2="58" stroke="#1a1a16" stroke-width="2.4"/>
+    <g class="spin"><circle cx="49" cy="66" r="10.5" fill="none" stroke="#8a8f7d" stroke-width="2.6"/>
+      <line x1="38.5" y1="66" x2="59.5" y2="66" stroke="#8a8f7d" stroke-width="1.6"/><line x1="49" y1="55.5" x2="49" y2="76.5" stroke="#8a8f7d" stroke-width="1.6"/><circle cx="49" cy="66" r="2.2" fill="#5f6556"/></g>
+    <rect x="44" y="77" width="10" height="9" fill="#3a3c34"/>
+    <rect x="60" y="66" width="10" height="20" rx="2" fill="#a8321e"/><rect x="60" y="71" width="10" height="1.4" fill="#6a1e12"/><rect x="60" y="80" width="10" height="1.4" fill="#6a1e12"/>
+    <rect x="71.5" y="70" width="10" height="16" rx="2" fill="#8a2a18"/><rect x="71.5" y="75" width="10" height="1.4" fill="#5a1a0e"/>
+    <path d="M38 50 Q60 44 82 28" stroke="#1a1a16" stroke-width="1.4" fill="none"/>`;
+}
+function propsWater(r){
+  const lv=Math.min(1,S.res.water/40), h=48*lv;
+  return `<rect x="6" y="28" width="24" height="58" rx="9" fill="#1b262b" stroke="#6b8a96" stroke-width="1"/>
+    <rect x="9" y="${84-h}" width="18" height="${h}" rx="6" fill="#3b7a99" opacity=".9"/>
+    <rect x="9" y="${84-h}" width="18" height="2" rx="1" fill="#7fc4e0" opacity=".8"/>
+    <circle cx="14" cy="80" r="1.4" fill="#bfe6f5" class="bubble"/><circle cx="21" cy="80" r="1" fill="#bfe6f5" class="bubble" style="animation-delay:.7s"/><circle cx="17" cy="80" r="1.2" fill="#bfe6f5" class="bubble" style="animation-delay:1.4s"/>
+    <rect x="6" y="40" width="24" height="1.6" fill="#4a636d"/><rect x="6" y="66" width="24" height="1.6" fill="#4a636d"/>
+    <rect x="33" y="50" width="14" height="36" rx="5" fill="#1b262b" stroke="#6b8a96" stroke-width=".8"/>
+    <rect x="35" y="${86-Math.max(4,30*lv)}" width="10" height="${Math.max(4,30*lv)-2}" rx="3" fill="#3b7a99" opacity=".8"/>
+    <path d="M18 28 V14 H70 V40" stroke="#5f7d88" stroke-width="3" fill="none"/>
+    <g transform="translate(52,14)"><circle r="4" fill="none" stroke="#c03020" stroke-width="1.4"/><path d="M-4 0 H4 M0 -4 V4" stroke="#c03020" stroke-width="1"/></g>
+    <rect x="64" y="40" width="12" height="26" rx="3" fill="#8a8f7d"/><rect x="64" y="46" width="12" height="1.4" fill="#5f6556"/><rect x="64" y="58" width="12" height="1.4" fill="#5f6556"/>
+    <path d="M70 66 V72 H76" stroke="#5f7d88" stroke-width="2.4" fill="none"/>
+    <circle cx="76" cy="74" r="1.1" fill="#7fc4e0" class="drip"/>
+    <path d="M70 78 h12 l-1.5 8 h-9z" fill="#3a3c34"/><ellipse cx="76" cy="79" rx="5" ry="1" fill="#3b7a99"/>`;
+}
+function propsFilter(r){
+  const hot=S.res.rad>=35, c=hot?'#7be36a':'#8a8f7d';
+  let parts=''; for(let i=0;i<6;i++) parts+=`<circle cx="${8+i*3}" cy="${30+i*7}" r=".9" fill="${hot?'#7be36a':'#b8ada0'}" class="suck" style="animation-delay:${i*.3}s"/>`;
+  return `<rect x="30" y="0" width="24" height="14" fill="#34362e"/><rect x="28" y="12" width="28" height="3" fill="#2a2c25"/>
+    <rect x="14" y="15" width="56" height="58" rx="5" fill="#1d211e" stroke="${hot?'#5aa84a':'#5f6556'}" stroke-width="1.2"/>
+    <circle cx="42" cy="44" r="21" fill="#141714" stroke="#4d5246" stroke-width="1.5"/>
+    <g class="spin ${r.lvl>1?'':'slow'}">
+      <ellipse cx="42" cy="34" rx="5" ry="10" fill="${c}"/><ellipse cx="42" cy="34" rx="5" ry="10" fill="${c}" transform="rotate(120 42 44)"/><ellipse cx="42" cy="34" rx="5" ry="10" fill="${c}" transform="rotate(240 42 44)"/>
+      <circle cx="42" cy="44" r="3.4" fill="#4d5246"/></g>
+    <circle cx="42" cy="44" r="21" fill="none" stroke="#5f6556" stroke-width=".6" stroke-dasharray="1.5 2"/>
+    <circle cx="42" cy="44" r="14" fill="none" stroke="#5f6556" stroke-width=".5"/>
+    <rect x="18" y="73" width="48" height="13" fill="#2a2c25"/><rect x="22" y="76" width="40" height="2" fill="#1a1a16"/><rect x="22" y="80" width="40" height="2" fill="#1a1a16"/>
+    <rect x="72" y="58" width="10" height="9" rx="1" fill="#6b705f"/><rect x="72" y="68" width="10" height="9" rx="1" fill="#6b705f"/><rect x="72" y="78" width="10" height="8" rx="1" fill="#5a5f50"/>
+    ${parts}`;
+}
+function propsRadio(r){
+  const bars=S.flags.signal ? Math.min(5, Math.round(S.res.signal/2)) : 0;
+  let sb=''; for(let i=0;i<5;i++) sb+=`<rect x="${67+i*3.2}" y="${58-i*3}" width="2.4" height="${4+i*3}" fill="${i<bars?'#7be36a':'#3a3d34'}"/>`;
+  return `<rect x="46" y="14" width="34" height="24" fill="#c9b98a"/><path d="M48 22 Q58 18 66 26 T78 24 M50 32 Q60 28 76 34" stroke="#8a7a5a" stroke-width=".8" fill="none"/>
+    <circle cx="63" cy="26" r="1.6" fill="#c03020"/><line x1="63" y1="26" x2="70" y2="20" stroke="#c03020" stroke-width=".5"/>
+    <path d="M80 0 V12 Q80 16 76 16" stroke="#1a1a16" stroke-width="1.2" fill="none"/>
+    <rect x="4" y="62" width="56" height="4" fill="#5a4630"/><rect x="7" y="66" width="3" height="20" fill="#4a3826"/><rect x="54" y="66" width="3" height="20" fill="#4a3826"/>
+    <rect x="8" y="40" width="38" height="22" rx="2" fill="#3c3f35" stroke="#5b5f52" stroke-width=".8"/>
+    <rect x="11" y="43" width="17" height="11" fill="#0c1a0c"/>
+    <g class="scan"><polyline points="11,49 14,46 16,52 19,45 22,51 25,47 28,49 31,46 34,52 37,45" fill="none" stroke="#7be36a" stroke-width=".8"/></g>
+    <rect x="11" y="43" width="17" height="11" fill="none" stroke="#1a1a16" stroke-width=".6"/>
+    <rect x="31" y="44" width="2" height="8" fill="#2a2c25"/><rect x="31" y="47" width="2" height="5" fill="#e8c23a" class="vu"/>
+    <rect x="35" y="44" width="2" height="8" fill="#2a2c25"/><rect x="35" y="48" width="2" height="4" fill="#7be36a" class="vu" style="animation-delay:.3s"/>
+    <circle cx="41" cy="48" r="2.4" fill="#2a2c25" stroke="#8a8f7d" stroke-width=".6"/><circle cx="16" cy="58.5" r="1.8" fill="#2a2c25" stroke="#8a8f7d" stroke-width=".6"/><circle cx="22" cy="58.5" r="1.8" fill="#2a2c25" stroke="#8a8f7d" stroke-width=".6"/>
+    <line x1="52" y1="62" x2="52" y2="52" stroke="#8a8f7d" stroke-width="1"/><rect x="50" y="47" width="4" height="6" rx="2" fill="#2a2c25"/>
+    <circle cx="44" cy="38" r="1.4" fill="#ff5d5d" class="blinkf"/>
+    ${sb}`;
+}
+function propsFarm(r){
+  const L=r.lvl; let g='';
+  const rows = L>=3 ? [34,58,84] : [40,72];
+  rows.forEach((ty,ri)=>{
+    g+=`<rect x="4" y="${ty-26}" width="76" height="2.4" fill="#b58ad8"/><rect x="4" y="${ty-23.6}" width="76" height="20" fill="#b58ad8" opacity=".07"/>`;
+    g+=`<rect x="4" y="${ty}" width="76" height="4" fill="#5a4630"/><rect x="4" y="${ty+4}" width="76" height="1" fill="#3a2c1e"/>`;
+    for(let i=0;i<8;i++){ const ph=4+L*2.6+(i%3)*1.4, cx=8.5+i*9.5;
+      g+=`<g class="sway" style="animation-delay:${(i+ri)*.27}s"><path d="M${cx} ${ty} Q${cx-3} ${ty-ph*0.6} ${cx-1} ${ty-ph}" stroke="#4f9a3c" stroke-width="1" fill="none"/>
+         <ellipse cx="${cx-2.2}" cy="${ty-ph*0.55}" rx="2.4" ry="1.3" fill="#5fae4a" transform="rotate(-30 ${cx-2.2} ${ty-ph*0.55})"/>
+         <ellipse cx="${cx+1.4}" cy="${ty-ph*0.8}" rx="2.4" ry="1.3" fill="#7bd06a" transform="rotate(25 ${cx+1.4} ${ty-ph*0.8})"/>
+         ${L>=2 && i%2===0 ? `<circle cx="${cx+.6}" cy="${ty-ph*0.45}" r="1.3" fill="#e0503a"/>`:''}</g>`; }
+    g+=`<line x1="4" y1="${ty-1}" x2="80" y2="${ty-1}" stroke="#3b7a99" stroke-width=".6" stroke-dasharray="2 3"/>`;
+  });
+  return g;
+}
+function propsWorkshop(r, busy){
+  return `<rect x="5" y="14" width="46" height="28" fill="#3a3226"/>
+    ${[...Array(5)].map((_,j)=>[...Array(9)].map((_,i)=>`<circle cx="${9+i*5}" cy="${18+j*5.2}" r=".45" fill="#22201a"/>`).join('')).join('')}
+    <rect x="9" y="17" width="2.2" height="14" fill="#8a8f7d"/><rect x="6.5" y="17" width="7" height="3.6" rx=".8" fill="#5f6556"/>
+    <path d="M20 17 l2 0 l0 11 l2 2 l-6 0 l2 -2z" fill="#9aa08e"/>
+    <path d="M30 18 h14 l-2 6 h-12z" fill="#b8bcb0"/><rect x="28" y="18" width="3" height="10" fill="#6b4a2e"/>
+    <circle cx="45" cy="34" r="3.4" fill="none" stroke="#9aa08e" stroke-width="1.6"/>
+    <rect x="3" y="60" width="58" height="4" fill="#6b4a2e"/><rect x="6" y="64" width="3" height="22" fill="#4a331f"/><rect x="55" y="64" width="3" height="22" fill="#4a331f"/>
+    <rect x="6" y="54" width="9" height="6" fill="#5f6556"/><rect x="9" y="50" width="3" height="4" fill="#5f6556"/>
+    <rect x="24" y="56" width="14" height="4" fill="#8a8f7d"/>
+    ${busy?`<circle cx="40" cy="57" r="5" fill="#ffd27a" opacity=".25" class="blinkf"/>
+      <circle cx="40" cy="56" r="1.3" fill="#fff2c0" class="blinkf"/><circle cx="43" cy="53" r=".8" fill="#ffd27a" class="blinkf" style="animation-delay:.25s"/><circle cx="37" cy="52.5" r=".8" fill="#ffd27a" class="blinkf" style="animation-delay:.5s"/>`:''}
+    <rect x="20" y="70" width="18" height="12" fill="#c03020"/><rect x="20" y="68" width="18" height="3" fill="#8a2018"/><rect x="26" y="66" width="6" height="2.4" fill="#2a2c25"/>
+    <path d="M62 86 l4 -10 l6 3 l4 -6 l6 5 v8z" fill="#4d5246"/><path d="M66 82 l8 -3 l-1 4z" fill="#6b705f"/><rect x="70" y="72" width="2" height="10" fill="#8a8f7d" transform="rotate(30 71 77)"/>`;
+}
+function propsMedbay(r, patients){
+  const beds = Math.min(2, r.lvl+ (r.lvl>1?0:0));
+  let g=`<rect x="8" y="14" width="16" height="16" rx="2" fill="#efe9dc"/><rect x="14" y="16.5" width="4" height="11" fill="#e05a47"/><rect x="10.5" y="20" width="11" height="4" fill="#e05a47"/>
+    <rect x="3" y="44" width="16" height="42" rx="1.5" fill="#d8dcd4"/><rect x="5" y="47" width="12" height="17" fill="#b8c0c0"/><rect x="5" y="67" width="12" height="17" fill="#b8c0c0"/>
+    <rect x="9" y="55" width="4" height="1.4" fill="#e05a47"/><rect x="10.3" y="53.7" width="1.4" height="4" fill="#e05a47"/>
+    <rect x="56" y="22" width="24" height="16" rx="1.5" fill="#0c1a0c" stroke="#5b5f52" stroke-width=".8"/>
+    <g class="scan"><polyline points="56,31 60,31 62,26 64,35 66,31 72,31 74,27 76,34 78,31 84,31" fill="none" stroke="#7be36a" stroke-width=".8"/></g>
+    <rect x="80" y="22" width="4" height="16" fill="${WALL.medbay}"/>`;
+  const bedX=[24,54];
+  for(let b=0;b<beds;b++){
+    const x=bedX[b];
+    g+=`<rect x="${x}" y="72" width="28" height="5" rx="1.5" fill="#cfd6c4"/><rect x="${x}" y="77" width="28" height="2" fill="#6b705f"/>
+        <rect x="${x+1}" y="79" width="2" height="7" fill="#6b705f"/><rect x="${x+25}" y="79" width="2" height="7" fill="#6b705f"/>
+        <rect x="${x+1}" y="68.5" width="6" height="4" rx="1.5" fill="#eef2e6"/>`;
+    if(patients[b]) g+=lying(x+1,72,patients[b]);
+  }
+  if(patients.length) g+=`<line x1="22" y1="40" x2="22" y2="86" stroke="#8a8f7d" stroke-width="1"/><rect x="19" y="40" width="6" height="8" rx="1.5" fill="#a8d8e8" opacity=".8"/><path d="M22 48 Q30 60 ${bedX[0]+6} 70" stroke="#a8d8e8" stroke-width=".5" fill="none"/>`;
+  return g;
+}
+function propsLiving(patients){
+  const crates=Math.min(6, Math.ceil(S.res.food/6)), cans=Math.min(4, Math.ceil(S.res.water/8));
+  let g=`<rect x="34" y="16" width="16" height="20" fill="#c9b98a"/><circle cx="42" cy="23" r="4" fill="#ff8a3d"/><rect x="36" y="30" width="12" height="1.4" fill="#5a4630"/><rect x="38" y="33" width="8" height="1" fill="#5a4630"/>
+    <rect x="2" y="30" width="2.4" height="56" fill="#4a331f"/><rect x="28" y="30" width="2.4" height="56" fill="#4a331f"/>
+    <rect x="2" y="50" width="28.4" height="3" fill="#6b4a2e"/><rect x="3" y="46" width="26" height="4" rx="1.5" fill="#8a7a5a"/>
+    <rect x="2" y="76" width="28.4" height="3" fill="#6b4a2e"/><rect x="3" y="72" width="26" height="4" rx="1.5" fill="#8a7a5a"/>
+    <rect x="3" y="45" width="6" height="3.4" rx="1.4" fill="#d8d2c4"/><rect x="3" y="71" width="6" height="3.4" rx="1.4" fill="#d8d2c4"/>
+    <rect x="36" y="70" width="22" height="2.6" fill="#6b4a2e"/><rect x="38" y="72.6" width="2" height="13.4" fill="#4a331f"/><rect x="54" y="72.6" width="2" height="13.4" fill="#4a331f"/>
+    <rect x="45" y="66" width="3" height="4" fill="#efe9dc"/><ellipse cx="46.5" cy="65.4" rx="1" ry="1.6" fill="#ffd27a" class="flicker"/>
+    <circle cx="46.5" cy="66" r="7" fill="#ffd27a" opacity=".12"/>
+    <rect x="40" y="69" width="3" height="1" fill="#efe9dc" transform="rotate(-12 41 69)"/><rect x="50" y="69" width="3" height="1" fill="#efe9dc" transform="rotate(10 51 69)"/>`;
+  for(let i=0;i<crates;i++){ const cx=62+(i%2)*10.5, cy=78-Math.floor(i/2)*8.6; g+=`<rect x="${cx}" y="${cy}" width="10" height="8" fill="#7a5a32" stroke="#4a331f" stroke-width=".6"/><line x1="${cx}" y1="${cy+4}" x2="${cx+10}" y2="${cy+4}" stroke="#4a331f" stroke-width=".5"/>`; }
+  for(let i=0;i<cans;i++){ g+=`<rect x="${62+i*5.2}" y="${crates>4?44:crates>2?52:60}" width="4.4" height="8" rx="1" fill="#3b7a99"/><rect x="${63.2+i*5.2}" y="${crates>4?42.6:crates>2?50.6:58.6}" width="2" height="1.6" fill="#2a5a72"/>`; }
+  patients.slice(0,2).forEach((p,i)=> g+=lying(4,i?72:46,p));
+  return g;
+}
+
+function constructionSite(id){
+  return `<rect width="${RW}" height="${RH}" fill="#131410"/>
+    <rect y="${FL}" width="${RW}" height="${RH-FL}" fill="#1a1b17"/>
+    <rect x="12" y="10" width="2" height="76" fill="#4a3c28"/><rect x="70" y="10" width="2" height="76" fill="#4a3c28"/>
+    <rect x="12" y="30" width="60" height="2" fill="#4a3c28"/><rect x="12" y="58" width="60" height="2" fill="#4a3c28"/>
+    <line x1="14" y1="32" x2="70" y2="58" stroke="#3a2f22" stroke-width="1.6"/>
+    <rect x="20" y="80" width="40" height="3" fill="#6b4a2e" transform="rotate(-4 40 81)"/><rect x="24" y="83" width="38" height="3" fill="#5a3e26"/>
+    <g transform="rotate(-8 42 46)"><rect x="-4" y="41" width="92" height="9" fill="url(#hazard)"/></g>
+    <rect x="22" y="58" width="40" height="15" rx="7.5" fill="rgba(0,0,0,.6)" stroke="#c9e265" stroke-width=".6"/>
+    <text x="42" y="68.2" font-size="7.5" fill="#c9e265" text-anchor="middle" font-weight="bold">🔨 ${ROOMS[id].cost}</text>`;
 }
 
 function bunkerSVG(){
   const {eff}=compute();
-  const out=[]; let shirt=0;
-  // Поверхность
+  const out=[];
+  const r7=iRand(11);
+  // defs
   out.push(`<defs>
-    <linearGradient id="ashsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2420"/><stop offset="1" stop-color="#5a3f2a"/></linearGradient>
-    <radialGradient id="lamp"><stop offset="0" stop-color="#ffd27a" stop-opacity=".45"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
-    <radialGradient id="radg"><stop offset="0" stop-color="#7be36a" stop-opacity=".0"/><stop offset="1" stop-color="#7be36a" stop-opacity=".55"/></radialGradient>
-  </defs>
-  <rect x="0" y="0" width="362" height="48" fill="url(#ashsky)"/>
-  <path d="M60 48 V30 H72 V22 H80 V48 M110 48 V34 l6 -4 6 6 V48 M170 48 V18 H186 V26 H192 V48 M240 48 V28 l10 -8 V48 M290 48 V32 H310 V24 H318 V48" fill="#14110e"/>`);
-  for(let i=0;i<14;i++) out.push(`<circle class="ash" style="animation-delay:${(i*0.43)%6}s" cx="${20+i*25}" cy="${(i*7)%40}" r="${i%3?0.8:1.2}" fill="#b8ada0" opacity=".6"/>`);
-  out.push(`<rect x="0" y="48" width="362" height="222" fill="#1d1a14"/>`);
-  for(let i=0;i<5;i++) out.push(`<line x1="0" y1="${56+i*44}" x2="362" y2="${60+i*44}" stroke="#25211a" stroke-width="2"/>`);
-  // Люк и шахта
-  out.push(`<rect x="14" y="42" width="30" height="6" fill="#6a6d5e"/><rect x="18" y="40" width="22" height="3" fill="#8a8f7d"/>
-    <rect x="20" y="48" width="18" height="210" fill="#0f0e0b"/>`);
-  for(let y=54;y<256;y+=8) out.push(`<line x1="22" y1="${y}" x2="36" y2="${y}" stroke="#4b4f45" stroke-width="1.5"/>`);
-  out.push(`<line x1="23" y1="50" x2="23" y2="258" stroke="#4b4f45"/><line x1="35" y1="50" x2="35" y2="258" stroke="#4b4f45"/>`);
-  // Перекрытия
-  out.push(`<rect x="38" y="56" width="324" height="6" fill="#3a3a32"/><rect x="38" y="154" width="324" height="8" fill="#3a3a32"/><rect x="38" y="254" width="324" height="6" fill="#3a3a32"/>`);
+    <linearGradient id="ashsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#241d1a"/><stop offset=".7" stop-color="#5a3f2a"/><stop offset="1" stop-color="#7a5236"/></linearGradient>
+    <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2218"/><stop offset="1" stop-color="#15110c"/></linearGradient>
+    <radialGradient id="lamp"><stop offset="0" stop-color="#ffd27a" stop-opacity=".42"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="radg"><stop offset="0" stop-color="#7be36a" stop-opacity="0"/><stop offset="1" stop-color="#7be36a" stop-opacity=".55"/></radialGradient>
+    <clipPath id="rc"><rect width="84" height="96"/></clipPath>
+    <pattern id="hazard" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="6" fill="#e8c23a"/><rect x="3" width="3" height="6" fill="#151515"/></pattern>
+  </defs>`);
+  // поверхность
+  out.push(`<rect width="400" height="60" fill="url(#ashsky)"/>
+    <path d="M70 58 V30 h6 v-4 h4 v32 M96 58 V36 l5 -5 l3 3 V22 h10 V58 M150 58 V16 h14 v8 l4 -4 v38 M210 58 V40 h8 v-12 h6 V58 M250 58 V24 h10 l4 6 V58 M300 58 V34 h16 v-6 h4 V58 M350 58 V20 h12 V58" fill="#18130f"/>`);
+  [[100,26],[104,32],[154,22],[158,30],[154,38],[158,46],[254,30],[254,38],[352,26],[356,34],[352,42]].forEach(([x,y])=>out.push(`<rect x="${x}" y="${y}" width="2.4" height="3" fill="#2e2620"/>`));
+  out.push(`<path d="M392 58 V44 M392 50 l-6 -6 M392 47 l5 -4 M386 44 l-3 -2" stroke="#120e0b" stroke-width="1.6" fill="none"/>`);
+  for(let i=0;i<16;i++) out.push(`<circle class="ash" style="animation-delay:${(i*0.41)%6}s" cx="${20+i*24}" cy="${(i*7)%44}" r="${i%3?0.8:1.2}" fill="#b8ada0" opacity=".55"/>`);
+  // грунт
+  out.push(`<rect y="58" width="400" height="242" fill="url(#soil)"/><rect y="58" width="400" height="3" fill="#3a2e20"/>`);
+  for(let i=0;i<34;i++){ const x=r7()*400, y=64+r7()*230; out.push(`<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${(1.5+r7()*3).toFixed(1)}" ry="${(1+r7()*1.6).toFixed(1)}" fill="#3a3024" opacity=".7"/>`); }
+  out.push(`<path d="M120 60 q4 8 -2 16 q-3 6 2 12 M260 60 q-3 6 2 12 q4 6 0 12" stroke="#3a2a1a" stroke-width="1" fill="none"/>`);
+  // оголовок: люк, вентиляция, мешки
+  out.push(`<rect x="4" y="38" width="44" height="22" fill="#5a5c52"/><rect x="2" y="35" width="48" height="4" fill="#6c6e62"/>
+    <rect x="16" y="43" width="18" height="17" fill="#3a3c34"/><rect x="17.5" y="44.5" width="15" height="15.5" fill="#4d5046"/><circle cx="25" cy="52" r="3.4" fill="none" stroke="#2a2c25" stroke-width="1.2"/>
+    <rect x="38" y="22" width="5" height="14" fill="#4d5046"/><rect x="36" y="20" width="9" height="3" fill="#3a3c34"/>
+    <path d="M9 41 l3.6 6 h-7.2z" fill="#e8c23a"/>
+    ${[0,1,2,3].map(i=>`<ellipse cx="${55+i*7}" cy="56" rx="4" ry="2.6" fill="#6a5236"/>`).join('')}${[0,1,2].map(i=>`<ellipse cx="${58.5+i*7}" cy="51.5" rx="4" ry="2.6" fill="#7a6040"/>`).join('')}`);
+  // бетонная оболочка
+  out.push(`<rect x="44" y="66" width="354" height="226" rx="3" fill="#3b3c35"/><rect x="47" y="69" width="348" height="220" fill="#202119"/>`);
+  // шахта
+  out.push(`<rect x="12" y="60" width="28" height="226" fill="#3b3c35"/><rect x="15" y="60" width="22" height="226" fill="#0f0e0b"/>`);
+  for(let y=64;y<284;y+=7) out.push(`<line x1="18" y1="${y}" x2="34" y2="${y}" stroke="#4b4f45" stroke-width="1.3"/>`);
+  out.push(`<line x1="18.5" y1="60" x2="18.5" y2="286" stroke="#5b5f52"/><line x1="33.5" y1="60" x2="33.5" y2="286" stroke="#5b5f52"/>`);
+  [118,222].forEach(y=>out.push(`<rect x="37" y="${y-34}" width="13" height="${34}" fill="#2a2b24"/><rect x="37" y="${y}" width="13" height="2" fill="#4b4f45"/><circle cx="26" cy="${y-30}" r="1.6" fill="#ffd27a" opacity=".8"/>`));
+  // перекрытие между этажами + трубы и силовой кабель
+  out.push(`<rect x="47" y="170" width="348" height="8" fill="#45463e"/>`);
+  for(let x=50;x<395;x+=12) out.push(`<line x1="${x}" y1="170" x2="${x+6}" y2="178" stroke="rgba(0,0,0,.25)" stroke-width=".8"/>`);
+  out.push(`<line x1="50" y1="172" x2="395" y2="172" stroke="#3b7a99" stroke-width="1.4"/>
+    <line x1="50" y1="175.5" x2="395" y2="175.5" stroke="${eff<1?'#ff5d5d':'#e8c23a'}" stroke-width="1.3" class="${eff<1?'blinkf':'flow'}" stroke-dasharray="${eff<1?'0':'4 3'}"/>`);
+  // отсеки
+  const sickAll=people(p=>p.sick), medOn=S.rooms.medbay.lvl>0;
+  const inMed = medOn ? sickAll.slice(0,2) : [];
+  const inLiving = sickAll.filter(p=>!inMed.includes(p));
+  let delay=0;
+  for(const id in ROOMPOS){
+    const [c,row]=ROOMPOS[id], x=50+c*86, y=74+row*104;
+    const isLiving=id==='living', r=isLiving?{lvl:1}:S.rooms[id];
+    const idleRoom = !isLiving && r.lvl>0 && id!=='filter' && assigned(id).filter(p=>!p.sick).length===0;
+    let g=`<g class="room" transform="translate(${x},${y})" ${isLiving?'':`onclick="focusRoom('${id}')"`}><g clip-path="url(#rc)">`;
+    if(!r.lvl){ g+=constructionSite(id); }
+    else {
+      const crew = isLiving ? people(p=>!p.job && !p.sick) : assigned(id).filter(p=>!p.sick);
+      const idle = !isLiving && crew.length===0 && id!=='filter';
+      const lit = (isLiving ? Math.max(0.6,eff) : eff) * (idle ? 0.45 : 1);
+      g+=roomBase(id);
+      g+=roomLight(lit, eff);
+      g+= id==='generator'?propsGenerator(r,eff) : id==='water'?propsWater(r) : id==='filter'?propsFilter(r) : id==='radio'?propsRadio(r)
+        : id==='farm'?propsFarm(r) : id==='workshop'?propsWorkshop(r,crew.length>0) : id==='medbay'?propsMedbay(r,inMed) : propsLiving(inLiving);
+      // люди: стоят у пола, равномерно
+      const n=Math.min(crew.length,6), zone = isLiving ? [36,77] : [8,76];
+      for(let i=0;i<n;i++){
+        const px = n===1 ? (zone[0]+zone[1])/2 : zone[0]+(zone[1]-zone[0])*i/(n-1);
+        g+=figure(px, FL, crew[i], (delay++)*0.23, !isLiving);
+      }
+      if(crew.length>6) g+=`<text x="80" y="20" font-size="7" fill="#d8e0c8" text-anchor="end">+${crew.length-6}</text>`;
 
-  // Отсеки
-  for(const id in LAYOUT){
-    const [c,row]=LAYOUT[id], x=44+c*79, y=62+row*100;
-    const isLiving = id==='living';
-    const r = isLiving ? {lvl:1,w:0} : S.rooms[id];
-    let g=`<g class="room" transform="translate(${x},${y})" ${isLiving?'':`onclick="focusRoom('${id}')"`}>`;
-    if(!r.lvl){
-      g+=`<rect width="${RW}" height="${RH}" fill="#12130e" stroke="#2c3324"/>
-          <line x1="4" y1="20" x2="72" y2="70" stroke="#3a2f22" stroke-width="5"/><line x1="4" y1="70" x2="72" y2="20" stroke="#3a2f22" stroke-width="5"/>
-          <text x="38" y="44" font-size="7.5" fill="#8a937a" text-anchor="middle">не построен</text>
-          <text x="38" y="56" font-size="8" fill="#c9e265" text-anchor="middle">${ROOMS[id].cost} 🛠</text>`;
-    } else {
-      const lit = isLiving ? Math.max(0.5,eff) : eff;
-      g+=`<rect width="${RW}" height="${RH}" fill="#2a2e22" stroke="#3d4434"/>
-          <rect y="${FLOOR}" width="${RW}" height="2" fill="#4b4f45"/>
-          <g class="${eff<1?'flicker':''}"><ellipse cx="38" cy="32" rx="37" ry="31" fill="url(#lamp)" opacity="${lit}" pointer-events="none"/>
-          <rect x="33" y="2" width="10" height="3" fill="${lit>0.3?'#ffd27a':'#5b5040'}"/></g>`;
-      g+= isLiving ? livingRoom() : roomProps(id, r, eff);
-      // люди
-      const n = isLiving ? Math.max(0, freeWorkers()) : r.w;
-      for(let i=0;i<Math.min(n,6);i++){ const px = isLiving ? 40+i*6 : 12+i*10.5; g+=person(px, FLOOR, SHIRTS[shirt++%SHIRTS.length], i*0.23); }
-      if(isLiving && n>6) g+=`<text x="70" y="64" font-size="7" fill="#d8e0c8" text-anchor="end">+${n-6}</text>`;
     }
-    // подпись и уровень
-    g+=`<rect y="${FLOOR+2}" width="${RW}" height="${RH-FLOOR-2}" fill="#0e0f0c" opacity=".85"/>
-        <text x="4" y="${RH-3}" font-size="7.5" fill="${r.lvl?'#d8e0c8':'#5b6050'}" font-family="Courier New" font-weight="bold">${SHORT[id]}</text>`;
-    if(!isLiving && r.lvl) for(let i=0;i<MAX_LVL;i++) g+=`<rect x="${RW-5-(MAX_LVL-1-i)*6}" y="${RH-8}" width="4" height="4" fill="${i<r.lvl?'#c9e265':'#3a3a32'}"/>`;
-    g+=`</g>`;
+    // табличка
+    g+=`<rect y="${FL}" width="${RW}" height="${RH-FL}" fill="#0c0d0a" opacity=".82"/>
+        <text x="3.5" y="${RH-2.8}" font-size="6.6" fill="${r.lvl?'#e6ead8':'#6b705f'}" font-weight="bold" letter-spacing=".3">${SHORT[id]}${idleRoom?' 💤':''}</text>`;
+    if(!isLiving && r.lvl) for(let i=0;i<MAX_LVL;i++) g+=`<rect x="${RW-4-(MAX_LVL-1-i)*4.6}" y="${RH-7}" width="3.4" height="3.4" rx=".6" fill="${i<r.lvl?'#ff8a3d':'#3a3a32'}"/>`;
+    g+=`</g></g>`;
     out.push(g);
   }
-
-  // Радиация: зелёная дымка
-  if(S.res.rad>=35) out.push(`<rect x="38" y="56" width="324" height="204" fill="url(#radg)" opacity="${Math.min(1,(S.res.rad-30)/50)}" pointer-events="none"/>`);
-  return `<svg viewBox="0 0 362 266" xmlns="http://www.w3.org/2000/svg" font-family="Courier New">${out.join('')}</svg>`;
+  // стены между отсеками
+  [134,220,306].forEach(x=>{ out.push(`<rect x="${x}" y="74" width="2" height="96" fill="#3b3c35"/><rect x="${x}" y="178" width="2" height="96" fill="#3b3c35"/>`); });
+  out.push(`<rect x="47" y="274" width="348" height="8" fill="#45463e"/>`);
+  // радиация
+  if(S.res.rad>=35) out.push(`<rect x="47" y="69" width="348" height="220" fill="url(#radg)" opacity="${Math.min(1,(S.res.rad-30)/50).toFixed(2)}" pointer-events="none"/>`);
+  return `<svg viewBox="0 0 400 296" xmlns="http://www.w3.org/2000/svg" font-family="Manrope, sans-serif">${out.join('')}</svg>`;
 }
 
 function focusRoom(id){
@@ -922,12 +1083,25 @@ function render(){
   const sc=S.screen;
   app.classList.toggle('tabs-on', sc==='manage');
 
+  if(sc==='start'){
+    app.innerHTML = `<div class="startscr" onclick="startPrologue()">
+      <div class="glow"></div>
+      <p class="kicker">УБЕЖИЩЕ №7</p>
+      <h1 class="big">БУНКЕР</h1>
+      <p class="dim">Сирена. Пятнадцать минут. Твой выбор.</p>
+      <div class="tap">▶ Нажми, чтобы начать</div>
+      <p class="small dim">🔊 Лучше со звуком</p>
+    </div>`;
+    return;
+  }
+
   if(sc==='title'){
     app.innerHTML = `
       <h1>БУНКЕР</h1><p class="dim">ядерная зима · убежище №7</p>
       <div class="card"><p>Ты — тот, кто успел спуститься. Теперь от твоих решений зависит, кто доживёт до весны.</p></div>
       <button class="main" onclick="bgm.play();go(S.screen_prev||'event')">Продолжить · день ${S.day}</button>
-      <button onclick="restart()"><span>Новая игра</span><span class="tag">сбросит прогресс</span></button>`;
+      <button onclick="restart()"><span>Новая игра</span><span class="tag">сбросит прогресс</span></button>
+      <button onclick="playPrologue(()=>render())"><span>▶ Предыстория</span><span class="tag">22 сек</span></button>`;
     return;
   }
 
@@ -938,7 +1112,8 @@ function render(){
       <div class="card"><p>До удара пятнадцать минут. Ты, сосед-электрик Пётр и медсестра Вера бежите к недостроенному бункеру под гаражами.</p>
         <p>Унести можно только <b>три</b> вещи.</p></div>
       ${ITEMS.map(it=>`<button class="${S.picked.includes(it.id)?'sel':''}" onclick="togglePick('${it.id}')"><span>${it.name}</span><span class="tag">${S.picked.includes(it.id)?'✓ ':''}${it.desc}</span></button>`).join('')}
-      <button class="main" style="margin-top:12px" ${S.picked.length<3?'disabled':''} onclick="descend()">Спуститься в бункер · ${S.picked.length}/3</button>`;
+      <button class="main" style="margin-top:12px" ${S.picked.length<3?'disabled':''} onclick="descend()">Спуститься в бункер · ${S.picked.length}/3</button>
+      <button onclick="playPrologue(()=>render())" style="justify-content:center;background:none;border:none;color:var(--dim);font-size:13px">▶ Пересмотреть предысторию</button>`;
     return;
   }
 
@@ -1561,7 +1736,226 @@ function introAudio(){
   return ac;
 }
 
-function playIntro(done){
+/* =========================================================
+   7.6 ПРОЛОГ: предыстория при первом запуске
+   ========================================================= */
+const PRO_LEN = 22;
+function iRR(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r); c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h); c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r); c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath(); }
+function iType(c,txt,x,y,t0,t,spd){ if(t>t0) c.fillText(txt.slice(0,Math.floor((t-t0)*(spd||22))),x,y); }
+
+function pShotText(c,t,E){
+  c.fillStyle='#050506'; c.fillRect(-E,-500,360+2*E,1640);
+  for(let i=0;i<70;i++){ const h=Math.sin(i*91.7+Math.floor(t*24)*13.3)*43758.5453, x=(h-Math.floor(h))*360, y=((h*7)-Math.floor(h*7))*640;
+    c.fillStyle='rgba(255,255,255,.05)'; c.fillRect(x,y,1.5,1.5); }
+  c.textAlign='center'; c.font='bold 17px "Courier New", monospace';
+  c.fillStyle='#c3c7d4'; iType(c,'Последние недели новости',180,282,0.3,t); iType(c,'становились всё тревожнее.',180,308,1.4,t);
+  c.fillStyle='#ff8a3d'; iType(c,'Все думали — обойдётся.',180,356,2.7,t);
+}
+
+function pSitting(c,x,y,fill){
+  c.save(); c.translate(x,y); c.fillStyle=fill; c.strokeStyle=fill; c.lineCap='round'; c.lineJoin='round';
+  c.beginPath(); c.moveTo(-8,-2); c.lineTo(8,-2); c.lineTo(5,-48); c.lineTo(-9,-46); c.closePath(); c.fill();
+  c.beginPath(); c.arc(-1,-60,9,0,7); c.fill();
+  c.lineWidth=11; c.beginPath(); c.moveTo(0,-6); c.lineTo(28,-6); c.stroke();
+  c.lineWidth=9;  c.beginPath(); c.moveTo(28,-6); c.lineTo(30,16); c.stroke();
+  c.lineWidth=6;  c.beginPath(); c.moveTo(29,16); c.lineTo(39,17); c.stroke();
+  c.lineWidth=7;  c.beginPath(); c.moveTo(2,-40); c.lineTo(16,-22); c.lineTo(26,-12); c.stroke();
+  c.restore();
+}
+
+// стоит; wave — машет рукой «за мной»
+function iStanding(c,x,y,h,kind,fill,wave){
+  c.save(); c.translate(x,y); const s=h/100; c.scale(s,s); c.fillStyle=fill; c.strokeStyle=fill; c.lineCap='round'; c.lineJoin='round';
+  const L=(a,b,w)=>{ c.lineWidth=w; c.beginPath(); c.moveTo(a[0],a[1]); c.lineTo(b[0],b[1]); c.stroke(); };
+  L([-4,-48],[-6,-24],11); L([-6,-24],[-7,0],9); L([-9,0],[2,1],6);
+  L([4,-48],[6,-24],11);   L([6,-24],[7,0],9);   L([5,0],[16,1],6);
+  c.beginPath(); c.moveTo(-9,-45); c.lineTo(9,-45); c.lineTo(10,-84); c.lineTo(-10,-86); c.closePath(); c.fill();
+  L([0,-84],[1,-90],7); c.beginPath(); c.arc(1,-97,9,0,7); c.fill();
+  L([-9,-80],[-13,-60],8); L([-13,-60],[-14,-42],7);
+  if(wave){ const a=Math.sin(performance.now()/120)*4; L([9,-80],[22,-92],8); L([22,-92],[30+a,-110],7); }
+  else { L([9,-80],[13,-60],8); L([13,-60],[14,-42],7); }
+  if(kind===1){ c.fillRect(-8,-108,18,5); c.fillRect(6,-105,8,3); c.fillRect(-23,-43,18,11); c.fillRect(-17,-47,6,4); }
+  c.restore();
+}
+
+function pShotRoom(c,t,D,E){
+  const u=t-4.2, alarm=t>=10.8, pulse=alarm?0.5+0.5*Math.sin(t*5):0;
+  const z=1+u*0.012+iSm(10.6,14,t)*0.05;
+  c.save(); c.translate(240,360); c.scale(z,z); c.translate(-240,-360);
+  // стены и пол
+  c.fillStyle='#17151c'; c.fillRect(-E,-500,360+2*E,970);
+  for(let x=-E;x<360+E;x+=24){ c.fillStyle='rgba(255,255,255,.025)'; c.fillRect(x,0,10,470); }
+  c.fillStyle='#0e0d10'; c.fillRect(-E,470,360+2*E,400);
+  c.fillStyle='#211e26'; c.fillRect(-E,464,360+2*E,7);
+  // окно с ночным городом
+  c.save(); c.beginPath(); c.rect(22,150,110,180); c.clip();
+  const sg=c.createLinearGradient(0,150,0,330); sg.addColorStop(0,'#05070f'); sg.addColorStop(1,alarm?iMix('#2a1622','#5a1010',pulse):'#2a1622'); c.fillStyle=sg; c.fillRect(22,150,110,180);
+  c.fillStyle='#d9d2b8'; c.beginPath(); c.arc(108,178,7,0,7); c.fill();
+  if(alarm) iBeam(c,70,330,Math.sin(t*0.9)*0.5,220,14,0.18);
+  c.save(); c.translate(22,330); c.scale(0.32,0.32); iCity(c,D.far,0,'#12131b',0.5,true,true); iCity(c,D.mid,0,'#0a0b10',0.5,true,false); c.restore();
+  c.restore();
+  c.strokeStyle='#08070a'; c.lineWidth=6; c.strokeRect(22,150,110,180);
+  c.lineWidth=3; c.beginPath(); c.moveTo(77,150); c.lineTo(77,330); c.moveTo(22,240); c.lineTo(132,240); c.stroke();
+  c.fillStyle='#0f0d12'; c.beginPath(); c.moveTo(14,140); c.lineTo(40,140); c.quadraticCurveTo(30,250,44,340); c.lineTo(14,340); c.closePath(); c.fill(); // штора
+  // часы
+  c.fillStyle='#0a090c'; iRR(c,256,226,62,24,4); c.fill();
+  c.save(); c.shadowColor='#ff3b2a'; c.shadowBlur=8; c.fillStyle='#ff5040'; c.font='bold 16px "Courier New", monospace'; c.textAlign='center';
+  c.fillText(t<13?'22:31':'22:32',287,244); c.restore();
+  // дверь
+  const open=iSm(14.5,14.75,t);
+  if(open>0){
+    const dg=c.createLinearGradient(0,345,0,470); dg.addColorStop(0,'#e8c890'); dg.addColorStop(1,'#a8844e');
+    c.fillStyle=dg; c.fillRect(150,345,50,125);
+    c.fillStyle='rgba(240,200,130,.22)'; c.beginPath(); c.moveTo(150,470); c.lineTo(200,470); c.lineTo(250,560); c.lineTo(110,560); c.closePath(); c.fill();
+    iStanding(c,177,470,104,1,'#050505',true);
+    c.fillStyle='#1d1a20'; c.beginPath(); c.moveTo(150,345); c.lineTo(150-28*open,338); c.lineTo(150-28*open,478); c.lineTo(150,470); c.closePath(); c.fill();
+  } else {
+    c.fillStyle='#211d22'; c.fillRect(150,345,50,125); c.fillStyle='#2c2730'; c.fillRect(154,350,42,52); c.fillRect(154,410,42,54);
+    c.fillStyle='#8a7a5a'; c.fillRect(192,408,4,4);
+  }
+  c.strokeStyle='#0a090c'; c.lineWidth=3; c.strokeRect(150,345,50,125);
+  // телевизор
+  c.fillStyle='#08080a'; iRR(c,218,296,126,90,6); c.fill();
+  c.save(); c.beginPath(); c.rect(224,302,114,76); c.clip();
+  if(t<10.5){
+    const tg2=c.createLinearGradient(0,302,0,378); tg2.addColorStop(0,'#14305a'); tg2.addColorStop(1,'#0a1630'); c.fillStyle=tg2; c.fillRect(224,302,114,76);
+    c.fillStyle='#05080f'; c.beginPath(); c.arc(281,330,9,0,7); c.fill(); c.beginPath(); c.ellipse(281,356,25,15,0,0,7); c.fill();
+    c.fillStyle='#e8eef8'; c.font='bold 6px sans-serif'; c.textAlign='left'; c.fillText('НОВОСТИ 24',228,310);
+    c.fillStyle='#b3261e'; c.fillRect(224,366,114,12);
+    c.fillStyle='#fff'; c.font='bold 7px sans-serif';
+    const tick='СРОЧНО · ПЕРЕГОВОРЫ СОРВАНЫ · ВОЙСКА ПРИВЕДЕНЫ В ПОЛНУЮ БОЕВУЮ ГОТОВНОСТЬ · ';
+    const off=(u*34)%330; c.fillText(tick,338-off,375); c.fillText(tick,338-off+330,375);
+  } else if(t<10.8){
+    for(let y=302;y<378;y+=4) for(let x=224;x<338;x+=4){ const h=Math.sin(x*12.9+y*78.2+Math.floor(t*40)*7.1)*43758.5; const v=Math.floor((h-Math.floor(h))*255); c.fillStyle=`rgb(${v},${v},${v})`; c.fillRect(x,y,4,4); }
+  } else {
+    c.fillStyle=iMix('#5a0a0a','#a01414',pulse); c.fillRect(224,302,114,76);
+    c.fillStyle='#ffe0d8'; c.textAlign='center'; c.font='bold 22px sans-serif'; c.fillText('⚠',281,330);
+    c.font='bold 10px sans-serif'; c.fillText('ВНИМАНИЕ ВСЕМ!',281,350); c.font='bold 8px sans-serif'; c.fillText('ВОЗДУШНАЯ ТРЕВОГА',281,364);
+  }
+  c.restore();
+  c.fillStyle='#121014'; c.fillRect(230,386,102,84); c.fillStyle='#1b181e'; c.fillRect(236,394,90,30); c.fillRect(236,430,90,30);
+  // свет экрана на комнату
+  const flick=0.85+0.15*Math.sin(t*17)*Math.sin(t*5.3);
+  const gl=c.createRadialGradient(281,340,10,281,340,300);
+  if(t<10.5){ gl.addColorStop(0,`rgba(90,150,255,${0.24*flick})`); gl.addColorStop(1,'rgba(90,150,255,0)'); }
+  else { gl.addColorStop(0,`rgba(255,40,30,${0.18+0.22*pulse})`); gl.addColorStop(1,'rgba(255,40,30,0)'); }
+  c.save(); c.globalCompositeOperation='lighter'; c.fillStyle=gl; c.fillRect(-E,-500,360+2*E,1300); c.restore();
+  // диван
+  c.fillStyle='#1d1a20'; iRR(c,34,398,138,50,10); c.fill();
+  c.fillStyle='#252129'; iRR(c,30,440,146,32,8); c.fill();
+  c.fillStyle='#19161c'; iRR(c,26,418,18,54,6); c.fill(); iRR(c,162,418,18,54,6); c.fill();
+  // герой: сидит, потом вскакивает
+  const rim=t<10.5?'rgba(120,170,255,.75)':`rgba(255,90,70,${0.5+0.4*pulse})`;
+  if(t<12.6){ pSitting(c,96.5,452,rim); pSitting(c,95,452,'#050505'); }
+  else { iStanding(c,109.5,470,96,0,rim); iStanding(c,108,470,96,0,'#050505'); }
+  // столик, кружка, телефон
+  c.fillStyle='#141216'; c.fillRect(160,454,62,5); c.fillRect(164,459,4,11); c.fillRect(214,459,4,11);
+  c.fillStyle='#d8d2c4'; c.fillRect(200,444,9,10); c.strokeStyle='#d8d2c4'; c.lineWidth=1.5; c.beginPath(); c.arc(210,449,3,-1.4,1.4); c.stroke();
+  if(t<12){ c.strokeStyle='rgba(220,220,230,.25)'; c.lineWidth=1.2; for(let k=0;k<2;k++){ c.beginPath(); for(let y=0;y<16;y++){ const x=203+k*4+Math.sin(y*0.6+t*3+k)*2; y?c.lineTo(x,442-y):c.moveTo(x,442); } c.stroke(); } }
+  const vib = (t>11.2 && t<13.6 && Math.floor(t*2.5)%2===0) ? Math.sin(t*90)*1.2 : 0;
+  c.fillStyle='#050506'; c.fillRect(170+vib,449,16,5);
+  if(t>11.2){ c.save(); c.shadowColor='#9fd0ff'; c.shadowBlur=10; c.fillStyle='#bfe0ff'; c.fillRect(171+vib,449.5,14,1.8); c.restore(); }
+  // виньетка
+  const vg=c.createRadialGradient(200,360,120,200,360,430); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.8)');
+  c.fillStyle=vg; c.fillRect(-E,-500,360+2*E,1300);
+  c.restore();
+  // уведомление на телефоне
+  if(t>11.2 && t<14.3){
+    const dy=(1-iSm(11.2,11.55,t))*-110 - iSm(14.0,14.3,t)*110;
+    c.save(); c.translate(0,dy);
+    c.fillStyle='rgba(28,30,38,.95)'; iRR(c,26,64,308,78,16); c.fill();
+    c.strokeStyle='rgba(255,255,255,.08)'; c.lineWidth=1; c.stroke();
+    c.fillStyle='#d8261e'; iRR(c,38,76,30,30,8); c.fill();
+    c.fillStyle='#fff'; c.font='bold 18px sans-serif'; c.textAlign='center'; c.fillText('!',53,98);
+    c.textAlign='left'; c.font='bold 11px sans-serif'; c.fillStyle='#ff8a7a'; c.fillText('ГРАЖДАНСКАЯ ОБОРОНА · сейчас',78,86);
+    c.font='bold 13px sans-serif'; c.fillStyle='#fff'; c.fillText('Ракетная опасность!',78,104);
+    c.font='12px sans-serif'; c.fillStyle='#c3c7d4'; c.fillText('Немедленно пройдите в укрытие.',78,122);
+    c.restore();
+  }
+}
+
+function pShotTitle(c,t,D,E){
+  const u=t-18;
+  const bg=c.createRadialGradient(180,320,20,180,320,420); bg.addColorStop(0,'#3a0d08'); bg.addColorStop(1,'#030203');
+  c.fillStyle=bg; c.fillRect(-E,-500,360+2*E,1640);
+  for(const d of D.dust){ const y=640-((d.y+u*d.v*2.2)%640), x=d.x+Math.sin(u*1.3+d.ph)*6; c.fillStyle=`rgba(255,${140+Math.floor(d.ph*15)},60,${0.25+0.4*Math.sin(d.ph+u*3)**2})`; c.fillRect(x,y,d.s*1.3,d.s*1.3); }
+  const s=1.1-0.1*iSm(18,18.9,t);
+  c.save(); c.translate(180,318); c.scale(s,s); c.textAlign='center';
+  c.font='bold 54px Unbounded, "Arial Black", sans-serif';
+  const gl=Math.sin(t*37)>0.82 || (u<0.5 && Math.sin(t*60)>0);
+  if(gl){ c.fillStyle='rgba(255,40,40,.8)'; c.fillText('БУНКЕР',-4,0); c.fillStyle='rgba(40,220,255,.7)'; c.fillText('БУНКЕР',4,2); }
+  c.save(); c.shadowColor='rgba(255,138,61,.6)'; c.shadowBlur=26; c.fillStyle='#f2f0ea'; c.fillText('БУНКЕР',0,0); c.restore();
+  c.restore();
+  c.textAlign='center'; c.font='bold 11px Manrope, sans-serif'; c.fillStyle='rgba(255,255,255,.45)';
+  if(u>0.6) c.fillText('У Б Е Ж И Щ Е   № 7',180,262);
+  c.font='bold 18px "Courier New", monospace'; c.fillStyle='#ff8a3d'; iType(c,'У тебя 15 минут.',180,372,19.2,t,16);
+}
+
+function drawPrologue(c,t,V){
+  const D=introData(), {W,H,SC,OX,OY}=V, E=OX/SC+40;
+  c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H);
+  const amp = 6*iPulse(t,14.5,0.4) + 10*iPulse(t,18,0.8) + (t>10.8&&t<14.5 ? 1.2 : 0);
+  const sx=(Math.sin(t*91.3)+Math.sin(t*53.7))*0.5*amp, sy=(Math.sin(t*77.1)+Math.sin(t*61.9))*0.5*amp;
+  c.translate(OX+sx*SC, OY+sy*SC); c.scale(SC,SC);
+  if(t<4.2) pShotText(c,t,E);
+  else if(t<18) pShotRoom(c,t,D,E);
+  else pShotTitle(c,t,D,E);
+  c.restore();
+  const dip=Math.max(0, ...[4.2,18].map(x=>1-Math.abs(t-x)/0.25), 1-iSm(0,0.6,t), iSm(21.3,22,t));
+  if(dip>0){ c.fillStyle=`rgba(0,0,0,${dip})`; c.fillRect(0,0,W,H); }
+  if(t>18 && t<18.15){ c.fillStyle=`rgba(255,240,220,${1-(t-18)/0.15})`; c.fillRect(0,0,W,H); }
+  const bh=Math.round(H*0.075); c.fillStyle='#000'; c.fillRect(0,0,W,bh); c.fillRect(0,H-bh,W,bh);
+  let cap=null, col='#d8e0c8';
+  if(t>5 && t<10.2) cap=['22:31. Обычный вечер.'];
+  else if(t>14.8 && t<17.9){ cap=['Пётр: «Бункер под гаражами!','Бери самое нужное — у нас 15 минут!»']; col='#ffb340'; }
+  if(cap){
+    const fs=Math.round(Math.min(16,W/24)); c.font=`bold ${fs}px "Courier New", monospace`; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle=col;
+    cap.forEach((l,i)=>c.fillText(l,W/2,H-bh/2+(i-(cap.length-1)/2)*(fs+3)));
+    c.textBaseline='alphabetic';
+  }
+}
+
+function prologueAudio(){
+  let ac=null;
+  try{
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    const T=ac.currentTime;
+    const noise=len=>{ const b=ac.createBuffer(1,ac.sampleRate*len,ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; const n=ac.createBufferSource(); n.buffer=b; return n; };
+    const env=(node,at,peak,dur)=>{ const g=ac.createGain(); g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(peak,at+0.02); g.gain.exponentialRampToValueAtTime(0.0001,at+dur); node.connect(g).connect(ac.destination); };
+    const filt=(type,f,q)=>{ const b=ac.createBiquadFilter(); b.type=type; b.frequency.value=f; if(q) b.Q.value=q; return b; };
+    // низкий гул
+    const dr=ac.createOscillator(), dl=filt('lowpass',220), dg=ac.createGain(); dr.type='sawtooth'; dr.frequency.value=55;
+    dg.gain.setValueAtTime(0,T); dg.gain.linearRampToValueAtTime(0.035,T+2); dg.gain.setValueAtTime(0.035,T+17.5); dg.gain.linearRampToValueAtTime(0,T+18);
+    dr.connect(dl).connect(dg).connect(ac.destination); dr.start(T); dr.stop(T+18.2);
+    // часы
+    for(let s=T+0.5; s<T+10.5; s+=1){ const n=noise(0.03), hp=filt('highpass',3000); n.connect(hp); env(hp,s,0.05,0.03); n.start(s); }
+    // бормотание телевизора
+    const tv=noise(6.3), bp=filt('bandpass',650,1.2), tg=ac.createGain(), lfo=ac.createOscillator(), lg=ac.createGain();
+    tg.gain.value=0.025; lfo.frequency.value=4.2; lg.gain.value=0.02; lfo.connect(lg).connect(tg.gain);
+    tv.connect(bp).connect(tg).connect(ac.destination); tv.start(T+4.2); lfo.start(T+4.2); lfo.stop(T+10.5);
+    // помехи
+    const st=noise(0.3), sh=filt('highpass',900); st.connect(sh); env(sh,T+10.5,0.22,0.3); st.start(T+10.5);
+    // сигнал оповещения
+    [10.9,11.3,11.7,12.7,13.1,13.5].forEach(o=>{ const b=ac.createOscillator(); b.frequency.value=880; env(b,T+o,0.1,0.14); b.start(T+o); b.stop(T+o+0.2); });
+    // вибрация телефона
+    for(let s=11.2; s<13.6; s+=0.8){ const v=ac.createOscillator(); v.type='square'; v.frequency.value=150; const lp=filt('lowpass',400); v.connect(lp); env(lp,T+s,0.05,0.38); v.start(T+s); v.stop(T+s+0.42); }
+    // сирена снаружи
+    const o=ac.createOscillator(), l2=ac.createOscillator(), lg2=ac.createGain(), f=filt('lowpass',900), g=ac.createGain();
+    o.type='sawtooth'; o.frequency.value=600; l2.frequency.value=0.25; lg2.gain.value=220; l2.connect(lg2).connect(o.frequency); o.connect(f).connect(g).connect(ac.destination);
+    g.gain.setValueAtTime(0,T+11.4); g.gain.linearRampToValueAtTime(0.04,T+12.2); g.gain.setValueAtTime(0.04,T+17.8); g.gain.linearRampToValueAtTime(0,T+18.4);
+    o.start(T+11.4); l2.start(T+11.4); o.stop(T+18.6); l2.stop(T+18.6);
+    // дверь
+    const n1=noise(0.4), lp1=filt('lowpass',500); n1.connect(lp1); env(lp1,T+14.5,0.6,0.3); n1.start(T+14.5);
+    const k=ac.createOscillator(); k.frequency.setValueAtTime(90,T+14.5); k.frequency.exponentialRampToValueAtTime(40,T+14.8); env(k,T+14.5,0.5,0.35); k.start(T+14.5); k.stop(T+15);
+    // удар на титре
+    const n2=noise(3), lp2=filt('lowpass',300); n2.connect(lp2); env(lp2,T+18,0.8,2.6); n2.start(T+18);
+    const b2=ac.createOscillator(); b2.frequency.setValueAtTime(60,T+18); b2.frequency.exponentialRampToValueAtTime(28,T+20); env(b2,T+18,0.6,2.4); b2.start(T+18); b2.stop(T+20.6);
+  }catch(e){ ac=null; }
+  return ac;
+}
+
+/* ---------- общий проигрыватель роликов ---------- */
+function runCutscene(draw, len, audioFn, buzzAt, done){
   const cv=document.createElement('canvas'); cv.id='cut';
   const skipBtn=document.createElement('button'); skipBtn.id='skip'; skipBtn.textContent='Пропустить ›';
   document.body.append(cv, skipBtn);
@@ -1573,13 +1967,13 @@ function playIntro(done){
     V.SC=Math.min(V.W/360, V.H/640); V.OX=(V.W-360*V.SC)/2; V.OY=(V.H-640*V.SC)/2;
   }
   resize(); addEventListener('resize', resize);
-  const ac=introAudio();
+  const ac=audioFn();
   const start=performance.now(), buzz={}; let raf=0, finished=false;
   function frame(now){
     const t=(now-start)/1000;
-    drawIntro(ctx,t,V);
-    [[7.4,'f'],[8.6,'w'],[12.45,'d']].forEach(([at,k])=>{ if(t>at && !buzz[k]){ buzz[k]=1; haptic('heavy'); } });
-    if(t>INTRO_LEN) return finish();
+    draw(ctx,t,V);
+    buzzAt.forEach(at=>{ if(t>at && !buzz[at]){ buzz[at]=1; haptic('heavy'); } });
+    if(t>len) return finish();
     raf=requestAnimationFrame(frame);
   }
   function finish(){
@@ -1592,6 +1986,9 @@ function playIntro(done){
   skipBtn.onclick=finish;
   raf=requestAnimationFrame(frame);
 }
+function playIntro(done){ runCutscene(drawIntro, INTRO_LEN, introAudio, [7.4,8.6,12.45], done); }
+function playPrologue(done){ bgm.stop(); runCutscene(drawPrologue, PRO_LEN, prologueAudio, [10.8,14.5,18], done); }
+function startPrologue(){ haptic('medium'); S.seenPrologue=1; playPrologue(()=>{ S.screen='pick'; go('pick'); }); }
 
 /* =========================================================
    8. ЗАПУСК
@@ -1602,7 +1999,7 @@ load(raw=>{
   if(saved && saved.screen && saved.screen!=='ending' && saved.screen!=='pick'){
     S = migrate(saved); S.screen_prev = saved.screen; S.screen='title';
   } else {
-    S = newState();
+    S = newState(); S.screen='start';
   }
   render();
 });
