@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>БУНКЕР</title>
+<!-- Скрипт Telegram: внутри Telegram даёт доступ к облачным сохранениям и вибрации.
+     В обычном браузере просто ничего не делает. -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#0e0f0c; --panel:#171a14; --line:#2c3324; --text:#d8e0c8;
+    --dim:#8a937a; --acc:#c9e265; --warn:#e8a23a; --bad:#e05a47;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"Courier New",monospace;font-size:15px;line-height:1.45;min-height:100vh}
+  #app{max-width:520px;margin:0 auto;padding:0 12px 40px}
+  .hud{position:sticky;top:0;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line);z-index:5;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:13px}
+  .hud div{background:var(--panel);border:1px solid var(--line);padding:4px 2px;border-radius:4px;text-align:center;white-space:nowrap}
+  .hud .day{grid-column:1/-1;display:flex;justify-content:space-between;color:var(--acc);padding:4px 8px}
+  h1{color:var(--acc);font-size:30px;letter-spacing:6px;margin:40px 0 6px}
+  h2{color:var(--acc);font-size:18px;margin:16px 0 8px}
+  p{margin:8px 0}
+  .dim{color:var(--dim)} .small{font-size:13px}
+  .good{color:var(--acc)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;margin:10px 0}
+  button{font-family:inherit;font-size:15px;background:#232a1b;color:var(--text);border:1px solid var(--acc);border-radius:5px;padding:12px;width:100%;margin:6px 0;text-align:left;cursor:pointer}
+  button:active{background:#2f3a22}
+  button:disabled{opacity:.35;border-color:var(--line);cursor:default}
+  button.main{background:var(--acc);color:#111;font-weight:bold;text-align:center}
+  button.sel{border-color:var(--warn);background:#3a2f17}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+  .row button{width:auto;padding:6px 16px;margin:0;text-align:center}
+  .log li{margin:4px 0 4px 18px}
+  .blink{animation:b 1s steps(2) infinite} @keyframes b{50%{opacity:0}}
+  /* Заставка */
+  #cut{position:fixed;inset:0;width:100vw;height:100vh;z-index:100;background:#000;transition:opacity .6s}
+  #skip{position:fixed;right:12px;bottom:16px;z-index:101;width:auto;padding:8px 14px;background:rgba(0,0,0,.5);border-color:#555;color:#aaa;font-size:13px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================
+   1. TELEGRAM И СОХРАНЕНИЯ
+   ========================================================= */
+const tg = window.Telegram && window.Telegram.WebApp;
+const inTG = !!(tg && tg.initData);           // true только если игра открыта внутри Telegram
+if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
+
+function haptic(type){ try{ if(inTG) tg.HapticFeedback.impactOccurred(type||'light'); }catch(e){} }
+
+const SAVE_KEY = 'bunker_save_v1';
+function lsGet(){ try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; } }
+function save(){
+  const data = JSON.stringify(S);
+  try{ localStorage.setItem(SAVE_KEY, data); }catch(e){}
+  try{ if(inTG && tg.CloudStorage) tg.CloudStorage.setItem(SAVE_KEY, data, ()=>{}); }catch(e){}
+}
+function load(cb){
+  try{
+    if(inTG && tg.CloudStorage){
+      tg.CloudStorage.getItem(SAVE_KEY, (err, val)=> cb(!err && val ? val : lsGet()));
+      return;
+    }
+  }catch(e){}
+  cb(lsGet());
+}
+function wipe(){
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  try{ if(inTG && tg.CloudStorage) tg.CloudStorage.removeItem(SAVE_KEY, ()=>{}); }catch(e){}
+}
+
+/* =========================================================
+   2. ДАННЫЕ ИГРЫ: отсеки, предметы, концовки
+   ========================================================= */
+const ROOMS = {
+  generator:{name:'⚡ Генератор',      desc:'Даёт энергию всему бункеру', cost:0,  per:4, res:'energy',    use:0},
+  water:    {name:'💧 Водоочистка',    desc:'Очищает воду',               cost:0,  per:4, res:'water',     use:1},
+  filter:   {name:'🌀 Фильтр воздуха', desc:'Снижает радиацию',           cost:0,  per:2, res:'rad',       use:2},
+  farm:     {name:'🌱 Гидропоника',    desc:'Выращивает еду',             cost:8,  per:4, res:'food',      use:2},
+  workshop: {name:'🛠 Мастерская',     desc:'Делает материалы',           cost:4,  per:3, res:'materials', use:1},
+  medbay:   {name:'➕ Медпункт',       desc:'Поднимает мораль',           cost:12, per:3, res:'morale',    use:1},
+  radio:    {name:'📻 Радиорубка',     desc:'Ловит и усиливает сигнал',   cost:15, per:1, res:'signal',    use:1},
+};
+const MAX_LVL = 3;
+
+const ITEMS = [
+  {id:'food',   name:'🥫 Ящик консервов',  desc:'+15 еды'},
+  {id:'water',  name:'🚰 Канистры с водой', desc:'+15 воды'},
+  {id:'tools',  name:'🧰 Инструменты',      desc:'+10 материалов'},
+  {id:'meds',   name:'💊 Аптечка',          desc:'+15 морали'},
+  {id:'radio',  name:'📻 Радиоприёмник',    desc:'Радиорубка сразу построена'},
+  {id:'filter', name:'🌀 Запасной фильтр',  desc:'Фильтр воздуха сразу 2 уровня'},
+];
+
+const ENDINGS = {
+  silence:{title:'ТИШИНА', text:'Последний фонарь погас. В бункере больше никто не дышит. Через много лет его найдут — по записям в журнале, который ты вёл до конца.'},
+  mutiny: {title:'БУНТ',   text:'Ночью они пришли все вместе. Тебя вывели за шлюз и закрыли дверь. Бункер теперь принадлежит другим — и, может быть, они справятся лучше.'},
+  surface:{title:'ВЫХОД НА ПОВЕРХНОСТЬ', text:'Шлюз открывается впервые за много дней. Серое небо, пепел под ногами. Вы идёте на север — туда, где «Заря» держит для вас огонь.'},
+  secret: {title:'ПРАВДА В ЭФИРЕ', text:'Ты зачитываешь в микрофон документы «Полдня». Удар не был ответным. Тысячи приёмников в тысячах бункеров слышат это. Мир, который выйдет наверх, будет помнить, кто начал войну.'},
+  city:   {title:'ПОДЗЕМНЫЙ ГОРОД', text:'Тридцать дней. Бункер гудит, как улей: грядки, мастерская, дети учат буквы при свете ламп. Это уже не убежище — это город. Твой город.'},
+  endure: {title:'ДОЛГАЯ НОЧЬ', text:'Вы пережили тридцать дней. Без радости, без надежды — но живые. Наверху всё ещё пепел. Внизу — всё ещё вы.'},
+};
+
+/* =========================================================
+   3. СОСТОЯНИЕ ИГРЫ
+   ========================================================= */
+let S = null;
+
+function newState(){
+  return {
+    screen:'pick', day:1,
+    res:{food:15, water:15, materials:6, morale:55, rad:10, signal:0},
+    residents:['Ты','Пётр','Вера'],
+    rooms:{
+      generator:{lvl:1,w:0}, water:{lvl:1,w:0}, filter:{lvl:1,w:0},
+      farm:{lvl:0,w:0}, workshop:{lvl:0,w:0}, medbay:{lvl:0,w:0}, radio:{lvl:0,w:0},
+    },
+    flags:{}, seen:[], hunger:0,
+    picked:[], eventId:null, ctx:{}, resultText:'', log:[], lastEvent:null, ending:null,
+  };
+}
+
+/* ---------- помощники ---------- */
+const rnd = arr => arr[Math.floor(Math.random()*arr.length)];
+const chance = p => Math.random() < p;
+function clamp(){
+  const r=S.res;
+  r.morale = Math.max(0, Math.min(100, r.morale));
+  r.rad    = Math.max(0, Math.min(100, r.rad));
+  ['food','water','materials','signal'].forEach(k=> r[k]=Math.max(0, r[k]));
+}
+function workers(){ let s=0; for(const id in S.rooms) s+=S.rooms[id].w; return s; }
+function freeWorkers(){ return S.residents.length - workers(); }
+function addResident(name){ S.residents.push(name); }
+function killResident(name){
+  // Если имя не указано — погибает случайный житель, «Ты» — последним
+  const others = S.residents.filter(n=>n!=='Ты');
+  const victim = (name && S.residents.includes(name)) ? name : (others.length ? rnd(others) : 'Ты');
+  S.residents.splice(S.residents.indexOf(victim),1);
+  // если работников больше, чем людей — снимаем лишних
+  while(freeWorkers()<0){
+    const busy = Object.keys(S.rooms).filter(id=>S.rooms[id].w>0);
+    S.rooms[rnd(busy)].w--;
+  }
+  return victim;
+}
+
+/* =========================================================
+   4. СОБЫТИЯ
+   cond  — когда событие может выпасть
+   once  — выпадает только один раз
+   choices[].req — условие, при котором кнопку можно нажать
+   choices[].go  — что произойдёт; возвращает текст результата
+   ========================================================= */
+const EVENTS = {
+  knock:{
+    title:'Стук в шлюз',
+    text:()=>'Сирена давно стихла. Сквозь гул вентиляции — удары в гермодверь. Женский голос: «Пустите! Со мной двое детей!» Счётчик радиации снаружи щёлкает всё чаще.',
+    choices:[
+      {t:'Открыть шлюз', go:()=>{ ['Марина','Лёша','Соня'].forEach(addResident); S.res.morale+=10; S.res.rad+=8; S.flags.kind=1;
+        return 'Шлюз лязгает. Марина с детьми падают на пол, кашляя пеплом. Ртов стало больше — но в бункере снова звучит детский голос.'; }},
+      {t:'Впустить только детей', go:()=>{ ['Лёша','Соня'].forEach(addResident); S.res.morale-=5; S.res.rad+=4; S.flags.hard=1;
+        return 'Мать сама проталкивает детей в щель и отступает. Дверь закрывается. Дети молчат весь вечер.'; }},
+      {t:'Не открывать', go:()=>{ S.res.morale-=20; S.flags.cold=1;
+        return 'Стук продолжается ещё полчаса. Потом — тишина. Никто в бункере не смотрит тебе в глаза.'; }},
+    ]
+  },
+  rats:{
+    once:true, cond:()=>S.day>=2,
+    title:'Крысы на складе',
+    text:()=>'Ночью кто-то прогрыз мешки с крупой. В темноте склада блестят глаза.',
+    choices:[
+      {t:'Поставить ловушки (−2 🛠)', req:()=>S.res.materials>=2, go:()=>{ S.res.materials-=2; S.res.food-=2; return 'Ловушки сработали. Потеряли немного еды, но склад спасён.'; }},
+      {t:'Устроить охоту', go:()=>{ S.res.food+=4; S.res.morale-=3; return 'Крысиное рагу. Едят молча, но едят.'; }},
+      {t:'Не обращать внимания', go:()=>{ S.res.food-=8; return 'Через пару дней от запасов осталась половина.'; }},
+    ]
+  },
+  filter_noise:{
+    cond:()=>S.day>=3,
+    title:'Фильтр хрипит',
+    text:()=>'Из вентиляции тянет гарью. Фильтр забит пылью с поверхности.',
+    choices:[
+      {t:'Разобрать и почистить (−4 🛠)', req:()=>S.res.materials>=4, go:()=>{ S.res.materials-=4; S.res.rad-=10; return 'Два часа в респираторе — и воздух снова чистый.'; }},
+      {t:'Подождать', go:()=>{ S.res.rad+=12; return 'Фильтр кое-как работает. Дозиметр недовольно трещит.'; }},
+    ]
+  },
+  quarrel:{
+    cond:()=>S.day>=3 && S.residents.length>=4,
+    title:'Драка из-за пайка',
+    text:()=>`${S.ctx.a} и ${S.ctx.b} сцепились из-за пайка: каждый уверен, что другой ворует еду.`,
+    pre:()=>{ const o=S.residents.filter(n=>n!=='Ты'); S.ctx.a=rnd(o); S.ctx.b=rnd(o.filter(n=>n!==S.ctx.a))||'кого-то'; },
+    choices:[
+      {t:'Разделить еду поровну, включая себя (−2 🍞)', go:()=>{ S.res.food-=2; S.res.morale+=6; return 'Ты отдаёшь часть своего пайка. Люди это запомнят.'; }},
+      {t:'Наказать зачинщика', go:()=>{ S.res.morale-=4; S.flags.strict=(S.flags.strict||0)+1; return 'Порядок восстановлен. Страхом.'; }},
+      {t:'Пусть разбираются сами', go:()=>{ S.res.morale-=10; return 'Ссора тлеет ещё несколько дней.'; }},
+    ]
+  },
+  sick:{
+    cond:()=>S.day>=4 && S.residents.length>=3,
+    pre:()=>{ S.ctx.name=rnd(S.residents.filter(n=>n!=='Ты')); },
+    title:'Жар',
+    text:()=>`${S.ctx.name} мечется в лихорадке. Лоб горячий, губы потрескались.`,
+    choices:[
+      {t:'Лечить в медпункте (−3 💧)', req:()=>S.rooms.medbay.lvl>0 && S.res.water>=3, go:()=>{ S.res.water-=3; S.res.morale+=5; return `${S.ctx.name} идёт на поправку.`; }},
+      {t:'Отдать двойную порцию воды (−4 💧)', req:()=>S.res.water>=4, go:()=>{ S.res.water-=4; if(chance(.7)) return `Жар спадает. ${S.ctx.name} выживет.`; killResident(S.ctx.name); S.res.morale-=10; return `Не помогло. ${S.ctx.name} не дожил до утра.`; }},
+      {t:'Изолировать', go:()=>{ S.res.morale-=8; if(chance(.6)) return `${S.ctx.name} выкарабкался сам — и не забудет, как его заперли.`; const v=killResident(S.ctx.name); S.res.morale-=5; return `Утром за дверью изолятора тихо. ${v} больше нет.`; }},
+    ]
+  },
+  generator_burn:{
+    cond:()=>S.day>=4,
+    title:'Перегрев генератора',
+    text:()=>'Генератор воет на высокой ноте, от кожуха пахнет горелой изоляцией.',
+    choices:[
+      {t:'Остановить и починить (−3 🛠)', req:()=>S.res.materials>=3, go:()=>{ S.res.materials-=3; return 'Сутки в полутьме, зато генератор цел.'; }},
+      {t:'Работать дальше', go:()=>{ if(chance(.5)) return 'Обошлось. Генератор понемногу остыл.'; if(S.rooms.generator.lvl>1){ S.rooms.generator.lvl--; S.rooms.generator.w=Math.min(S.rooms.generator.w, S.rooms.generator.lvl*2); return 'Хлопок, дым — сгорела обмотка. Генератор потерял уровень.'; } S.res.materials=Math.max(0,S.res.materials-5); return 'Хлопок, дым. Пришлось потратить материалы на срочный ремонт.'; }},
+    ]
+  },
+  sortie:{
+    cond:()=>S.day>=5 && S.residents.length>=2,
+    pre:()=>{ S.ctx.name=rnd(S.residents.filter(n=>n!=='Ты' && n!=='Лёша' && n!=='Соня')) || rnd(S.residents.filter(n=>n!=='Ты')); },
+    title:'Вылазка',
+    text:()=>`${S.ctx.name} предлагает подняться наверх и обыскать разрушенный магазин неподалёку.`,
+    choices:[
+      {t:'Отправить (риск)', go:()=>{
+        S.res.rad+=3;
+        const roll=Math.random();
+        if(roll<0.15){ killResident(S.ctx.name); S.res.morale-=10; return `${S.ctx.name} не вернулся. Только треск в рации — и тишина.`; }
+        if(!S.flags.docs && roll<0.55){ S.flags.docs=1; S.res.materials+=4; return `${S.ctx.name} возвращается с материалами — и с промокшей папкой с грифом «ПОЛДЕНЬ. Совершенно секретно».`; }
+        S.res.materials+=8; S.res.food+=5; return `${S.ctx.name} возвращается с полным рюкзаком: консервы, провода, инструменты.`;
+      }},
+      {t:'Слишком опасно', go:()=>{ S.res.morale-=2; return 'Все остаются внизу. Безопасно — и тоскливо.'; }},
+    ]
+  },
+  docs:{
+    once:true, cond:()=>S.flags.docs===1,
+    title:'Папка «Полдень»',
+    text:()=>'В папке приказы, подписанные за неделю до войны. Даты, цели, фамилии. Удар не был ответным — его готовили заранее.',
+    choices:[
+      {t:'Прочитать всё и спрятать', go:()=>{ S.flags.secret=1; return 'Ты прячешь папку под половицу. Когда-нибудь мир должен это узнать.'; }},
+      {t:'Сжечь', go:()=>{ S.res.morale+=3; return 'Бумага вспыхивает. Некоторые правды лучше не знать.'; }},
+    ]
+  },
+  radio_voice:{
+    once:true, cond:()=>S.day>=6 && S.rooms.radio.lvl>0,
+    title:'Голос в эфире',
+    text:()=>'Сквозь треск: «…говорит убежище „Заря“. Есть чистая вода. Кто слышит — отзовитесь…»',
+    choices:[
+      {t:'Ответить', go:()=>{ S.flags.signal=1; return 'Ты называешь свой позывной. Связь слабая — нужно усилить сигнал. Отправляй людей в радиорубку (нужно 📡 10).'; }},
+      {t:'Промолчать', go:()=>{ S.flags.silentRadio=1; return 'А вдруг это ловушка? Ты выключаешь приёмник.'; }},
+    ]
+  },
+  stranger:{
+    once:true, cond:()=>S.day>=7,
+    title:'Чужак у шлюза',
+    text:()=>'В камере шлюза мужчина в противогазе, с обрезом. «Воды. Только воды — и я уйду».',
+    choices:[
+      {t:'Дать воды (−5 💧)', req:()=>S.res.water>=5, go:()=>{ S.res.water-=5; S.res.materials+=4; S.flags.strangerFriend=1; return 'Он кивает и оставляет у двери ящик с инструментами. «Спасибо. Я запомню».'; }},
+      {t:'Впустить его в бункер', go:()=>{ addResident('Глеб'); S.res.morale-=5; return 'Его зовут Глеб. Жители косятся на обрез, но лишние руки не помешают.'; }},
+      {t:'Прогнать', go:()=>{ if(chance(.5)){ S.res.materials=Math.max(0,S.res.materials-5); return 'Уходя, он стреляет в замок. Ремонт обошёлся в материалы.'; } return 'Он молча уходит в пепельную метель.'; }},
+    ]
+  },
+  birthday:{
+    once:true, cond:()=>S.day>=10 && S.residents.includes('Соня'),
+    title:'День рождения',
+    text:()=>'Соне сегодня восемь. Она делает вид, что забыла, но то и дело поглядывает на взрослых.',
+    choices:[
+      {t:'Устроить праздник (−3 🍞)', req:()=>S.res.food>=3, go:()=>{ S.res.food-=3; S.res.morale+=12; return 'Свеча в консервной банке, песня вполголоса. Впервые за долгое время все улыбаются.'; }},
+      {t:'Не до праздников', go:()=>{ S.res.morale-=5; return 'День проходит как обычно. Соня плачет вечером в углу.'; }},
+    ]
+  },
+  quiet:{
+    title:'Тихое утро',
+    text:()=>'Ничего не случилось. Иногда это лучшая новость.',
+    choices:[
+      {t:'Работать как обычно', go:()=>'Обычный день под землёй.'},
+      {t:'Устроить вечер историй', go:()=>{ S.res.morale+=4; return 'Пётр рассказывает про рыбалку на Волге. Все смеются.'; }},
+    ]
+  },
+  final:{
+    title:'«Заря» на связи',
+    text:()=>'Сигнал чистый. «Заря» передаёт координаты: сорок километров на север. Путь опасен, но там есть вода, свет и люди.',
+    choices:[
+      {t:'Вести всех на поверхность', go:()=>{ S.ending='surface'; return ''; }},
+      {t:'Передать в эфир правду о «Полдне»', req:()=>S.flags.secret===1, go:()=>{ S.ending='secret'; return ''; }},
+      {t:'Остаться в бункере', go:()=>{ S.flags.finalDeclined=1; return 'Ты благодаришь «Зарю» и выключаешь передатчик. Ваш дом — здесь.'; }},
+    ]
+  },
+};
+
+function pickEvent(){
+  if(S.day===1) return 'knock';
+  if(S.flags.signal && !S.flags.finalDeclined && S.res.signal>=10) return 'final';
+  const pool = Object.keys(EVENTS).filter(id=>{
+    const e=EVENTS[id];
+    if(['knock','final','quiet'].includes(id)) return false;
+    if(e.once && S.seen.includes(id)) return false;
+    if(id===S.lastEvent) return false;
+    return !e.cond || e.cond();
+  });
+  if(!pool.length || chance(.15)) return 'quiet';
+  return rnd(pool);
+}
+
+/* =========================================================
+   5. РАСЧЁТ ДНЯ
+   ========================================================= */
+function compute(){
+  let prodE=0, useE=0;
+  for(const id in S.rooms){
+    const r=S.rooms[id]; if(!r.lvl) continue;
+    if(id==='generator') prodE += r.lvl*4 + r.w*ROOMS.generator.per;
+    else useE += ROOMS[id].use;
+  }
+  const eff = useE ? Math.min(1, prodE/useE) : 1;
+  const d={food:0, water:0, materials:0, morale:0, signal:0, rad:0};
+  const out={};
+  for(const id in S.rooms){
+    const r=S.rooms[id]; if(!r.lvl || id==='generator') continue;
+    let v = r.w * ROOMS[id].per * (1 + 0.5*(r.lvl-1));
+    if(id==='filter') v += r.lvl*2;
+    v = Math.round(v*eff);
+    out[id]=v;
+    if(id==='filter') d.rad -= v; else d[ROOMS[id].res] += v;
+  }
+  const n=S.residents.length;
+  d.food -= n; d.water -= n;
+  d.rad  += 5;          // радиация просачивается с поверхности
+  if(S.residents.length>5 && !S.rooms.medbay.lvl) d.morale -= 1;  // теснота и тоска без медпункта
+  return {d, prodE, useE, eff, out};
+}
+
+function endDay(){
+  const {d, eff} = compute();
+  const r=S.res, log=[];
+  const sign = v => (v>=0?'+':'')+v;
+  log.push(`🍞 Еда ${sign(d.food)}   💧 Вода ${sign(d.water)}   🛠 ${sign(d.materials)}`);
+  if(eff<1) log.push(`<span class="warn">⚡ Не хватает энергии — отсеки работали на ${Math.round(eff*100)}%</span>`);
+  for(const k in d) r[k]+=d[k];
+
+  // Голод и жажда
+  if(r.food<0 || r.water<0){
+    r.food=Math.max(0,r.food); r.water=Math.max(0,r.water);
+    S.hunger++; r.morale-=8;
+    log.push('<span class="bad">Еды или воды не хватило. Люди голодают.</span>');
+    if(S.hunger>=2){ const v=killResident(); log.push(`<span class="bad">☠ ${v} не пережил голод.</span>`); }
+  } else S.hunger=0;
+
+  // Радиация
+  if(r.rad>=60){ r.morale-=6; log.push('<span class="warn">☢ Высокая радиация. У людей кровоточат дёсны.</span>'); }
+  if(r.rad>=90 && S.residents.length){ const v=killResident(); r.rad-=15; log.push(`<span class="bad">☠ ${v} умер от лучевой болезни.</span>`); }
+
+  clamp();
+  S.log=log;
+  S.day++;
+  checkEnding();
+}
+
+function checkEnding(){
+  if(S.ending) return;
+  if(S.residents.length===0) S.ending='silence';
+  else if(S.res.morale<=0) S.ending='mutiny';
+  else if(S.day>30) S.ending = (S.residents.length>=6 && S.res.morale>=40) ? 'city' : 'endure';
+}
+
+/* =========================================================
+   6. ДЕЙСТВИЯ ИГРОКА
+   ========================================================= */
+function go(screen){ S.screen=screen; save(); render(); window.scrollTo(0,0); }
+
+function togglePick(id){
+  haptic();
+  const i=S.picked.indexOf(id);
+  if(i>=0) S.picked.splice(i,1); else if(S.picked.length<3) S.picked.push(id);
+  render();
+}
+function descend(){
+  haptic('medium');
+  S.picked.forEach(id=>{
+    if(id==='food') S.res.food+=15;
+    if(id==='water') S.res.water+=15;
+    if(id==='tools') S.res.materials+=10;
+    if(id==='meds') S.res.morale+=15;
+    if(id==='radio') S.rooms.radio.lvl=1;
+    if(id==='filter') S.rooms.filter.lvl=2;
+  });
+  playIntro(startMorning);
+}
+function startMorning(){
+  S.eventId = pickEvent();
+  S.ctx = {};
+  const e=EVENTS[S.eventId];
+  if(e.pre) e.pre();
+  go('event');
+}
+function choose(i){
+  haptic('medium');
+  const e=EVENTS[S.eventId], c=e.choices[i];
+  if(c.req && !c.req()) return;
+  S.resultText = c.go();
+  if(e.once || S.eventId==='knock') S.seen.push(S.eventId);
+  S.lastEvent = S.eventId;
+  clamp(); checkEnding();
+  if(S.ending) return go('ending');
+  go('result');
+}
+function addWorker(id, delta){
+  const r=S.rooms[id];
+  if(delta>0 && (freeWorkers()<=0 || r.w>=r.lvl*2)) return;
+  if(delta<0 && r.w<=0) return;
+  haptic(); r.w+=delta; save(); render();
+}
+function upgrade(id){
+  const r=S.rooms[id];
+  const cost = r.lvl===0 ? ROOMS[id].cost : r.lvl*8;
+  if(r.lvl>=MAX_LVL || S.res.materials<cost) return;
+  haptic('heavy'); S.res.materials-=cost; r.lvl++; save(); render();
+}
+function finishDay(){ haptic('medium'); endDay(); go(S.ending ? 'ending' : 'summary'); }
+function restart(){ wipe(); S=newState(); S.screen='pick'; go('pick'); }
+
+/* =========================================================
+   7. ОТРИСОВКА ЭКРАНОВ
+   ========================================================= */
+const app = document.getElementById('app');
+
+function hud(){
+  const r=S.res, {prodE,useE}=compute();
+  const radCls = r.rad>=60?'bad':r.rad>=35?'warn':'';
+  const morCls = r.morale<=20?'bad':r.morale<=40?'warn':'';
+  return `<div class="hud">
+    <div class="day"><span>ДЕНЬ ${S.day}</span><span>👥 ${S.residents.length}</span></div>
+    <div>🍞 ${r.food}</div><div>💧 ${r.water}</div><div>🛠 ${r.materials}</div>
+    <div class="${prodE<useE?'warn':''}">⚡ ${prodE}/${useE}</div>
+    <div class="${radCls}">☢ ${r.rad}</div><div class="${morCls}">🙂 ${r.morale}</div>
+    <div>${S.flags.signal?'📡 '+r.signal+'/10':'📡 —'}</div>
+    <div class="dim">${freeWorkers()} своб.</div>
+  </div>`;
+}
+
+function render(){
+  const sc=S.screen;
+
+  if(sc==='title'){
+    app.innerHTML = `
+      <h1>БУНКЕР</h1><p class="dim">ядерная зима · день первый</p>
+      <div class="card"><p>Ты — тот, кто успел спуститься. Теперь от твоих решений зависит, кто доживёт до весны.</p></div>
+      <button class="main" onclick="go(S.screen_prev||'event')">Продолжить</button>
+      <button onclick="restart()">Новая игра</button>`;
+    return;
+  }
+
+  if(sc==='pick'){
+    app.innerHTML = `
+      <h1>БУНКЕР</h1>
+      <p class="bad blink">⚠ ВОЗДУШНАЯ ТРЕВОГА</p>
+      <div class="card">
+        <p>До удара пятнадцать минут. Ты, сосед-электрик Пётр и медсестра Вера бежите к недостроенному бункеру под гаражами.</p>
+        <p>Унести можно только <b>три</b> вещи.</p>
+      </div>
+      ${ITEMS.map(it=>`<button class="${S.picked.includes(it.id)?'sel':''}" onclick="togglePick('${it.id}')">${it.name}<br><span class="small dim">${it.desc}</span></button>`).join('')}
+      <button class="main" ${S.picked.length<3?'disabled':''} onclick="descend()">Спуститься в бункер (${S.picked.length}/3)</button>`;
+    return;
+  }
+
+  if(sc==='event'){
+    const e=EVENTS[S.eventId];
+    app.innerHTML = hud() + `
+      <h2>☀ Утро · ${e.title}</h2>
+      <div class="card"><p>${e.text()}</p></div>
+      ${e.choices.map((c,i)=>`<button ${c.req&&!c.req()?'disabled':''} onclick="choose(${i})">› ${c.t}</button>`).join('')}`;
+    return;
+  }
+
+  if(sc==='result'){
+    app.innerHTML = hud() + `
+      <h2>${EVENTS[S.eventId].title}</h2>
+      <div class="card"><p>${S.resultText}</p></div>
+      <button class="main" onclick="go('manage')">К работе</button>`;
+    return;
+  }
+
+  if(sc==='manage'){
+    const {d,out,eff}=compute();
+    const sign=v=>(v>=0?'+':'')+v;
+    const cards = Object.keys(ROOMS).map(id=>{
+      const R=ROOMS[id], r=S.rooms[id];
+      if(r.lvl===0){
+        return `<div class="card"><b>${R.name}</b> <span class="dim small">не построен</span><br><span class="small dim">${R.desc}</span>
+          <button ${S.res.materials<R.cost?'disabled':''} onclick="upgrade('${id}')">Построить (−${R.cost} 🛠)</button></div>`;
+      }
+      const effect = id==='generator' ? `+${r.lvl*4 + r.w*R.per} ⚡` : (id==='filter' ? `−${out[id]} ☢` : `+${out[id]} ${({food:'🍞',water:'💧',materials:'🛠',morale:'🙂',signal:'📡'})[R.res]}`);
+      const upCost=r.lvl*8;
+      return `<div class="card"><b>${R.name}</b> <span class="dim small">ур. ${r.lvl}${R.use?' · −'+R.use+'⚡':''}</span>
+        <div class="row"><span>👥 ${r.w}/${r.lvl*2}</span>
+          <span><button onclick="addWorker('${id}',-1)">−</button> <button onclick="addWorker('${id}',1)">+</button></span>
+          <span class="good">${effect}</span></div>
+        ${r.lvl<MAX_LVL?`<button ${S.res.materials<upCost?'disabled':''} onclick="upgrade('${id}')">Улучшить до ур. ${r.lvl+1} (−${upCost} 🛠)</button>`:'<p class="small dim">Максимальный уровень</p>'}
+      </div>`;
+    }).join('');
+    app.innerHTML = hud() + `
+      <h2>🔧 День · Работа</h2>
+      <p class="small dim">Распредели людей по отсекам. Каждый житель ест 1 🍞 и пьёт 1 💧 в день.</p>
+      <div class="card small">Прогноз на вечер:
+        <span class="${d.food<0?'bad':'good'}">🍞 ${sign(d.food)}</span>
+        <span class="${d.water<0?'bad':'good'}">💧 ${sign(d.water)}</span>
+        <span>🛠 ${sign(d.materials)}</span>
+        <span class="${d.rad>0?'warn':'good'}">☢ ${sign(d.rad)}</span>
+        <span class="${d.morale<0?'warn':'good'}">🙂 ${sign(d.morale)}</span>
+        ${eff<1?`<br><span class="warn">⚡ Энергии хватает только на ${Math.round(eff*100)}%</span>`:''}
+      </div>
+      ${cards}
+      <button class="main" onclick="finishDay()">🌙 Закончить день</button>`;
+    return;
+  }
+
+  if(sc==='summary'){
+    app.innerHTML = hud() + `
+      <h2>🌙 Вечер · Итоги дня ${S.day-1}</h2>
+      <div class="card"><ul class="log">${S.log.map(l=>`<li>${l}</li>`).join('')}</ul></div>
+      <p class="small dim">Жители: ${S.residents.join(', ')}</p>
+      <button class="main" onclick="startMorning()">Новый день</button>`;
+    return;
+  }
+
+  if(sc==='ending'){
+    const E=ENDINGS[S.ending];
+    app.innerHTML = `
+      <h1 style="font-size:22px">${E.title}</h1>
+      <p class="dim">Концовка · день ${S.day}</p>
+      <div class="card"><p>${E.text}</p></div>
+      <div class="card small dim">Выжило: ${S.residents.length} · Мораль: ${S.res.morale} · Радиация: ${S.res.rad}</div>
+      <button class="main" onclick="restart()">Начать заново</button>`;
+    return;
+  }
+}
+
+/* =========================================================
+   7.5 ЗАСТАВКА: бег в бункер (canvas + звук)
+   ========================================================= */
+function playIntro(done){
+  const cv=document.createElement('canvas'); cv.id='cut';
+  const skipBtn=document.createElement('button'); skipBtn.id='skip'; skipBtn.textContent='Пропустить ›';
+  document.body.append(cv, skipBtn);
+  const ctx=cv.getContext('2d');
+  let W=0,H=0;
+  function resize(){ const d=window.devicePixelRatio||1; W=innerWidth; H=innerHeight; cv.width=W*d; cv.height=H*d; ctx.setTransform(d,0,0,d,0,0); }
+  resize(); addEventListener('resize', resize);
+
+  // --- город на горизонте (координаты в долях ширины/высоты) ---
+  const blds=[]; let bx=-0.02;
+  while(bx<1.05){
+    const w=0.04+Math.random()*0.07, h=0.08+Math.random()*0.22, win=[];
+    for(let wy=0.02; wy<h-0.02; wy+=0.03) for(let wx=0.008; wx<w-0.01; wx+=0.016)
+      if(Math.random()<0.45) win.push({x:wx,y:wy,off:1+Math.random()*6});
+    blds.push({x:bx,w,h,win}); bx+=w+0.004;
+  }
+  const lerp=(a,b,k)=>a+(b-a)*k, cl=v=>Math.max(0,Math.min(1,v)), ease=k=>k*k*(3-2*k);
+
+  // --- звук (рисуется синтезатором, файлов не нужно) ---
+  let ac=null;
+  try{
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    const T=ac.currentTime;
+    const noise=(len)=>{ const b=ac.createBuffer(1, ac.sampleRate*len, ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; const n=ac.createBufferSource(); n.buffer=b; return n; };
+    const env=(node, at, peak, dur)=>{ const g=ac.createGain(); g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(peak,at+0.02); g.gain.exponentialRampToValueAtTime(0.0001,at+dur); node.connect(g).connect(ac.destination); };
+    // сирена
+    const o=ac.createOscillator(), lfo=ac.createOscillator(), lg=ac.createGain(), f=ac.createBiquadFilter(), g=ac.createGain();
+    o.type='sawtooth'; o.frequency.value=620; lfo.frequency.value=0.25; lg.gain.value=230; f.type='lowpass'; f.frequency.value=1600;
+    lfo.connect(lg).connect(o.frequency); o.connect(f).connect(g).connect(ac.destination);
+    g.gain.setValueAtTime(0,T); g.gain.linearRampToValueAtTime(0.045,T+0.6); g.gain.setValueAtTime(0.045,T+7.1); g.gain.linearRampToValueAtTime(0,T+7.3);
+    o.start(T); lfo.start(T); o.stop(T+7.5); lfo.stop(T+7.5);
+    // взрыв: звук приходит позже вспышки
+    const n1=noise(4), lp1=ac.createBiquadFilter(); lp1.type='lowpass'; lp1.frequency.value=380; n1.connect(lp1); env(lp1, T+8.4, 0.9, 3.8); n1.start(T+8.4);
+    const th=ac.createOscillator(); th.frequency.setValueAtTime(55,T+8.4); th.frequency.exponentialRampToValueAtTime(25,T+10); env(th, T+8.4, 0.6, 1.8); th.start(T+8.4); th.stop(T+10.5);
+    // гермодверь
+    const n2=noise(0.6), lp2=ac.createBiquadFilter(); lp2.type='lowpass'; lp2.frequency.value=700; n2.connect(lp2); env(lp2, T+11.0, 0.7, 0.5); n2.start(T+11.0);
+    const cl1=ac.createOscillator(); cl1.type='triangle'; cl1.frequency.value=150; env(cl1, T+11.0, 0.35, 0.6); cl1.start(T+11.0); cl1.stop(T+11.8);
+  }catch(e){ ac=null; }
+
+  // --- бегущий человечек ---
+  function runner(x, y, h, ph, label){
+    ctx.save(); ctx.strokeStyle='#050505'; ctx.fillStyle='#050505'; ctx.lineCap='round'; ctx.lineWidth=h*0.1;
+    const hipY=y-h*0.45, shY=y-h*0.8, sw=Math.sin(ph)*0.7, lean=h*0.08;
+    const leg=(a)=>{ ctx.beginPath(); ctx.moveTo(x,hipY); const kx=x+Math.sin(a)*h*0.22, ky=hipY+Math.cos(a)*h*0.22; ctx.lineTo(kx,ky); ctx.lineTo(kx+Math.sin(a-0.6)*h*0.22, ky+Math.cos(a-0.6)*h*0.22); ctx.stroke(); };
+    leg(sw); leg(-sw);
+    ctx.beginPath(); ctx.moveTo(x,hipY); ctx.lineTo(x+lean,shY); ctx.stroke();
+    const arm=(a)=>{ ctx.beginPath(); ctx.moveTo(x+lean,shY); ctx.lineTo(x+lean+Math.sin(a)*h*0.25, shY+Math.cos(a)*h*0.25); ctx.stroke(); };
+    arm(-sw*1.2); arm(sw*1.2);
+    ctx.fillRect(x-h*0.2, shY-h*0.02, h*0.18, h*0.25);                 // рюкзак с вещами
+    ctx.beginPath(); ctx.arc(x+lean*1.4, shY-h*0.13, h*0.1, 0, 7); ctx.fill(); // голова
+    if(label){ ctx.fillStyle='#c9e265'; ctx.font='bold 12px Courier New'; ctx.textAlign='center'; ctx.fillText('ТЫ', x+lean, shY-h*0.32); }
+    ctx.restore();
+  }
+
+  let start=performance.now(), raf=0, finished=false, buzz={};
+  function once(key,fn){ if(!buzz[key]){ buzz[key]=1; fn(); } }
+
+  function frame(now){
+    const t=(now-start)/1000;
+    const HZ=H*0.6, GY=H*0.82;            // горизонт и земля
+    const flash=t>=7.2;
+
+    // тряска камеры
+    let amp=0;
+    if(t>7.2) amp+=8*Math.max(0,1-(t-7.2)/1.2);
+    if(t>8.4) amp+=16*Math.max(0,1-(t-8.4)/1.8);
+    if(t>11.0) amp+=9*Math.max(0,1-(t-11.0)/0.5);
+    ctx.save(); ctx.translate((Math.random()-.5)*amp, (Math.random()-.5)*amp);
+
+    // небо
+    const sky=ctx.createLinearGradient(0,0,0,HZ);
+    sky.addColorStop(0, flash?'#1a0d06':'#05070d'); sky.addColorStop(1, flash?'#7a3410':'#1a1420');
+    ctx.fillStyle=sky; ctx.fillRect(-20,-20,W+40,HZ+20);
+    // красная пульсация сирены
+    if(t<7.2){ ctx.fillStyle=`rgba(200,30,20,${0.12+0.1*Math.sin(t*6)})`; ctx.fillRect(-20,-20,W+40,HZ+20); }
+
+    // ядерный гриб
+    if(flash){
+      const k=cl((t-7.2)/5), mx=W*0.2, top=HZ-H*0.42*ease(k), cw=W*(0.08+0.16*ease(k));
+      ctx.save(); ctx.shadowColor='#ff7a1a'; ctx.shadowBlur=40;
+      const st=ctx.createLinearGradient(0,top,0,HZ); st.addColorStop(0,'#ffb04a'); st.addColorStop(1,'#5a1a08');
+      ctx.fillStyle=st; ctx.beginPath(); ctx.moveTo(mx-cw*0.12,HZ); ctx.lineTo(mx-cw*0.07,top+cw*0.3); ctx.lineTo(mx+cw*0.07,top+cw*0.3); ctx.lineTo(mx+cw*0.12,HZ); ctx.fill();
+      for(let i=0;i<7;i++){ const a=i/7*Math.PI*2+t*0.3; ctx.fillStyle=i%2?'#ff8a2a':'#ffcf6a';
+        ctx.beginPath(); ctx.ellipse(mx+Math.cos(a)*cw*0.3, top+Math.sin(a)*cw*0.12, cw*0.32, cw*0.2, 0, 0, 7); ctx.fill(); }
+      ctx.restore();
+    }
+
+    // город
+    blds.forEach(b=>{
+      const x=b.x*W, w=b.w*W, h=b.h*H;
+      ctx.fillStyle='#0b0b10'; ctx.fillRect(x, HZ-h, w, h+2);
+      b.win.forEach(wn=>{ if(t<wn.off && !flash){ ctx.fillStyle=Math.random()<0.02?'#6b5a2a':'#d8b25a'; ctx.fillRect(x+wn.x*W, HZ-h+wn.y*H, W*0.006, H*0.008); } });
+    });
+
+    // земля
+    const gr=ctx.createLinearGradient(0,HZ,0,H);
+    gr.addColorStop(0, flash?'#5a3a22':'#34352c'); gr.addColorStop(1,'#121310');
+    ctx.fillStyle=gr; ctx.fillRect(-20,HZ,W+40,H-HZ+20);
+    // фонарь
+    const lampX=W*0.45, lampOn = t<6.5 && Math.random()>0.06;
+    ctx.fillStyle='#111'; ctx.fillRect(lampX-2, GY-H*0.24, 4, H*0.24); ctx.fillRect(lampX-2, GY-H*0.24, W*0.05, 4);
+    if(lampOn){ const lg=ctx.createRadialGradient(lampX+W*0.045,GY,5,lampX+W*0.045,GY,W*0.18); lg.addColorStop(0,'rgba(230,190,110,.35)'); lg.addColorStop(1,'rgba(230,190,110,0)'); ctx.fillStyle=lg; ctx.fillRect(lampX-W*0.2,GY-H*0.25,W*0.45,H*0.3); }
+
+    // бункер
+    const bx0=W*0.68, bw=W*0.26, bh=H*0.13, dx=W*0.74, dw=W*0.08, dh=H*0.1;
+    ctx.fillStyle='#4a4c40'; ctx.fillRect(bx0, GY-bh, bw, bh);
+    ctx.fillStyle='#3a3c32'; ctx.fillRect(bx0-W*0.02, GY-bh-6, bw+W*0.04, 8);
+    ctx.fillStyle='#2a2c24'; ctx.fillRect(bx0+bw*0.75, GY-bh-H*0.06, W*0.02, H*0.06);    // вентиляция
+    ctx.fillStyle='#e8c23a'; ctx.font=`bold ${Math.round(H*0.035)}px sans-serif`; ctx.textAlign='center'; ctx.fillText('☢', bx0+bw*0.78, GY-bh*0.4);
+    ctx.fillStyle='#000'; ctx.fillRect(dx, GY-dh, dw, dh);                                   // проём
+    const glow=ctx.createLinearGradient(dx,0,dx+dw,0); glow.addColorStop(0,'rgba(120,90,30,.5)'); glow.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=glow; ctx.fillRect(dx,GY-dh,dw,dh);
+
+    // бегущие: Ты, Пётр, Вера
+    const rh=H*0.11;
+    [0,1,2].forEach(i=>{
+      const s0=3+i*0.45, s1=9.4+i*0.35, k=(t-s0)/(s1-s0);
+      if(k<0||k>1) return;
+      const x=lerp(-W*0.08, dx+dw*0.5, ease(cl(k))*0.4+cl(k)*0.6);
+      ctx.save(); ctx.globalAlpha = k>0.93 ? (1-k)/0.07 : 1;
+      runner(x, GY - i*2, rh*(1-i*0.06), t*14+i*1.7, i===0 && t<7);
+      ctx.restore();
+    });
+
+    // гермодверь закрывается
+    const p=ease(cl((t-10.4)/0.6));
+    if(p>0){
+      ctx.fillStyle='#6a6d5e'; ctx.fillRect(dx+dw*(1-p), GY-dh, dw*p, dh);
+      for(let i=0;i<5;i++){ ctx.fillStyle=i%2?'#111':'#e8c23a'; ctx.fillRect(dx+dw*(1-p), GY-dh+i*dh/5, 4, dh/5); }
+    }
+
+    // ударная волна: пыль
+    if(t>8.4 && t<11){ ctx.fillStyle=`rgba(120,80,50,${0.35*Math.max(0,1-(t-8.4)/2.6)})`; ctx.fillRect(-20,-20,W+40,H+40); }
+    ctx.restore();
+
+    // вспышка
+    if(t>7.1 && t<8.6){ const a = t<7.2 ? (t-7.1)/0.1 : 1-(t-7.2)/1.4; ctx.fillStyle=`rgba(255,250,235,${cl(a)})`; ctx.fillRect(0,0,W,H); }
+
+    // подписи
+    ctx.textAlign='center'; ctx.font=`bold ${Math.max(14,Math.round(W*0.04))}px Courier New`;
+    if(t<3 && Math.floor(t*2)%2===0){ ctx.fillStyle='#e05a47'; ctx.fillText('22:47 · ВОЗДУШНАЯ ТРЕВОГА', W/2, H*0.1); }
+    if(t>3.2 && t<6.8){ ctx.fillStyle='#d8e0c8'; ctx.fillText('До бункера — двести метров', W/2, H*0.1); }
+    if(t>8.6 && t<10.4){ ctx.fillStyle='#e8a23a'; ctx.fillText('БЕГОМ!', W/2, H*0.1); }
+
+    // затемнение и финальный текст
+    if(t>11.3){
+      ctx.fillStyle=`rgba(0,0,0,${cl((t-11.3)/0.4)})`; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#c9e265';
+      const l1='Гермодверь закрыта.', l2='Наверху остался весь мир.';
+      if(t>12) ctx.fillText(l1.slice(0, Math.floor((t-12)*18)), W/2, H*0.46);
+      if(t>13.3) ctx.fillText(l2.slice(0, Math.floor((t-13.3)*18)), W/2, H*0.54);
+    }
+
+    // вибрация в Telegram
+    if(t>7.2) once('f',()=>haptic('heavy'));
+    if(t>8.4) once('w',()=>haptic('heavy'));
+    if(t>11.0) once('d',()=>haptic('heavy'));
+
+    if(t>16) return finish();
+    raf=requestAnimationFrame(frame);
+  }
+
+  function finish(){
+    if(finished) return; finished=true;
+    cancelAnimationFrame(raf); removeEventListener('resize', resize);
+    try{ if(ac) ac.close(); }catch(e){}
+    cv.style.opacity='0'; skipBtn.remove();
+    setTimeout(()=>{ cv.remove(); done(); }, 600);
+  }
+  skipBtn.onclick=finish;
+  raf=requestAnimationFrame(frame);
+}
+
+/* =========================================================
+   8. ЗАПУСК
+   ========================================================= */
+load(raw=>{
+  let saved=null;
+  try{ saved = raw ? JSON.parse(raw) : null; }catch(e){}
+  if(saved && saved.screen && saved.screen!=='ending' && saved.screen!=='pick'){
+    S = saved; S.screen_prev = saved.screen; S.screen='title';
+  } else {
+    S = newState();
+  }
+  render();
+});
+</script>
+</body>
+</html>
