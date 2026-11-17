@@ -84,7 +84,7 @@
   .dock{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(14,16,23,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--gline);padding:8px 14px calc(8px + env(safe-area-inset-bottom))}
   .dock .inner{max-width:520px;margin:0 auto}
   .dock .main{margin:0 0 8px}
-  .tabbar{display:grid;grid-template-columns:repeat(4,1fr);text-align:center}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);text-align:center}
   .tabbar div{font-size:10px;color:#7d8394;cursor:pointer;padding:2px 0}
   .tabbar div b{display:block;font-size:19px;margin-bottom:1px;filter:grayscale(1);opacity:.6}
   .tabbar div.on{color:var(--acc)} .tabbar div.on b{filter:none;opacity:1}
@@ -108,6 +108,18 @@
   .startscr .big{font-size:48px;letter-spacing:4px;margin:6px 0 10px;position:relative;text-shadow:0 0 30px rgba(255,138,61,.5)}
   .startscr .tap{margin:36px 0 10px;font-weight:800;font-size:16px;color:#170c05;background:linear-gradient(90deg,#ff7a30,#ff9a4a);padding:14px 26px;border-radius:30px;position:relative;animation:tap 1.6s ease-in-out infinite;box-shadow:0 6px 24px rgba(255,122,48,.35)}
   @keyframes tap{50%{transform:scale(1.05)}}
+  .emerg{position:fixed;inset:0;z-index:60;padding:18px 16px 30px;overflow-y:auto;text-align:center;
+    background:radial-gradient(circle at 50% 30%,#5a0d0a,#1a0505 70%);animation:empulse 1s ease-in-out infinite}
+  .emerg.done{animation:none;background:radial-gradient(circle at 50% 30%,#2a0d0a,#0d0505 70%)}
+  @keyframes empulse{50%{background:radial-gradient(circle at 50% 30%,#7a1410,#220606 70%)}}
+  .emhead{font-family:Unbounded,sans-serif;font-weight:700;letter-spacing:2px;color:#ffb3a8;font-size:13px;margin-top:8px}
+  .emring{position:relative;width:132px;height:132px;margin:14px auto 6px}
+  .emring svg{width:100%;height:100%}
+  .emring b{position:absolute;inset:0;display:grid;place-items:center;font-family:Unbounded,sans-serif;font-size:44px;color:#fff;text-shadow:0 0 18px rgba(255,74,58,.8)}
+  .emtitle{color:#fff;font-size:20px;margin:6px 0}
+  .emtext{color:#ffd8d2;font-size:15px;max-width:420px;margin:0 auto 14px}
+  .embtn{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,160,150,.6);font-size:16px;padding:16px;justify-content:center;max-width:460px;margin:8px auto;color:#fff}
+  .embtn:active{background:rgba(255,90,70,.35)}
   .jr{border-left:2px solid var(--acc);padding:2px 0 2px 12px;margin:12px 0}
   .jr small{color:var(--dim);font-size:11px;font-weight:700;letter-spacing:1px}
   .jr b{display:block;margin:2px 0}
@@ -262,7 +274,7 @@ const ITEMS = [
   {id:'water',  name:'🚰 Канистры с водой', desc:'+15 воды'},
   {id:'tools',  name:'🧰 Инструменты',      desc:'+10 материалов'},
   {id:'pills',  name:'💊 Твои «витамины»',  desc:'Таблетки по рецепту. Без них болит голова'},
-  {id:'meds',   name:'🩹 Аптечка',          desc:'+15 морали, все здоровы'},
+  {id:'meds',   name:'🩹 Аптечка',          desc:'+15 морали, +1 💊 лекарство'},
   {id:'radio',  name:'📻 Радиоприёмник',    desc:'Радиорубка сразу построена'},
   {id:'filter', name:'🌀 Запасной фильтр',  desc:'Фильтр воздуха сразу 2 уровня'},
 ];
@@ -304,6 +316,7 @@ function newState(){
 }
 // перевод старых сохранений (жители были просто именами)
 function migrate(s){
+  if(s.flags && s.flags.medkit===1){ s.res.meds=(s.res.meds||0)+1; s.flags.medkit=2; }
   if(s.residents && typeof s.residents[0]==='string'){
     const PR={'Ты':'boss','Пётр':'electric','Вера':'medic','Марина':'farmer','Лёша':'child','Соня':'child','Глеб':'mechanic'};
     s.residents = s.residents.map(n=>makePerson(n, PR[n]||'plumber', n==='Ты'?'leader':undefined));
@@ -338,13 +351,13 @@ function syncW(){
     if(a.length>cap(id)) a.slice(cap(id)).forEach(p=>p.job=null);
     S.rooms[id].w = assigned(id).filter(p=>!p.sick).length;
   }
-  people(p=>p.sick && p.job).forEach(p=>p.job=null);
+  people(p=>(p.sick || p.away || p.locked) && p.job).forEach(p=>p.job=null);
 }
 function workers(){ return people(p=>p.job).length; }
-function freeWorkers(){ return people(p=>!p.job && !p.sick).length; }
+function freeWorkers(){ return people(p=>!p.job && !p.sick && !p.away && !p.locked).length; }
 // сила работника в отсеке
 function mult(p, id){
-  if(p.sick || p.migraine>0) return 0;
+  if(p.sick || p.migraine>0 || p.away || p.locked) return 0;
   let m=1;
   if(PROFS[p.prof].room===id) m*=1.5;
   if(p.prof==='child') m*=0.5;
@@ -358,6 +371,7 @@ function clamp(){
   r.morale = Math.max(0, Math.min(100, r.morale));
   r.rad    = Math.max(0, Math.min(100, r.rad));
   ['food','water','materials','signal'].forEach(k=> r[k]=Math.max(0, r[k]));
+  r.meds=Math.max(0, r.meds||0);
   S.residents.forEach(p=> p.hp=Math.max(0, Math.min(100, Math.round(p.hp))));
 }
 
@@ -473,7 +487,7 @@ const EVENTS = {
     title:'Жар',
     text:()=>{ const p=P(S.ctx.name); return `${who(p)} мечется в лихорадке. Лоб горячий, губы потрескались. Пока болен — не работает, теряет здоровье и может заразить других.${p.trait==='sickly'&&traitKnown(p)?' Опять — здоровье у неё/него всегда было слабым.':''}`; },
     choices:[
-      {t:'Открыть аптечку (💊)', req:()=>S.flags.medkit===1, go:()=>{ const p=P(S.ctx.name); S.flags.medkit=2; if(p){ p.sick=false; p.hp=Math.min(100,p.hp+20); } return `Таблетки из аптечки сделали своё дело. ${S.ctx.name} снова на ногах. Аптечка пуста.`; }},
+      {t:'Дать лекарство (−1 💊)', req:()=>(S.res.meds||0)>=1, go:()=>{ const p=P(S.ctx.name); S.res.meds--; if(p){ p.sick=false; p.hp=Math.min(100,p.hp+20); } return `Таблетки из аптечки сделали своё дело. ${S.ctx.name} снова на ногах. `; }},
       {t:'Лечить в медпункте (−3 💧)', req:()=>S.rooms.medbay.lvl>0 && S.res.water>=3, go:()=>{ const p=P(S.ctx.name); S.res.water-=3; S.res.morale+=3; if(p){ p.sick=false; p.hp=Math.min(100,p.hp+10); } return `${S.ctx.name} идёт на поправку и завтра сможет работать.`; }},
       {t:'Отдать двойную порцию воды (−4 💧)', req:()=>S.res.water>=4, go:()=>{ const p=P(S.ctx.name); S.res.water-=4; if(!p) return ''; p.hp=Math.min(100,p.hp+20); if(chance(.5)){ p.sick=false; return `Жар спадает. ${p.name} выживет.`; } return `Стало легче, но ${p.name} ещё болен. Медпункт бы помог.`; }},
       {t:'Изолировать от остальных', go:()=>{ const p=P(S.ctx.name); S.res.morale-=4; if(p) p.isolated=true; return `${S.ctx.name} будет болеть в одиночестве — зато никого не заразит.`; }},
@@ -515,7 +529,7 @@ const EVENTS = {
     ]
   },
   sortie:{
-    cond:()=>S.day>=5 && people(canWalk).length>=1,
+    cond:()=>S.day>=5 && S.day<13 && people(canWalk).length>=1,
     pre:()=>{ const c=people(canWalk).filter(p=>p.name!=='Ты'); const pool=c.length?c:people(canWalk);
       S.ctx.cands = pool.sort(()=>Math.random()-.5).slice(0,3).map(p=>p.name); },
     title:'Вылазка',
@@ -675,6 +689,194 @@ const EVENTS = {
       {t:'Выдернуть все провода', go:()=>{ S.pendingAct=2; S.res.morale-=3; return 'Ты рвёшь провода один за другим. Тишина. А ночью голос из стены снова считает: «…двадцать восемь…».'; }},
     ]
   },
+  /* ===================== АКТ 2 «НАВЕРХУ» — сюжет ===================== */
+  act2_open:{
+    story:true, once:true,
+    title:'Можно подняться',
+    text:()=>'Дозиметр у шлюза впервые за две недели показывает терпимый фон. Наверху — пепел, тишина и город, который больше не город. Пора искать то, чего нет внизу: лекарства, запчасти, людей. И ответы.',
+    choices:[
+      {t:'Открыть карту района', go:()=>{ S.flags.mapOpen=1; S.openMap=1; return 'Пётр приносит из подсобки старую карту района. На ней кто-то уже отметил крестиками аптеку, школу и НИИ «Связь». Почерк кажется знакомым. Во вкладке 🗺 «Карта» теперь можно отправлять людей на вылазки.'; }},
+    ]
+  },
+  gleb_knows:{
+    story:true, once:true, cond:()=>!!P('Глеб'),
+    title:'Седьмой отдел',
+    pre:()=>{ if(lucid()) remember('Пост охраны, Глеб в форме кивает тебе. Белый медблок, шприц, голос: «Он должен забыть седьмой отдел». Тебе стирали память — много раз.','fb3'); },
+    text:()=>'Глеб садится напротив и долго молчит. «Я вспомнил, где тебя видел. Седьмой отдел. Полгода я стоял на посту у твоей двери. Каждую ночь тебя водили в медблок. Ты правда ничего не помнишь?» Он оглядывается. «И ещё. „Заря“ ищет меня. Из-за одной вещи».',
+    choices:[
+      {t:'Сохранить его тайну', go:()=>{ S.flags.glebAlly=1; S.res.morale+=2; clue('g_post','Глеб полгода охранял твою дверь в седьмом отделе. Тебя каждую ночь водили в медблок.'); return 'Глеб кивает. «Я твой должник, Связист». Впервые кто-то называет тебя так — и это не звучит как угроза.'; }},
+      {t:'Расспросить про «одну вещь»', go:()=>{ S.flags.glebAlly=1; S.flags.knowKeycard=1; clue('g_card','У Глеба ключ-карта «Полдня» — открывает любой узел связи. Поэтому «Заря» его ищет.'); return 'Глеб достаёт из-под стельки пластиковую карту с гербом и цифрой «П». «Открывает любой узел связи. Любой. Поэтому они меня и ищут». Он прячет её обратно.'; }},
+      {t:'Выдать Глеба «Заре»', go:()=>{ killResident('Глеб'); S.flags.glebGiven=1; S.flags.zaryaFavor=(S.flags.zaryaFavor||0)+1; S.res.morale-=6; return 'Через два часа у шлюза стоят люди в белой химзащите. Глеб уходит молча. Ракитин по радио: «Вы приняли правильное решение, Связист». На душе погано.'; }},
+    ]
+  },
+  winter:{
+    story:true, once:true,
+    title:'Ядерная зима',
+    text:()=>'Утром на стенах иней. Пепел закрыл солнце, и холод пришёл быстрее, чем ждали. Обогрев требует энергии: генератор теперь должен работать и на тепло. Без него люди будут мёрзнуть и болеть.',
+    choices:[
+      {t:'Утеплить отсеки (−6 🛠)', req:()=>S.res.materials>=6, go:()=>{ S.flags.winter=1; S.flags.insulated=1; S.res.materials-=6; return 'Стены обиты войлоком и картоном. Обогрев будет брать меньше энергии (+1 ⚡ вместо +2). ❄ Зима началась.'; }},
+      {t:'Жечь мусор в бочке', go:()=>{ S.flags.winter=1; S.res.rad+=5; S.res.morale+=2; return 'У бочки с огнём тепло и почти уютно. Дым тянет радиацию. ❄ Зима началась: обогрев берёт +2 ⚡.'; }},
+      {t:'Терпеть', go:()=>{ S.flags.winter=1; return 'Все спят в куртках. ❄ Зима началась: обогрев берёт +2 ⚡. Если энергии не хватит — люди будут мёрзнуть.'; }},
+    ]
+  },
+  raiders_ultimatum:{
+    story:true, once:true,
+    title:'Бес у шлюза',
+    text:()=>`У шлюза — трое в самодельной броне из дорожных знаков. Главный улыбается в камеру: «Меня зовут Бес. Каждые три дня — восемь банок еды. Или зайдём сами».${S.flags.marinaRaiders?' За его спиной стоит Марина и не смотрит в камеру.':''}`,
+    choices:[
+      {t:'Платить дань', go:()=>{ S.flags.tribute=1; S.res.morale-=3; return 'Бес довольно хлопает по двери. Каждые три дня вы отдаёте 8 🍞. Если еды не хватит — он придёт сам.'; }},
+      {t:'Отказать', go:()=>{ S.flags.raidersHostile=1; S.res.morale+=3; return '«Зря», — говорит Бес и уходит. Жители смотрят на тебя с уважением — и со страхом. Рейдеры вернутся. Готовьтесь: мастерская и здоровые взрослые помогут в обороне.'; }},
+      {t:'Предложить разговор (−8 🛠)', req:()=>S.res.materials>=8, go:()=>{ S.flags.raidersTalk=1; S.res.materials-=8; return 'Ты передаёшь через шлюз ящик с инструментами. Бес взвешивает его в руке. «Деловой сосед. Посмотрим». Он уходит, не назвав цену.'; }},
+    ]
+  },
+  drawing2:{
+    story:true, once:true, cond:()=>!!P('Соня'),
+    title:'Второй рисунок',
+    text:()=>'Соня рисует быстро, высунув язык. Ты спишь на нарах. Над тобой стоит человек в кепке и держит у уха чёрную коробочку. «Это дядя Петя. Он ночью разговаривает с коробочкой. Про тебя».',
+    choices:[
+      {t:'Забрать рисунок', go:()=>{ S.flags.drawings=(S.flags.drawings||0)+1; clue('s_draw2','Рисунок Сони: Пётр ночью стоит над тобой с рацией. «Разговаривает с коробочкой. Про тебя».'); return 'Рисунок отправляется во внутренний карман, к первому.'; }},
+      {t:'Показать рисунок Петру', req:()=>!!P('Пётр'), go:()=>{ S.flags.drawings=(S.flags.drawings||0)+1; trustP(-6); clue('s_draw2','Рисунок Сони: Пётр с рацией над тобой. Пётр побледнел, когда увидел его.'); return 'Пётр смотрит на рисунок слишком долго. «Дети фантазируют», — говорит он и выходит. Руки у него дрожат.'; }},
+      {t:'Сказать Соне, что это просто сон', go:()=>{ S.res.morale+=1; return 'Соня пожимает плечами. «Может быть. Но дядя в стене сказал, что это правда».'; }},
+    ]
+  },
+  peter_caught:{
+    story:true, once:true, cond:()=>!!P('Пётр'),
+    title:'У рации',
+    text:()=>`Ночь. Ты спускаешься в радиорубку и застаёшь Петра в наушниках: «…Узел 7, объект вспоминает. Повторяю: вспоминает…». Он оборачивается. Улики: ${(S.clues||[]).filter(c=>c.id.startsWith('p_')||c.id==='s_draw2').length}. Доверие между вами: ${S.trust>=60?'крепкое':S.trust>=40?'шаткое':'почти нет'}.`,
+    choices:()=>[
+      {t:'Выслушать его', go:()=>{
+        if(S.trust>=45){ S.flags.peterConfessed=1; trustP(10); clue('p_family','Пётр признался: «Заря» держит его жену Аню и дочь Катю. За это он следил за тобой.');
+          return 'Пётр садится на пол. «Аня и Катюша. Жена и дочь. Их увезли в „Зарю“ за месяц до войны. Ракитин сказал: присматривай за соседом — и они будут живы. Сирена — это сигнал: привести тебя сюда. Прости меня». Он плачет.'; }
+        trustP(-5); return '«Частоты проверял», — говорит Пётр, не глядя в глаза. Он врёт, и вы оба это знаете.'; }},
+      {t:'Запереть в кладовой', go:()=>{ const p=P('Пётр'); if(p){ p.locked=true; p.job=null; } S.flags.peterLocked=1; S.flags.zaryaAlert=1; S.res.morale-=3;
+        return 'Замок щёлкает. Пётр не сопротивляется. Его рация молчит — и «Заря» наверняка это заметит. Пётр теперь не работает.'; }},
+      {t:'Выгнать наверх', go:()=>{ killResident('Пётр'); S.flags.peterExiled=1; S.res.morale-=5; return 'Пётр уходит в метель, не оглядываясь. Теперь Ракитин узнает всё — от него самого.'; }},
+      {t:'Сделать двойным агентом', req:()=>S.trust>=35, go:()=>{ S.flags.peterDouble=1; if(S.trust<55 && chance(.4)) S.flags.peterTraitor=1; trustP(5);
+        return '«Будешь докладывать то, что скажу я». Пётр долго смотрит на тебя и кивает. «Они убьют их, если узнают». — «Значит, не узнают». Можно ли ему верить — покажет время.'; }},
+    ]
+  },
+  epidemic:{
+    story:true, once:true,
+    pre:()=>{ const pool=people(p=>!p.sick && p.name!=='Ты').sort((a,b)=>(b.trait==='sickly')-(a.trait==='sickly')); pool.slice(0,3).forEach(p=>p.sick=true); S.ctx.n=Math.min(3,pool.length); },
+    title:'Эпидемия',
+    text:()=>`Кашель, жар, сыпь. За сутки слегли ${S.ctx.n}. Это не простуда. Вечером оживает радио: «Узел 7, это „Заря“. Мы знаем о вашей беде. У нас есть вакцина. Назовите цену, которую готовы заплатить».`,
+    choices:[
+      {t:'Использовать лекарства (−2 💊)', req:()=>(S.res.meds||0)>=2, go:()=>{ S.res.meds-=2; people(p=>p.sick).forEach(p=>{ p.sick=false; p.hp=Math.min(100,p.hp+10); }); return 'Лекарства из аптеки сделали своё дело. Через два дня все на ногах. «Заре» вы ничего не должны.'; }},
+      {t:'Сообщить «Заре» частоту Узла 7', go:()=>{ people(p=>p.sick).forEach(p=>p.sick=false); S.flags.leakedNode=1; clue('z_freq','Ты отдал «Заре» частоту Узла 7 в обмен на вакцину.'); return 'Ящик с вакциной оставляют у шлюза. Все поправляются. А «Заря» теперь слышит каждое слово вашего узла.'; }},
+      {t:'Отдать «Заре» человека', req:()=>people(p=>p.name!=='Ты' && p.prof!=='child').length>0, go:()=>{ const v=P('Вера') || rnd(people(p=>p.name!=='Ты' && p.prof!=='child')); const n=v.name; killResident(n); people(p=>p.sick).forEach(p=>p.sick=false); S.res.morale-=8; S.flags.gaveToZarya=n;
+        return `«Нам нужна медсестра», — говорит голос. ${n} уходит к шлюзу сама/сам. Вакцина спасает остальных. В бункере долго никто не разговаривает.`; }},
+      {t:'Справимся сами', go:()=>{ S.res.morale+=2; return 'Ты выключаешь рацию. Больных изолируют, медпункт работает круглые сутки. Аптека и больница на карте — шанс найти лекарства.'; }},
+    ]
+  },
+  nii_hint:{
+    story:true, once:true, cond:()=>!S.flags.folder,
+    title:'Между числами',
+    text:()=>'Ночью голос в стене снова считает: «…девятнадцать…». Но в этот раз между числами — шёпот, будто кто-то говорит в микрофон, закрыв его ладонью: «…НИИ „Связь“… третий этаж… сейф…». Голос — твой.',
+    choices:[
+      {t:'Запомнить', go:()=>{ clue('nii','Голос в стене: «НИИ „Связь“, третий этаж, сейф».'); return 'НИИ «Связь» есть на карте района. Высокий фон — но, похоже, именно там то, что ты ищешь.'; }},
+    ]
+  },
+  lesha_gone:{
+    story:true, once:true, cond:()=>!!P('Лёша'),
+    pre:()=>{ const p=P('Лёша'); S.leshaSave=JSON.stringify(p); killResident('Лёша'); },
+    title:'Лёша ушёл',
+    text:()=>`Утром нары Лёши пусты. Следы ведут к шлюзу — он открыл его изнутри. На полу записка: «Я найду ${S.flags.cold||S.flags.hard?'маму':'папу'}. Не ищите».`,
+    choices:()=>[
+      {t:'Отправить поисковую группу', req:()=>people(canWalk).length>0, go:()=>{ const s=rnd(people(canWalk).filter(p=>p.name!=='Ты'))||people(canWalk)[0]; hurt(s,15);
+        if(chance(.7)){ addResident('Лёша','child'); const l=P('Лёша'); try{ Object.assign(l, JSON.parse(S.leshaSave)); l.hp=60; }catch(e){} clue('tihiy2','Лёша: «Меня вывел из развалин дядя в противогазе. Он ничего не говорил».');
+          return `${s.name} находит Лёшу у развалин школы — замёрзшего, но живого. «Меня вывел дядя в противогазе, — шепчет он. — Он ничего не говорил. А потом его не стало». ${s.name} никого не видел(а).`; }
+        S.flags.leshaLost=1; S.res.morale-=10; return `${s.name} возвращается к вечеру одна/один. Следы обрываются у реки.`; }},
+      {t:'Ждать — он вернётся', go:()=>{ S.queue=(S.queue||[]).concat('lesha_return'); return 'Ты оставляешь свет у шлюза. Ночь тянется бесконечно.'; }},
+      ...((S.flags.marinaRaiders||S.flags.marinaSorry) ? [{t:'Попросить Марину найти его', go:()=>{ S.flags.leshaWithMarina=1; S.res.morale+=2; return 'Марина отвечает сразу: «Найду». Вечером по радио: «Он со мной. Спасибо, что сказали». Лёша остаётся с мамой.'; }}] : []),
+    ]
+  },
+  lesha_return:{
+    queued:true,
+    title:'Стук под утро',
+    text:()=>'Под утро — слабый стук в шлюз.',
+    choices:[
+      {t:'Открыть', go:()=>{ if(chance(.45)){ addResident('Лёша','child'); const l=P('Лёша'); try{ Object.assign(l, JSON.parse(S.leshaSave)); l.hp=50; }catch(e){} clue('tihiy2','Лёша: «Меня довёл до шлюза дядя в противогазе».');
+          return 'На пороге Лёша — синий от холода. «Меня довёл дядя в противогазе, — говорит он, стуча зубами. — Он сказал: „Ещё рано“». Больше он ничего не помнит.'; }
+        S.flags.leshaLost=1; S.res.morale-=10; return 'За дверью никого. Только ветер и пепел. Лёша не вернулся.'; }},
+    ]
+  },
+  marina_warn:{
+    story:true, once:true, cond:()=>!!(S.flags.marinaSorry && S.flags.raidersHostile),
+    title:'Шёпот в эфире',
+    text:()=>'Радио трещит. Марина, шёпотом: «Бес придёт через два дня. С юга, через вентиляцию. Я ничего не говорила».',
+    choices:[ {t:'Спасибо, Марина', go:()=>{ S.flags.warned=1; return 'Вентиляцию с юга заваривают листами железа. Теперь у вас есть преимущество (+3 к обороне).'; }} ]
+  },
+  vera_offer:{
+    story:true, once:true, cond:()=>!!P('Вера'),
+    title:'Брат Веры',
+    text:()=>'Радио: «Вера Андреевна, ваш брат Сергей жив, он у нас, в „Заре“. Мы готовы принять вас. Медики нам нужны». Вера смотрит на тебя. Она не плачет — только сжимает кулаки.',
+    choices:[
+      {t:'Отпустить её к брату', go:()=>{ killResident('Вера'); S.flags.veraLeft=1; S.res.morale-=4; return 'Вера обнимает каждого. У шлюза оборачивается: «Я не забуду». Медпункт опустел.'; }},
+      {t:'Уговорить остаться', go:()=>{ if(chance(.7)){ S.flags.veraStays=1; clue('v_stage2','Вера: брат перед войной проговорился про «второй этап» «Полдня».'); return 'Вера остаётся. Ночью она тихо говорит: «Сергей перед войной проговорился. Про какой-то „второй этап“. Я тогда не поняла». Она отворачивается к стене.'; }
+        killResident('Вера'); S.flags.veraLeft=1; S.res.morale-=6; return 'Вера кивает — а утром её нар пусты. Шлюз закрыт изнутри аккуратно, как она всё делала.'; }},
+      {t:'Попросить её стать нашими глазами в «Заре»', go:()=>{ killResident('Вера'); S.flags.veraSpy=1; S.res.morale-=2; return 'Вера долго молчит. «Хорошо. Я буду выходить на связь на частоте Узла 7, по ночам». Она уходит к «Заре» — уже как твой человек.'; }},
+    ]
+  },
+  raiders_assault:{
+    story:true, once:true, cond:()=>!!(S.flags.raidersHostile||S.flags.raidersTalk||S.flags.tribute),
+    title:'Бес вернулся',
+    text:()=> S.flags.raidersHostile
+      ? `Ночью — грохот у шлюза и скрежет в вентиляции. Рейдеры идут на штурм. Ваша оборона: ${defense()} (нужно 7+).`
+      : S.flags.raidersTalk
+        ? 'Бес приходит один и без оружия. «Говорят, у тебя счёты с „Зарёй“. У меня тоже: они забрали наших. Может, вместе?»'
+        : 'Бес пересчитывает банки и щурится в камеру: «Исправно платишь, сосед. Это хорошо. Пока».',
+    choices:()=> S.flags.raidersHostile ? [
+      {t:'Держать оборону', go:()=>{ if(defense()>=7){ S.flags.raidersBeaten=1; S.flags.raidersHostile=0; S.res.morale+=8; S.res.materials+=6; return 'Бой у шлюза длится полчаса. Рейдеры отступают, бросив оружие и раненого. Бес кричит из темноты: «Ещё увидимся!» +6 🛠, мораль +8.'; }
+        S.res.food=Math.max(0,S.res.food-15); S.res.materials=Math.max(0,S.res.materials-10); const v=rnd(people(p=>p.prof!=='child')); if(v) hurt(v,35); S.res.morale-=6; S.flags.raidersWon=1;
+        return `Рейдеры прорываются на склад. Забирают еду и материалы. ${v?v.name+' тяжело ранен(а).':''} Бес уходит, насвистывая.`; }},
+      {t:'Откупиться (−15 🍞)', req:()=>S.res.food>=15, go:()=>{ S.res.food-=15; S.flags.raidersHostile=0; S.flags.tribute=1; return 'Ты открываешь окошко шлюза и передаёшь банки. Бес смеётся: «Вот и договорились». Теперь — дань каждые три дня.'; }},
+    ] : S.flags.raidersTalk ? [
+      {t:'Заключить союз', go:()=>{ S.flags.raidersAlly=1; return 'Бес плюёт на ладонь и протягивает её через окошко шлюза. «Когда пойдём на „Зарю“ — свистни». Странный союзник. Но союзник.'; }},
+      {t:'Отказать вежливо', go:()=>{ return 'Бес пожимает плечами. «Как знаешь». Уходит без угроз — пока.'; }},
+    ] : [
+      {t:'Продолжать платить', go:()=>'Дань остаётся данью. Зато тихо.'},
+      {t:'Прекратить платить', go:()=>{ S.flags.tribute=0; S.flags.raidersHostile=1; S.res.morale+=2; return '«Зря», — говорит Бес. В следующий раз он придёт не за данью.'; }},
+    ]
+  },
+  folder_found:{
+    queued:true,
+    title:'Папка «Полдень»',
+    text:()=>'Непромокаемый пакет из сейфа НИИ. Внутри — папка с грифом «ПОЛДЕНЬ. ЭТАП 2. СОВ. СЕКРЕТНО». Текст — сплошные колонки цифр. Шифр. На полях — пометки карандашом. Твоим почерком.',
+    choices:[ {t:'Отнести в радиорубку', go:()=>{ clue('folder','Папка «Полдень. Этап 2» — зашифрована. Нужна радиорубка 2 ур. и 📡 15 связи.'); return 'Для расшифровки нужна радиорубка 2-го уровня и 📡 15 связи. Ставь людей в радиорубку — расшифровка случится сама, как только хватит связи.'; }} ]
+  },
+  folder_decoded:{
+    queued:true,
+    title:'Расшифровка',
+    text:()=>'Колонки цифр складываются в слова. «ЭТАП 2. Автоматический пуск по уцелевшим целям. Д+40, 12:00. Отмена — только с узла связи, ключом допуска и голосовым паролем оператора». Д+40. Сороковой день. Голос в стене считает не просто так.',
+    choices:[ {t:'Сорок дней. Ровно в полдень…', go:()=>{ S.flags.knowStrike=1; clue('strike','Второй залп «Полдня»: 40-й день, 12:00. Отменить можно с узла связи — нужен ключ и голосовой пароль оператора.'); return 'Теперь ты знаешь, до чего идёт отсчёт ⏳. И, кажется, догадываешься, кто был тем самым «оператором».'; }} ]
+  },
+  metro_meet:{
+    queued:true,
+    title:'Люди из «Метро»',
+    text:()=>'У входа на станцию «Пролетарская» вашего человека встретили люди с фонарями. Старик в ушанке представился Мироном. «Мы мирные. Торгуем. Вода у нас своя, артезианская. А у вас, говорят, мастера есть». ',
+    choices:[
+      {t:'Наладить торговлю', go:()=>{ S.flags.metroTrade=1; return 'Теперь каждая вылазка к «Метро» приносит воду и еду в обмен на материалы. Мирон обещает держать вход открытым.'; }},
+      {t:'Спросить про «Зарю»', go:()=>{ S.flags.metroTrade=1; clue('metro','Мирон из «Метро»: «Заря» забирает людей, и обратно никто не возвращается.'); return 'Мирон мрачнеет. «Оттуда не возвращаются. Забирают — и всё». Торговать он всё равно согласен.'; }},
+    ]
+  },
+  act2_finale:{
+    story:true, once:true,
+    pre:()=>{ if(lucid()) remember('Акт о готовности «Полдня». Ты отказался подписать: «Система неисправна». Ракитин: «Ты нам ещё понадобишься, Связист. Но не таким». Второй этап — Д+40, 12:00.','fb4'); },
+    title:'Второй полдень',
+    text:()=>{
+      const head='Голос в стене: «…тринадцать…». ';
+      const mem = lucid()
+        ? 'И тебя накрывает целиком: кабинет, акт о готовности «Полдня», твой отказ, холодный голос Ракитина, укол. Ты — Связист-7. Ты знал, что система неисправна. Тебе стёрли память, чтобы ты молчал — и чтобы ты был под рукой, когда понадобится твой голос.'
+        : 'Голова гудит, как трансформатор. Таблетки держат что-то важное за мутным стеклом.';
+      const strike = S.flags.knowStrike ? ' А расшифрованная папка говорит главное: через тринадцать дней, ровно в полдень, — второй залп.' : ' Тринадцать дней. До чего?';
+      return head+mem+strike;
+    },
+    choices:[
+      {t:'Рассказать всем правду', go:()=>{ S.flags.truthShared=1; S.res.morale-=4; S.pendingAct=3; return 'Ты собираешь всех в жилом отсеке и рассказываешь всё. Тишина. Потом Соня тихо говорит: «Я же говорила. Дядя в стене — это ты». Никто не смеётся.'; }},
+      {t:'Рассказать только тем, кому веришь', go:()=>{ S.flags.truthPartial=1; S.pendingAct=3; return 'Ты говоришь с теми, кому доверяешь. Остальным — потом. Если будет «потом».'; }},
+      {t:'Молчать', go:()=>{ S.pendingAct=3; return 'Ты молчишь. Отсчёт продолжается. ⏳'; }},
+    ]
+  },
 };
 function ideaPerson(){
   const c=people(p=>['electric','medic','farmer','mechanic','plumber'].includes(p.prof) && !p.sick && !S.flags['idea_'+p.name]);
@@ -682,13 +884,18 @@ function ideaPerson(){
 }
 
 const ACT1 = {1:'knock', 2:'pills_choice', 3:'mem1', 4:'injection', 5:'countdown', 6:'zarya_call', 7:'stranger', 8:'whisper', 9:'drawing1', 10:'marina_radio', 11:'pills_doubt', 12:'act1_finale'};
+const ACT2 = {13:'act2_open', 14:'gleb_knows', 15:'winter', 16:'raiders_ultimatum', 17:'drawing2', 19:'peter_caught', 20:'epidemic', 21:'nii_hint', 22:'lesha_gone', 23:'marina_warn', 24:'vera_offer', 25:'raiders_assault', 27:'act2_finale'};
+const STORY = Object.assign({}, ACT1, ACT2);
 function pickEvent(){
-  const st=ACT1[S.day];
+  const st=STORY[S.day];
   if(st && !S.seen.includes(st) && (!EVENTS[st].cond || EVENTS[st].cond())) return st;
+  S.queue=S.queue||[];
+  while(S.queue.length){ const q=S.queue.shift(); if(EVENTS[q] && (!EVENTS[q].cond||EVENTS[q].cond())) return q; }
+  if(S.flags.folder && !S.flags.knowStrike && !S.flags.decodeShown && S.rooms.radio.lvl>=2 && S.res.signal>=15){ S.flags.decodeShown=1; S.res.signal-=15; return 'folder_decoded'; }
   if(S.flags.thiefCaught && !S.flags.thiefDone && P(S.flags.thiefCaught)) return 'thief_judge';
   const pool = Object.keys(EVENTS).filter(id=>{
     const e=EVENTS[id];
-    if(['knock','quiet','thief_judge'].includes(id) || e.story) return false;
+    if(['knock','quiet','thief_judge'].includes(id) || e.story || e.queued) return false;
     if(e.once && S.seen.includes(id)) return false;
     if(id===S.lastEvent) return false;
     return !e.cond || e.cond();
@@ -710,6 +917,7 @@ function compute(){
     if(id==='generator') prodE += Math.round(r.lvl*4 + power(id)*ROOMS.generator.per);
     else useE += ROOMS[id].use;
   }
+  if(S.flags.winter) useE += S.flags.insulated ? 1 : 2;            // ❄ обогрев
   const eff = useE ? Math.min(1, prodE/useE) : 1;
   const d={food:0, water:0, materials:0, morale:0, signal:0, rad:0, heal:0};
   const out={};
@@ -736,6 +944,13 @@ function endDay(){
   log.push(`🍞 Еда ${sign(d.food)}   💧 Вода ${sign(d.water)}   🛠 ${sign(d.materials)}`);
   if(eff<1) log.push(`<span class="warn">⚡ Не хватает энергии — отсеки работали на ${Math.round(eff*100)}%</span>`);
   for(const k in d) if(k!=='heal') r[k]+=d[k];
+  resolveExp(log);
+  if(S.flags.tribute && S.day%3===0){
+    if(r.food>=8){ r.food-=8; log.push('<span class="warn">🏴 Дань рейдерам: −8 🍞</span>'); }
+    else { S.flags.tribute=0; S.flags.raidersHostile=1; log.push('<span class="bad">🏴 Нечем платить дань. Бес обещает прийти сам.</span>'); }
+  }
+  const cold = S.flags.winter && eff<1;
+  if(cold){ people().forEach(p=>hurt(p,2)); r.morale-=1; log.push('<span class="warn">❄ Не хватает энергии на обогрев: холодно, все −2 ❤, мораль −1.</span>'); }
 
   // Вор тайком таскает еду
   people(p=>p.trait==='thief').forEach(()=>{ if(chance(.4) && r.food>0){ r.food-=2; S.flags.stolen=(S.flags.stolen||0)+2; } });
@@ -743,6 +958,7 @@ function endDay(){
 
   // Голод
   const hungry = r.food<0 || r.water<0;
+  if(!hungry && !cold && r.morale<65){ r.morale+=1; }               // сыты и в тепле — понемногу легчает
   if(hungry){
     r.food=Math.max(0,r.food); r.water=Math.max(0,r.water); r.morale-=8;
     people().forEach(p=>hurt(p,15));
@@ -777,7 +993,7 @@ function endDay(){
   people(p=>p.migraine>0).forEach(p=>{ p.migraine--; });
   if(!S.flags.onPills && S.flags.pillsStopped && chance(.25)){ const me=P('Ты'); if(me && !me.migraine){ me.migraine=1; log.push('<span class="warn">🤕 Без таблеток раскалывается голова. Завтра ты не сможешь работать.</span>'); } }
   // Отдых: здоровые восстанавливаются сами
-  if(!hungry && r.rad<35) people(p=>!p.sick).forEach(p=>p.hp+=4);
+  if(!hungry && r.rad<35) people(p=>!p.sick).forEach(p=>p.hp+=5);
 
   clamp();
   // Смерти
@@ -801,6 +1017,278 @@ function checkEnding(){
 }
 
 /* =========================================================
+   5.5 КАРТА РАЙОНА И ВЫЛАЗКИ (акт 2)
+   ========================================================= */
+const winter = () => !!S.flags.winter;
+const LOCS = {
+  pharmacy:{n:'Аптека',      i:'💊', x:250, y:206, rad:[5,10],  desc:'Через два квартала. Разграблена, но не до конца.', finds:'💊 лекарства, немного воды',
+    loot:(p,first)=>{ const m=1+(chance(.5)?1:0); S.res.meds=(S.res.meds||0)+m; S.res.water+=3; return `+${m} 💊, +3 💧`; }},
+  school:  {n:'Школа №14',   i:'🏫', x:96,  y:196, rad:[4,9],   desc:'Пустые классы, спортзал, столовая.', finds:'🛠 материалы, игрушки и книги (мораль)',
+    loot:(p,first)=>{ const m=4+Math.floor(Math.random()*5); S.res.materials+=m; S.res.morale+=3; return `+${m} 🛠, книги и игрушки (мораль +3)`; }},
+  nii:     {n:'НИИ «Связь»', i:'📡', x:282, y:86,  rad:[13,22], desc:'Высокий фон. Здесь работал… кто-то, кого ты почти помнишь.', finds:'🛠 много материалов, тайны', death:.06,
+    loot:(p,first)=>{ const m=6+Math.floor(Math.random()*5); S.res.materials+=m;
+      if(!S.flags.folder){ S.flags.folder=1; S.queue=(S.queue||[]).concat('folder_found'); return `+${m} 🛠 — и папка из сейфа на третьем этаже 📁`; }
+      S.res.signal+=3; return `+${m} 🛠, детали для радио (+3 📡)`; }},
+  hospital:{n:'Больница',    i:'🏥', x:150, y:70,  rad:[9,16],  desc:'Много лекарств. И много заразы.', finds:'💊 много лекарств, риск заразиться',
+    loot:(p,first)=>{ const m=2+(chance(.5)?1:0); S.res.meds=(S.res.meds||0)+m; if(chance(.35)){ p.sick=true; return `+${m} 💊 — но ${p.name} подхватил(а) заразу 🤒`; } return `+${m} 💊`; }},
+  depot:   {n:'Трамвайное депо', i:'🚋', x:62, y:110, rad:[7,13], desc:'Горы металла. Территория рейдеров.', finds:'🛠 очень много материалов, риск стычки', death:.05,
+    loot:(p,first)=>{ const m=10+Math.floor(Math.random()*6); S.res.materials+=m;
+      if(!S.flags.raidersAlly && chance(.3)){ hurt(p,18); return `+${m} 🛠 — но была стычка с рейдерами (❤ −18)`; } return `+${m} 🛠`; }},
+  metro:   {n:'Станция «Пролетарская»', i:'Ⓜ', x:262, y:272, rad:[4,8], desc:'Вход в метро. Говорят, там живут люди.', finds:'обмен 🛠 на 💧 и 🍞',
+    loot:(p,first)=>{ if(!S.flags.metroMet){ S.flags.metroMet=1; S.queue=(S.queue||[]).concat('metro_meet'); return 'вас встретили люди с фонарями…'; }
+      if(S.flags.metroTrade && S.res.materials>=5){ S.res.materials-=5; S.res.water+=10; S.res.food+=8; return 'обмен: −5 🛠 → +10 💧, +8 🍞'; }
+      S.res.water+=4; return '+4 💧 из артезианской скважины'; }},
+  zarya:   {n:'«Заря»',      i:'🏰', x:330, y:30,  locked:true, desc:'Военный объект за рекой. Подходы под охраной. Туда — в акте 3.'},
+};
+function sendExp(loc){
+  const sel=document.getElementById('expWho'); const who=sel && sel.value; const p=P(who);
+  if(!p || S.exp || LOCS[loc].locked) return;
+  haptic('medium'); S.exp={loc, who}; p.job=null; p.away=true; save(); render();
+}
+function unlockP(name){ const p=P(name); if(!p) return; p.locked=false; S.flags.peterReleased=1; trustP(8); haptic(); save(); render(); }
+function cancelExp(){ if(!S.exp) return; const p=P(S.exp.who); if(p) p.away=false; S.exp=null; haptic(); save(); render(); }
+function selectLoc(id){ haptic(); S.mapSel=id; save(); render(); }
+function resolveExp(log){
+  const ex=S.exp; if(!ex) return; S.exp=null;
+  const p=P(ex.who), L=LOCS[ex.loc]; if(!p) return;
+  p.away=false;
+  S.visits=S.visits||{}; const first=!S.visits[ex.loc]; S.visits[ex.loc]=(S.visits[ex.loc]||0)+1;
+  if(p.trait==='coward' && chance(.35)){ S.flags['known_'+p.name]=1; log.push(`<span class="warn">🗺 ${p.name} вернулся с полпути: «Не могу…» (😰 трус)</span>`); return; }
+  const dmg=L.rad[0]+Math.floor(Math.random()*(L.rad[1]-L.rad[0]+1))+(winter()?4:0);
+  hurt(p,dmg);
+  if(chance((L.death||0.03)*(p.trait==='tough'?0.5:1))){ killResident(p.name); S.res.morale-=7; log.push(`<span class="bad">🗺 ${p.name} не вернулся из места «${L.n}».</span>`); return; }
+  const out=L.loot(p, first);
+  log.push(`🗺 ${p.name} — ${L.n}: ${out} <span class="dim">(❤ −${dmg}${winter()?', холод':''})</span>`);
+  if(chance(.1)){ S.flags.quietSeen=(S.flags.quietSeen||0)+1; clue('tihiy','На вылазках видят человека в противогазе. Стоит и смотрит. Потом исчезает.'); log.push(`<span class="dim">…${p.name} клянётся, что у ${L.n==='Аптека'?'аптеки':'развалин'} стоял человек в противогазе. Не двигался. Потом исчез.</span>`); }
+}
+function defense(){
+  return people(p=>p.prof!=='child' && p.hp>=40 && !p.sick && !p.locked).length
+    + (S.rooms.workshop.lvl||0)*2 + (P('Глеб')?2:0) + (S.flags.warned?3:0) + (S.flags.strangerFriend?2:0);
+}
+function mapSVG(){
+  const sel=S.mapSel, ex=S.exp;
+  let g=`<rect width="360" height="300" fill="#12110e"/>
+    <path d="M-10 150 Q80 130 140 160 T260 150 T380 120" stroke="#1d2a33" stroke-width="22" fill="none"/>
+    <path d="M-10 150 Q80 130 140 160 T260 150 T380 120" stroke="#25384a" stroke-width="2" stroke-dasharray="6 6" fill="none" opacity=".5"/>`;
+  for(let i=0;i<9;i++) g+=`<line x1="${i*44}" y1="0" x2="${i*44-30}" y2="300" stroke="#1d1c18" stroke-width="5"/>`;
+  for(let j=0;j<7;j++) g+=`<line x1="0" y1="${j*48+10}" x2="360" y2="${j*48-6}" stroke="#1d1c18" stroke-width="4"/>`;
+  const r=iRand(5); for(let k=0;k<40;k++){ const x=r()*360,y=r()*300; g+=`<rect x="${x.toFixed(0)}" y="${y.toFixed(0)}" width="${(8+r()*16).toFixed(0)}" height="${(6+r()*12).toFixed(0)}" fill="#1a1915" opacity=".9"/>`; }
+  // зоны радиации
+  g+=`<circle cx="282" cy="86" r="34" fill="#7be36a" opacity=".08"/><circle cx="150" cy="70" r="26" fill="#7be36a" opacity=".06"/>`;
+  // дом
+  const hx=150, hy=236;
+  if(sel && LOCS[sel] && !LOCS[sel].locked) g+=`<line x1="${hx}" y1="${hy}" x2="${LOCS[sel].x}" y2="${LOCS[sel].y}" stroke="#ff8a3d" stroke-width="2" stroke-dasharray="5 4" class="flow"/>`;
+  g+=`<g><circle cx="${hx}" cy="${hy}" r="13" fill="#ff8a3d"/><text x="${hx}" y="${hy+4.5}" text-anchor="middle" font-size="12">🏠</text>
+      <text x="${hx}" y="${hy+26}" text-anchor="middle" font-size="9" fill="#ffb37a" font-weight="bold">УЗЕЛ 7</text></g>`;
+  for(const id in LOCS){
+    const L=LOCS[id], on=sel===id, v=(S.visits||{})[id]||0, here=ex&&ex.loc===id;
+    g+=`<g class="room" onclick="selectLoc('${id}')">
+      <circle cx="${L.x}" cy="${L.y}" r="${on?17:14}" fill="${L.locked?'#3a1414':on?'#3a2a14':'#22242b'}" stroke="${L.locked?'#ff5d5d':on?'#ff8a3d':'#4a4f5c'}" stroke-width="${on?2:1.2}"/>
+      <text x="${L.x}" y="${L.y+5}" text-anchor="middle" font-size="13">${L.i}</text>
+      <text x="${L.x}" y="${L.y+(L.y>250?-21:27)}" text-anchor="middle" font-size="8.5" fill="${L.locked?'#ff9c9c':'#d8dce6'}" font-weight="bold">${L.n}</text>
+      ${v?`<circle cx="${L.x+11}" cy="${L.y-11}" r="5" fill="#7be36a"/><text x="${L.x+11}" y="${L.y-8.5}" text-anchor="middle" font-size="7" fill="#111" font-weight="bold">${v}</text>`:''}
+      ${here?`<circle cx="${L.x}" cy="${L.y}" r="20" fill="none" stroke="#ff8a3d" stroke-width="1.5" class="blinkf"/>`:''}
+    </g>`;
+  }
+  return `<svg viewBox="0 0 360 300" xmlns="http://www.w3.org/2000/svg" font-family="Manrope, sans-serif">${g}</svg>`;
+}
+function mapTab(){
+  if(!S.flags.mapOpen && S.day<=13) return `<h2>Карта района</h2><div class="card"><p class="dim">Наверху слишком высокий фон. Карта откроется в акте 2 — когда дозиметр у шлюза позволит выйти.</p></div>`;
+  const sel=S.mapSel, L=sel&&LOCS[sel], ex=S.exp;
+  let body=`<h2>Карта района</h2><div class="bunker">${mapSVG()}</div>`;
+  if(ex){ const p=P(ex.who); body+=`<div class="card"><b>🗺 Сегодня на вылазке</b><p>${p?p.name:'—'} идёт: ${LOCS[ex.loc].n}. Вернётся вечером.</p><button onclick="cancelExp()"><span>Отменить вылазку</span></button></div>`; }
+  if(!L){ body+=`<p class="small dim">Нажми на точку на карте. За день можно отправить одного человека — он вернётся вечером с добычей, но облучённым.${winter()?' ❄ Зимой вылазки опаснее.':''}</p>`; return body; }
+  const cand=people(p=>canWalk(p) && !p.locked).sort((a,b)=>(a.name==='Ты')-(b.name==='Ты') || b.hp-a.hp);
+  body+=`<div class="card"><div class="room-card"><div class="room-ico">${L.i}</div><div class="room-info"><b>${L.n}</b><span>${L.desc}</span></div></div>`;
+  if(L.locked){ body+=`<p class="small bad" style="margin-top:8px">🔒 Недоступно</p></div>`; return body; }
+  body+=`<p class="small" style="margin-top:10px">☢ Облучение: <b class="warn">−${L.rad[0]}…${L.rad[1]} ❤</b>${winter()?' +4 от холода':''}</p>
+    <p class="small">🎒 Можно найти: ${L.finds}</p>
+    <p class="small dim">Посещений: ${(S.visits||{})[sel]||0}</p>`;
+  if(ex) body+=`<p class="small dim" style="margin-top:8px">Сегодня уже есть вылазка.</p>`;
+  else if(!cand.length) body+=`<p class="small bad" style="margin-top:8px">Некого отправить: все больны, слабы или это дети.</p>`;
+  else body+=`<select class="job" id="expWho" style="margin-top:10px">${cand.map(p=>`<option value="${p.name}">${p.name==='Ты'?'Пойти самому':p.name} · ${PROFS[p.prof].i} ❤${p.hp}${traitKnown(p)?' '+TRAITS[p.trait].i:''}</option>`).join('')}</select>
+      <button class="main" style="margin-top:8px" onclick="sendExp('${sel}')">Отправить · вернётся вечером</button>`;
+  return body+'</div>';
+}
+
+/* =========================================================
+   5.7 ЭКСТРЕННЫЕ СИТУАЦИИ: решение за 10 секунд
+   ========================================================= */
+const EM_TIME = 10;
+const EM_DAYS = {6:'gas', 10:'fire', 17:'peter_radio', 21:'collapse', 26:'raiders_door', 30:'flood', 35:'shock', 39:'fire'};   // акт 1: 2, акт 2: 3 (+буря у шлюза), акт 3: 3
+const EM_POOL = ['gas','fire','shock','collapse','flood'];
+const adults = () => people(p=>p.prof!=='child' && !p.sick && !p.away && !p.locked);
+const pickVictim = (pref) => { const a=people(p=>!p.away && (pref?pref(p):true)); return a.length ? rnd(a) : (rnd(people(p=>!p.away)) || P('Ты')); };
+
+function emHurt(p,n){ if(!p) return; const k = p.name==='Ты' ? 0.5 : 0.6; hurt(p, Math.round(n*k)); }   // ЧП пугают, но не уничтожают
+const EM = {
+  gas:{
+    title:'УТЕЧКА ГАЗА',
+    pre:()=>{ S.em.v=(rnd(adults().filter(p=>p.name!=='Ты'))||P('Ты')).name; },
+    text:()=>'Шипение из трубы над жилым отсеком. Резкий запах газа. Вентиль — в конце коридора, прямо в облаке.',
+    choices:()=>[
+      {t:`${S.em.v==='Ты'?'Бежать к вентилю':S.em.v+' — к вентилю!'}`, go:()=>{ const v=P(S.em.v); if(v) emHurt(v,25); S.res.morale+=3; return `${S.em.v} задерживает дыхание и бежит в облако. Вентиль скрипит — и шипение стихает. ${S.em.v} кашляет до утра (❤ −25).`; }},
+      {t:'Всех — в шлюз!', go:()=>{ people().forEach(p=>emHurt(p,5)); S.res.morale-=3; S.res.food=Math.max(0,S.res.food-3); return 'Все теснятся в шлюзе, пока газ выветривается через вентиляцию. Продукты на столе пришлось выбросить. Все надышались дымом.'; }},
+      {t:'Сам к вентилю', go:()=>{ emHurt(P('Ты'),22); S.res.morale+=5; return 'Ты бежишь сам. Глаза режет, горло горит — но вентиль перекрыт. Люди видели, кто пошёл в газ первым. Мораль +5.'; }},
+    ],
+    timeout:()=>{ people().forEach(p=>emHurt(p,12)); const w=people().sort((a,b)=>a.hp-b.hp)[0]; if(w) emHurt(w,15); S.res.morale-=6; return `Ты замер. Газ расползается по отсеку. Все отравлены, ${w?w.name+' — тяжелее всех':''}.`; },
+  },
+  fire:{
+    title:'ПОЖАР В ГЕНЕРАТОРНОЙ',
+    pre:()=>{ const g=assigned('generator').filter(p=>!p.sick)[0]; S.em.v=(g||pickVictim(p=>p.name!=='Ты')).name; },
+    text:()=>`Пламя в генераторной! ${S.em.v} внутри, дверь заклинило. Дым ползёт по коридору.`,
+    choices:()=>[
+      {t:'Тушить огнетушителем', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,15); emHurt(P('Ты'),10); return `Пена, дым, крики. Огонь сбит. ${S.em.v} выбирается обожжённым, у тебя ожоги на руках.`; }},
+      {t:'Закрыть отсек — пусть задохнётся', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,40); S.rooms.generator.lvl=Math.max(1,S.rooms.generator.lvl-1); return `Без воздуха огонь гаснет. ${S.em.v} выбирается через вентиляцию — чёрный от копоти. Генератор потерял уровень.`; }},
+      {t:'Вырубить всё питание', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,12); S.res.food=Math.max(0,S.res.food-4); S.res.morale-=4; return `Тьма. Огонь без тока гаснет сам. ${S.em.v} цел, но сутки без света: испортилась еда (−4 🍞), мораль −4.`; }},
+    ],
+    timeout:()=>{ const v=P(S.em.v); if(v) emHurt(v,45); S.rooms.generator.lvl=Math.max(1,S.rooms.generator.lvl-1); S.res.materials=Math.max(0,S.res.materials-5); S.res.morale-=8; return `Никто не знает, что делать. Огонь выгрызает генераторную. ${S.em.v} вытаскивают уже без сознания. Генератор −1 ур., −5 🛠.`; },
+  },
+  shock:{
+    title:'УДАР ТОКОМ',
+    pre:()=>{ const k=people(p=>p.prof==='child' && !p.away); S.em.v=(k.length?rnd(k):pickVictim(p=>p.name!=='Ты')).name; },
+    text:()=>`${S.em.v} полез к щитку за упавшей вещью. Искры! ${S.em.v} не может отпустить провод — тело трясёт.`,
+    choices:()=>[
+      ...((S.memories||[]).some(m=>m.startsWith('Щиток')) ? [{t:'Третий рубильник слева!', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,8); S.res.morale+=4; return `Рука сама находит рубильник — третий слева, как во сне. Ток пропадает. ${S.em.v} отделался ожогом. 🧠 Память спасла жизнь.`; }}] : []),
+      {t:'Оттолкнуть сухой доской', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,20); emHurt(P('Ты'),5); return `Удар доской — ${S.em.v} отлетает от щитка. Ожоги, но жив(а).`; }},
+      {t:'Схватить руками', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,12); emHurt(P('Ты'),30); return `Ты хватаешь — и ток бьёт через вас обоих. ${S.em.v} отпускает провод. Тебя отбрасывает к стене.`; }},
+    ],
+    timeout:()=>{ const v=P(S.em.v); if(v) emHurt(v,45); S.res.morale-=6; return `Секунды тянутся вечностью. Кто-то наконец вырубает свет. ${S.em.v} без сознания.`; },
+  },
+  collapse:{
+    title:'ОБВАЛ',
+    pre:()=>{ const c=people(p=>!p.away && p.name!=='Ты'); const kid=c.filter(p=>p.prof==='child'); S.em.v=(kid.length&&chance(.6)?rnd(kid):rnd(c)||P('Ты')).name;
+      const st=adults().filter(p=>p.name!==S.em.v && (p.trait==='tough'||p.trait==='worker')); S.em.s=st.length?st[0].name:null; },
+    text:()=>`Треск бетона — и потолок в коридоре рушится. ${S.em.v} под балкой. Сверху сыплется крошка: может обвалиться ещё.`,
+    choices:()=>[
+      {t:'Вытаскивать руками — сейчас', go:()=>{ const v=P(S.em.v); if(chance(.7)){ if(v) emHurt(v,20); return `Ты разгребаешь обломки голыми руками. ${S.em.v} на свободе.`; } if(v) emHurt(v,30); emHurt(P('Ты'),20); return `Второй обвал! Балка придавливает и тебя. Вас вытаскивают вместе (${S.em.v} ранен, ты −20 ❤).`; }},
+      ...(S.rooms.workshop.lvl>0 ? [{t:'Бежать за домкратом', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,25); return `Минута — и домкрат под балкой. Медленно, надёжно. ${S.em.v} спасён(а), но долго лежал(а) под бетоном.`; }}] : []),
+      ...(S.em.s ? [{t:`Поднять балку вдвоём с ${S.em.s}`, go:()=>{ const v=P(S.em.v), s=P(S.em.s); if(v) emHurt(v,10); if(s) emHurt(s,10); S.res.morale+=3; return `${S.em.s} упирается плечом рядом с тобой. Балка поддаётся. ${S.em.v} вытащен(а) почти целым(ой).`; }}] : []),
+    ],
+    timeout:()=>{ const v=P(S.em.v); if(v) emHurt(v,40); S.res.materials=Math.max(0,S.res.materials-4); S.res.morale-=5; return `Пока все кричали, обвалился второй пролёт. ${S.em.v} откапывают час. Коридор завален (−4 🛠).`; },
+  },
+  flood:{
+    title:'ПРОРЫВ ТРУБЫ',
+    pre:()=>{ S.em.v=(rnd(adults())||P('Ты')).name; },
+    text:()=>'Лопнула магистраль водоочистки! Вода хлещет в склад, где еда. Рядом искрит проводка.',
+    choices:()=>[
+      {t:'Перекрыть магистраль', go:()=>{ S.res.water=Math.max(0,S.res.water-8); const v=P(S.em.v); if(v) emHurt(v,10); return `${S.em.v} ныряет к задвижке в ледяной воде. Поток остановлен. −8 💧, ${S.em.v} −10 ❤.`; }},
+      {t:'Спасать еду со склада', go:()=>{ S.res.water=Math.max(0,S.res.water-18); return 'Все таскают ящики наверх, пока вода заливает пол. Еда спасена, но вода ушла в слив (−18 💧).'; }},
+      {t:'Обесточить отсек', go:()=>{ S.res.water=Math.max(0,S.res.water-12); S.res.food=Math.max(0,S.res.food-5); S.res.morale-=2; return 'Свет гаснет, искры прекращаются. Пока искали задвижку в темноте, вода испортила часть еды. −12 💧, −5 🍞.'; }},
+    ],
+    timeout:()=>{ S.res.water=Math.max(0,S.res.water-20); S.res.food=Math.max(0,S.res.food-8); const v=P(S.em.v); if(v) emHurt(v,15); return `Вода добирается до проводки — вспышка. ${S.em.v} бьёт током. −20 💧, −8 🍞.`; },
+  },
+  raiders_door:{
+    title:'РЕЙДЕРЫ У ДВЕРИ',
+    cond:()=>!!S.flags.raidersHostile,
+    text:()=>'Удары в шлюз. Рейдеры ломают гермодверь ломами. Замок вот-вот сорвётся.',
+    choices:()=>[
+      {t:'Держать дверь плечами', go:()=>{ const st=adults().sort((a,b)=>b.hp-a.hp).slice(0,2); st.forEach(p=>emHurt(p,15)); if(defense()>=6){ S.res.morale+=4; return `${st.map(p=>p.name).join(' и ')} держат дверь, пока рейдеры не устают. Дверь выдержала (ранен каждому).`; } S.res.food=Math.max(0,S.res.food-10); return 'Вас слишком мало. Дверь приоткрывается — рейдеры хватают ящик с едой и уходят (−10 🍞).'; }},
+      {t:'Сигнальная ракета в окошко (−3 🛠)', req:()=>S.res.materials>=3, go:()=>{ S.res.materials-=3; S.res.morale+=6; return 'Красная вспышка и грохот. Рейдеры с руганью разбегаются в темноту. Мораль +6.'; }},
+      {t:'Отдать склад', go:()=>{ S.res.food=Math.max(0,S.res.food-12); S.res.materials=Math.max(0,S.res.materials-6); S.flags.raidersHostile=0; S.flags.tribute=1; return 'Ты открываешь окошко: «Берите». Бес смеётся. −12 🍞, −6 🛠, и теперь — дань.'; }},
+    ],
+    timeout:()=>{ S.res.food=Math.max(0,S.res.food-15); S.res.materials=Math.max(0,S.res.materials-8); const v=rnd(adults()); if(v) emHurt(v,25); S.res.morale-=8; return `Замок срывается. Рейдеры врываются на склад. −15 🍞, −8 🛠${v?', '+v.name+' ранен(а)':''}.`; },
+  },
+  airlock:{
+    title:'ПЫЛЬНАЯ БУРЯ',
+    pre:()=>{ S.em.v=S.exp.who; },
+    text:()=>`Стена пепла идёт на гаражи. ${S.em.v} возвращается с вылазки — до шлюза двадцать метров. Дозиметр зашкаливает.`,
+    choices:()=>[
+      {t:'Держать шлюз открытым', go:()=>{ S.res.rad+=7; return `${S.em.v} влетает в шлюз вместе с пеплом. Все живы — но радиация в бункере +7.`; }},
+      {t:'Закрыть шлюз', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,35); S.res.morale-=5; return `Дверь закрывается перед лицом ${S.em.v}. Ночь в буре у порога. Утром дверь открывают. Никто не смотрит тебе в глаза.`; }},
+      ...(canWalk(P('Ты')) && S.em.v!=='Ты' ? [{t:'Выбежать навстречу', go:()=>{ emHurt(P('Ты'),15); const v=P(S.em.v); if(v) emHurt(v,5); S.res.rad+=3; S.res.morale+=4; return `Ты выбегаешь в бурю, хватаешь ${S.em.v} за рукав и тащишь к двери. Вы оба облучены (ты ранен), но живы.`; }}] : []),
+    ],
+    timeout:()=>{ S.res.rad+=8; const v=P(S.em.v); if(v) emHurt(v,20); return `Пока ты медлил, шлюз застрял на полпути. Пепел внутри (☢ +8), ${S.em.v} протиснулся(ась) с ожогами.`; },
+  },
+  peter_radio:{
+    title:'ПЁТР У РАЦИИ',
+    cond:()=>!!P('Пётр') && !P('Пётр').locked && !S.flags.peterConfessed,
+    text:()=>'Ночь. Пётр у рации диктует цифры — координаты Узла 7. И… твоё полное имя. Его палец уже на кнопке «Передать».',
+    choices:()=>[
+      {t:'Вырвать рацию', go:()=>{ trustP(-10); S.flags.peterInterrupted=1; clue('p_radio','Ты застал Петра, когда он диктовал «Заре» координаты Узла 7 и твоё имя.'); return 'Ты вырываешь трубку. Пётр отшатывается: «Я… я не хотел». Передача не ушла.'; }},
+      {t:'Дать договорить — и проследить', go:()=>{ S.flags.zaryaAlert=1; clue('p_radio','Пётр передал «Заре» координаты Узла 7 и твоё имя. Ты дал ему договорить.'); return 'Ты стоишь в темноте и слушаешь. «Заря» отвечает одним словом: «Принято». Теперь ты знаешь точно.'; }},
+      {t:'Оглушить', go:()=>{ const p=P('Пётр'); if(p) emHurt(p,20); trustP(-20); S.res.morale-=3; S.flags.peterInterrupted=1; return 'Удар — и Пётр оседает на пол. Передача не ушла. Утром у него огромная шишка и взгляд, полный страха.'; }},
+    ],
+    timeout:()=>{ S.flags.zaryaAlert=1; clue('p_radio','Пётр успел передать «Заре» координаты Узла 7 и твоё имя.'); return '«Передаю». Щелчок. Пётр снимает наушники и видит тебя. Поздно.'; },
+  },
+};
+
+function pickEmergency(){
+  if(S.day<3) return null;
+  if(S.exp && S.day>=13 && (S.flags.airlocks||0)<2 && chance(.12)) return {id:'airlock', deferEnd:true};
+  let id=EM_DAYS[S.day];
+  if(!id) return null;
+  if(EM[id].cond && !EM[id].cond()){ const alt=EM_POOL.filter(k=>k!==id && (!EM[k].cond||EM[k].cond())); id=rnd(alt); }
+  return id ? {id, deferEnd:false} : null;
+}
+let emRaf=0, emAudioCtx=null, emRunning=false;
+function startEmergency(em){
+  S.em={id:em.id, deferEnd:em.deferEnd, result:null, left:EM_TIME};
+  if(EM[em.id].pre) EM[em.id].pre();
+  if(em.id==='airlock') S.flags.airlocks=(S.flags.airlocks||0)+1;
+  S.screen='emergency'; save(); render();
+  emRun();
+}
+function emRun(){
+  cancelAnimationFrame(emRaf); emStopAudio(); emRunning=true;
+  emAudioCtx = emAudio();
+  haptic('heavy');
+  let last=performance.now(), lastSec=Math.ceil(S.em.left);
+  const tick=now=>{
+    if(!S.em || S.em.result || S.screen!=='emergency'){ emStopAudio(); emRunning=false; return; }
+    const dt=Math.min(0.1,(now-last)/1000); last=now;
+    if(!document.hidden) S.em.left=Math.max(0,S.em.left-dt);
+    const ring=document.getElementById('emRing'), num=document.getElementById('emNum');
+    if(ring) ring.style.strokeDashoffset = (339.3*(1-S.em.left/EM_TIME)).toFixed(1);
+    const sec=Math.ceil(S.em.left);
+    if(num) num.textContent=sec;
+    if(sec!==lastSec){ lastSec=sec; haptic(sec<=3?'heavy':'light'); }
+    if(S.em.left<=0) return emTimeout();
+    emRaf=requestAnimationFrame(tick);
+  };
+  emRaf=requestAnimationFrame(tick);
+}
+function emFinish(text){
+  cancelAnimationFrame(emRaf); emStopAudio(); emRunning=false;
+  const E=EM[S.em.id];
+  clamp();
+  let extra='';
+  people(p=>p.hp<=0).forEach(p=>{ killResident(p.name); S.res.morale-=7; extra+=` ☠ ${p.name} не выжил(а).`; });
+  clamp();
+  S.em.result=text+extra;
+  S.flags['em_'+S.em.id]=(S.flags['em_'+S.em.id]||0)+1;
+  S.journal=S.journal||[]; S.journal.push({d:S.day-(S.em.deferEnd?0:1), t:'⚠ '+E.title, c:S.em.choice||'Не успел', r:S.em.result});
+  haptic('medium'); save(); render();
+}
+function emChoose(i){
+  if(!S.em || S.em.result) return;
+  const c=EM[S.em.id].choices()[i]; if(!c || (c.req && !c.req())) return;
+  S.em.choice=c.t; emFinish(c.go());
+}
+function emTimeout(){ if(!S.em || S.em.result) return; S.em.choice='⏱ Не успел'; emFinish('⏱ '+EM[S.em.id].timeout()); }
+function emContinue(){
+  const em=S.em; if(!em || !em.result) return;
+  const line=`<span class="${/☠|⏱/.test(em.result)?'bad':'warn'}">⚠ ${EM[em.id].title}: ${em.result}</span>`;
+  S.em=null;
+  if(em.deferEnd){ endDay(); S.log.unshift(line); }
+  else { S.log=S.log||[]; S.log.unshift(line); checkEnding(); }
+  if(S.ending) return go('ending');
+  go('summary');
+}
+function emAudio(){
+  try{
+    const ac=new (window.AudioContext||window.webkitAudioContext)(), T=ac.currentTime;
+    const env=(node,at,peak,dur)=>{ const g=ac.createGain(); g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(peak,at+0.01); g.gain.exponentialRampToValueAtTime(0.0001,at+dur); node.connect(g).connect(ac.destination); };
+    for(let i=0;i<6;i++){ const o=ac.createOscillator(); o.type='square'; o.frequency.value=i%2?920:700; const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value=1800; o.connect(f); env(f,T+i*0.22,0.05,0.2); o.start(T+i*0.22); o.stop(T+i*0.22+0.22); }
+    let t=0.4, gap=0.95;
+    while(t<EM_TIME+0.5){ [0,0.18].forEach((o,j)=>{ const h=ac.createOscillator(); h.frequency.setValueAtTime(70,T+t+o); h.frequency.exponentialRampToValueAtTime(34,T+t+o+0.12); env(h,T+t+o,j?0.3:0.5,0.16); h.start(T+t+o); h.stop(T+t+o+0.2); }); t+=gap; gap=Math.max(0.36,gap*0.9); }
+    const hi=ac.createOscillator(), hg=ac.createGain(); hi.frequency.value=3200; hg.gain.setValueAtTime(0,T+6); hg.gain.linearRampToValueAtTime(0.008,T+EM_TIME); hi.connect(hg).connect(ac.destination); hi.start(T+6); hi.stop(T+EM_TIME+0.3);
+    return ac;
+  }catch(e){ return null; }
+}
+function emStopAudio(){ try{ if(emAudioCtx) emAudioCtx.close(); }catch(e){} emAudioCtx=null; }
+
+/* =========================================================
    6. ДЕЙСТВИЯ ИГРОКА
    ========================================================= */
 function go(screen){ S.screen=screen; save(); render(); window.scrollTo(0,0); }
@@ -817,7 +1305,7 @@ function descend(){
     if(id==='food') S.res.food+=15;
     if(id==='water') S.res.water+=15;
     if(id==='tools') S.res.materials+=10;
-    if(id==='meds'){ S.res.morale+=15; S.flags.medkit=1; }
+    if(id==='meds'){ S.res.morale+=15; S.res.meds=(S.res.meds||0)+1; }
     if(id==='radio') S.rooms.radio.lvl=1;
     if(id==='filter') S.rooms.filter.lvl=2;
     if(id==='pills'){ S.flags.pills=1; S.flags.onPills=1; }
@@ -854,7 +1342,7 @@ function choose(i){
 }
 function afterResult(){
   if(S.pendingAct){ S.actN=S.pendingAct; S.pendingAct=0; return go('act'); }
-  S.tab='bunker'; go('manage');
+  S.tab = S.openMap ? 'map' : 'bunker'; S.openMap=0; go('manage');
 }
 function actContinue(){
   haptic('medium');
@@ -862,7 +1350,7 @@ function actContinue(){
   S.actN=0; S.tab='bunker'; go('manage');
 }
 function setJob(name, id){
-  const p=P(name); if(!p || p.sick) return;
+  const p=P(name); if(!p || p.sick || p.away || p.locked) return;
   id = id || null;
   if(id && p.job!==id && assigned(id).length>=cap(id)) return;
   haptic(); p.job=id; save(); render();
@@ -873,7 +1361,15 @@ function upgrade(id){
   if(r.lvl>=MAX_LVL || S.res.materials<cost) return;
   haptic('heavy'); S.res.materials-=cost; r.lvl++; save(); render();
 }
-function finishDay(){ haptic('medium'); endDay(); go(S.ending ? 'ending' : 'summary'); }
+function finishDay(){
+  haptic('medium');
+  const em=pickEmergency();
+  if(em && em.deferEnd) return startEmergency(em);     // буря у шлюза — до возвращения вылазки
+  endDay();
+  if(S.ending) return go('ending');
+  if(em) return startEmergency(em);                    // ночное ЧП
+  go('summary');
+}
 function restart(){ wipe(); S=newState(); S.screen='pick'; go('pick'); }
 
 /* =========================================================
@@ -1135,7 +1631,7 @@ function bunkerSVG(){
     let g=`<g class="room" transform="translate(${x},${y})" ${isLiving?'':`onclick="focusRoom('${id}')"`}><g clip-path="url(#rc)">`;
     if(!r.lvl){ g+=constructionSite(id); }
     else {
-      const crew = isLiving ? people(p=>(!p.job || p.migraine>0) && !p.sick) : assigned(id).filter(p=>!p.sick && !(p.migraine>0));
+      const crew = isLiving ? people(p=>(!p.job || p.migraine>0) && !p.sick && !p.away) : assigned(id).filter(p=>!p.sick && !(p.migraine>0) && !p.away);
       const idle = !isLiving && crew.length===0 && id!=='filter';
       const lit = (isLiving ? Math.max(0.6,eff) : eff) * (idle ? 0.45 : 1);
       g+=roomBase(id);
@@ -1183,7 +1679,7 @@ const ICONS = { generator:'⚡', water:'💧', filter:'🌀', farm:'🌱', works
 const EVENT_ART = {
   knock:['🚪','#4a2a18'], rats:['🐀','#3a2a1e'], filter_noise:['🌀','#1f3a3a'], quarrel:['👊','#4a1e1e'],
   sick:['🤒','#2a3a24'], generator_burn:['⚡','#4a3a10'], sortie:['🎒','#3a2c1a'], docs:['📁','#2a2a3e'],
-  pills_choice:['💊','#2e2440'], mem1:['💡','#14141e'], injection:['💉','#2a3a3a'], countdown:['🔊','#2a1414'], zarya_call:['📻','#1e2e44'], whisper:['🤫','#14182a'], drawing1:['🖍','#3a2a3a'], marina_radio:['📻','#3a2418'], pills_doubt:['💊','#3a2a14'], act1_finale:['📡','#3a1010'], idea:['💡','#3a3414'], pantry:['🥫','#3a2a14'], thief_judge:['⚖️','#2e2440'], stranger:['🥽','#3a2418'], birthday:['🎂','#4a2440'], quiet:['☕','#24283a'], final:['📡','#1a3a44'],
+  pills_choice:['💊','#2e2440'], act2_open:['🗺','#2a2418'], gleb_knows:['🪪','#1e2a3a'], winter:['❄️','#1a2a3a'], raiders_ultimatum:['🏴','#3a1a14'], drawing2:['🖍','#3a2a3a'], peter_caught:['🎧','#14182a'], epidemic:['🦠','#1e3a24'], nii_hint:['🔊','#2a1414'], lesha_gone:['👣','#2a2a30'], lesha_return:['🚪','#2a2418'], marina_warn:['📻','#3a2418'], vera_offer:['🏰','#2a1e3a'], raiders_assault:['⚔️','#3a1414'], folder_found:['📁','#2a2a14'], folder_decoded:['🔓','#3a1010'], metro_meet:['Ⓜ️','#14243a'], act2_finale:['🕛','#3a1010'], mem1:['💡','#14141e'], injection:['💉','#2a3a3a'], countdown:['🔊','#2a1414'], zarya_call:['📻','#1e2e44'], whisper:['🤫','#14182a'], drawing1:['🖍','#3a2a3a'], marina_radio:['📻','#3a2418'], pills_doubt:['💊','#3a2a14'], act1_finale:['📡','#3a1010'], idea:['💡','#3a3414'], pantry:['🥫','#3a2a14'], thief_judge:['⚖️','#2e2440'], stranger:['🥽','#3a2418'], birthday:['🎂','#4a2440'], quiet:['☕','#24283a'], final:['📡','#1a3a44'],
 };
 
 function ring(ico,val,label,pct,color,cls=''){
@@ -1197,6 +1693,8 @@ function hud(){
     <div class="topbar"><b>День ${S.day}</b>
       <div class="chips"><span class="chip">👥 ${n}${freeWorkers()>0?` · ${freeWorkers()} своб.`:''}${people(p=>p.sick).length?` · 🤒${people(p=>p.sick).length}`:''}</span>
       ${S.rooms.radio.lvl>0?`<span class="chip">📡 ${r.signal}</span>`:''}
+      ${(r.meds||0)>0?`<span class="chip">💊 ${r.meds}</span>`:''}
+      ${S.flags.winter?`<span class="chip" style="color:#9fd8ff">❄</span>`:''}
       ${S.flags.countdown?`<span class="chip" style="color:#ff8a7a">⏳ ${Math.max(0,40-S.day)}</span>`:''}
       <button class="chip btn" onclick="toggleMusic()">${musicOn()?'🔊':'🔇'}</button></div></div>
     <div class="rings">
@@ -1214,7 +1712,7 @@ function choiceBtn(c,i){
   return `<button ${c.req&&!c.req()?'disabled':''} onclick="choose(${i})"><span>${label}</span>${tag?`<span class="tag">${tag}</span>`:''}</button>`;
 }
 function dock(){
-  const tabs=[['bunker','🏠','Бункер'],['people','👥','Люди'],['build','🛠','Стройка'],['journal','📖','Журнал']];
+  const tabs=[['bunker','🏠','Бункер'],['people','👥','Люди'],['build','🛠','Стройка'],['map','🗺','Карта'],['journal','📖','Журнал']];
   return `<div class="dock"><div class="inner">
     <button class="main" onclick="finishDay()">🌙 Закончить день</button>
     <div class="tabbar">${tabs.map(([id,ic,t])=>`<div class="${S.tab===id?'on':''}" onclick="setTab('${id}')"><b>${ic}</b>${t}</div>`).join('')}</div>
@@ -1245,9 +1743,32 @@ function render(){
     return;
   }
 
+  if(sc==='emergency' && S.em){
+    const E=EM[S.em.id];
+    if(S.em.result){
+      app.innerHTML=`<div class="emerg done"><div class="emhead">⚠ ${E.title}</div>
+        <div class="card" style="margin-top:22px"><p>${S.em.result}</p></div>
+        <button class="main" onclick="emContinue()">Дальше</button></div>`;
+      return;
+    }
+    const ch=E.choices();
+    app.innerHTML=`<div class="emerg"><div class="emhead blink">⚠ ЭКСТРЕННАЯ СИТУАЦИЯ</div>
+      <div class="emring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" stroke="rgba(255,255,255,.12)" stroke-width="8" fill="none"/>
+        <circle id="emRing" cx="60" cy="60" r="54" stroke="#ff4a3a" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="0" transform="rotate(-90 60 60)"/></svg>
+        <b id="emNum">${Math.ceil(S.em.left)}</b></div>
+      <h2 class="emtitle">${E.title}</h2><p class="emtext">${E.text()}</p>
+      ${ch.map((c,i)=>`<button class="embtn" ${c.req&&!c.req()?'disabled':''} onclick="emChoose(${i})">${c.t}</button>`).join('')}
+      ${!S.flags.emSeen?'<p class="small" style="opacity:.8;margin-top:10px">У тебя 10 секунд. Не успеешь — решит паника.</p>':''}
+    </div>`;
+    S.flags.emSeen=1;
+    if(!emRunning) emRun();
+    return;
+  }
+
   if(sc==='act'){
     const A={1:['АКТ 1','ПОД ЗЕМЛЁЙ','Дни 1–12','Ты не помнишь последние полгода. Но этот бункер, кажется, помнит тебя.','Начать'],
-             2:['АКТ 2','НАВЕРХУ','Дни 13–27','Продолжение сюжета появится в следующем обновлении. А пока бункер живёт своей жизнью — и отсчёт продолжается.','Продолжить']}[S.actN]||['','','','',''];
+             2:['АКТ 2','НАВЕРХУ','Дни 13–27','Дозиметр у шлюза щёлкает реже. Наверху — пепел, холод и ответы. Кто-то там уже ждёт тебя.','Продолжить'],
+             3:['АКТ 3','ПОЛДЕНЬ','Дни 28–40','Продолжение сюжета появится в следующем обновлении. А пока бункер живёт — и отсчёт продолжается.','Продолжить']}[S.actN]||['','','','',''];
     app.innerHTML = `<div class="startscr" onclick="actContinue()"><div class="glow"></div>
       <p class="kicker">${A[0]}</p><h1 class="big" style="font-size:38px">${A[1]}</h1><p class="dim" style="font-weight:700">${A[2]}</p>
       <p style="max-width:300px;margin:18px auto 0;color:#c3c7d4">${A[3]}</p>
@@ -1328,10 +1849,11 @@ function render(){
             <div class="av" style="background:${AV_COLORS[i%AV_COLORS.length]}">${pr.i}</div>
             <div class="pinfo">
               <div class="pname"><b>${p.name}</b><span class="dim small">${pr.n}${pr.room?' · ★ '+ICONS[pr.room]:''}</span></div>
-              <div class="ptags"><span class="ptag">${known?tr.i+' '+tr.n:'❔ ???'}</span>${p.sick?'<span class="ptag bad">🤒 болен</span>':''}${p.migraine>0?'<span class="ptag bad">🤕 мигрень</span>':''}${p.name==='Ты'&&S.flags.pills?`<span class="ptag">${S.flags.onPills?'💊 пьёт таблетки':'🚫 без таблеток'}</span>`:''}${p.isolated?'<span class="ptag">🚪 изолирован</span>':''}</div>
+              <div class="ptags"><span class="ptag">${known?tr.i+' '+tr.n:'❔ ???'}</span>${p.sick?'<span class="ptag bad">🤒 болен</span>':''}${p.migraine>0?'<span class="ptag bad">🤕 мигрень</span>':''}${p.away?'<span class="ptag">🗺 на вылазке</span>':''}${p.locked?'<span class="ptag bad">🔒 под замком</span>':''}${p.name==='Ты'&&S.flags.pills?`<span class="ptag">${S.flags.onPills?'💊 пьёт таблетки':'🚫 без таблеток'}</span>`:''}${p.isolated?'<span class="ptag">🚪 изолирован</span>':''}</div>
               <div class="small dim">${known?tr.d:'Характер пока не ясен'}</div>
               <div class="hpbar"><i style="width:${p.hp}%;background:${hpCol}"></i></div>
-              <select class="job" onchange="setJob('${p.name}',this.value)" ${p.sick?'disabled':''}>${p.sick?'<option>🤒 Болеет</option>':opts}</select>
+              ${p.locked?`<button onclick="unlockP('${p.name}')" style="padding:8px 12px;margin:0 0 6px;font-size:13px"><span>🔓 Выпустить из кладовой</span></button>`:''}
+              <select class="job" onchange="setJob('${p.name}',this.value)" ${p.sick||p.away||p.locked?'disabled':''}>${p.sick?'<option>🤒 Болеет</option>':p.away?'<option>🗺 На вылазке до вечера</option>':p.locked?'<option>🔒 Заперт в кладовой</option>':opts}</select>
             </div>
             <div class="hp" style="color:${hpCol}">❤ ${p.hp}</div>
           </div>`;
@@ -1347,6 +1869,7 @@ function render(){
               `<button ${S.res.materials<cost?'disabled':''} onclick="upgrade('${id}')" style="margin-top:10px"><span>${r.lvl?'Улучшить до ур. '+(r.lvl+1):'Построить'}</span><span class="tag">−${cost} 🛠</span></button>`}</div>`;
         }).join('');
     }
+    if(tab==='map') body=mapTab();
     if(tab==='journal'){
       const J=(S.journal||[]).slice().reverse();
       const M=S.memories||[], C=S.clues||[];
@@ -2180,7 +2703,7 @@ function startPrologue(){ haptic('medium'); S.seenPrologue=1; playPrologue(()=>{
 /* =========================================================
    7.7 ФЛЕШБЭКИ: ролик на каждое воспоминание
    ========================================================= */
-const FLASH = { fb1:{len:9.6, title:'Щиток'}, fb2:{len:12.2, title:'Узел 7'} };
+const FLASH = { fb1:{len:9.6, title:'Щиток'}, fb2:{len:12.2, title:'Узел 7'}, fb3:{len:10.6, title:'Медблок'}, fb4:{len:12.6, title:'Акт о готовности'} };
 
 // белый коридор в перспективе; move — движение камеры вперёд, lights — сколько ламп горит
 function fbCorridor(c,E,t,move,lights,sign){
@@ -2363,11 +2886,111 @@ function fbAudio(kind){
   }catch(e){ ac=null; }
   return ac;
 }
+function drawFB3(c,t,V){
+  const {W,H,SC,OX,OY}=V, E=OX/SC+40, len=FLASH.fb3.len;
+  c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H);
+  const amp=(t<0.4?6:0)+(t>len-0.7?8:0), sx=Math.sin(t*93)*amp, sy=Math.sin(t*71)*amp;
+  c.translate(OX+sx*SC,OY+sy*SC); c.scale(SC,SC);
+  if(t<3.8){
+    fbCorridor(c,E,t,t*0.6,9,0);
+    // будка поста
+    c.fillStyle='#8e979f'; c.fillRect(214,250,120,220); c.fillStyle='rgba(190,215,235,.75)'; c.fillRect(224,262,100,90);
+    c.fillStyle='#2a3038'; c.beginPath(); c.arc(274,300,15,0,7); c.fill(); c.fillRect(256,314,36,40);
+    c.fillStyle='#1f3a2a'; c.fillRect(256,282,36,8); c.fillRect(262,276,24,8);
+    c.fillStyle='#e9e3c6'; c.fillRect(236,372,76,18); c.fillStyle='#2a2e33'; c.font='bold 11px "Courier New", monospace'; c.textAlign='center'; c.fillText('ПОСТ № 4',274,385);
+    // турникет
+    c.strokeStyle='#5f676e'; c.lineWidth=6; c.beginPath(); c.moveTo(150,470); c.lineTo(150,400); c.lineTo(205,400); c.stroke();
+  } else if(t<8.2){
+    const u=t-3.8;
+    c.fillStyle='#dfe4e8'; c.fillRect(-E,-500,360+2*E,1640);
+    for(let x=-E;x<360+E;x+=30){ c.fillStyle='rgba(0,0,0,.035)'; c.fillRect(x,0,1.5,640); }
+    // операционная лампа
+    c.save(); c.shadowColor='#fff'; c.shadowBlur=40; c.fillStyle='#ffffff'; c.beginPath(); c.ellipse(180,110,70,22,0,0,7); c.fill(); c.restore();
+    c.fillStyle='#9aa3ab'; c.fillRect(176,40,8,50);
+    // кушетка и ты
+    c.fillStyle='#8e979f'; c.fillRect(40,440,280,14); c.fillRect(56,454,8,90); c.fillRect(296,454,8,90);
+    c.fillStyle='#f2f4f6'; c.fillRect(44,422,272,20);
+    c.fillStyle='#2a3038'; c.beginPath(); c.arc(78,408,18,0,7); c.fill();
+    c.fillStyle='#c9d2da'; c.fillRect(96,400,200,26);
+    c.fillStyle='#d9b896'; c.fillRect(150,390,60,10);
+    // врач и шприц
+    const k=iSm(4.2,6.0,t);
+    c.fillStyle='#e9eef2'; c.fillRect(250,250,70,170); c.beginPath(); c.arc(285,226,22,0,7); c.fill();
+    c.fillStyle='#bfd6e0'; c.fillRect(268,226,34,14);
+    c.save(); c.translate(250-50*k,330+40*k); c.rotate(0.5);
+    c.fillStyle='#bfe0c8'; c.fillRect(-30,-6,52,12); c.fillStyle='#9aa3ab'; c.fillRect(22,-3,10,6); c.fillRect(-42,-2,12,4);
+    c.strokeStyle='#5f676e'; c.lineWidth=1.2; c.beginPath(); c.moveTo(32,0); c.lineTo(52,0); c.stroke();
+    c.fillStyle='#e9eef2'; c.fillRect(-60,-14,22,28);
+    c.restore();
+    c.fillStyle='#1d2228'; c.font='bold 15px "Courier New", monospace'; c.textAlign='center';
+    iType(c,'«Ещё кубик.',180,540,5.6,t,20); iType(c,'Он должен забыть седьмой отдел».',180,566,6.4,t,20);
+  } else {
+    c.fillStyle='#eef1f4'; c.fillRect(-E,-500,360+2*E,1640);
+    c.fillStyle=`rgba(29,34,40,${iSm(8.4,9,t)})`; c.font='bold 16px "Courier New", monospace'; c.textAlign='center';
+    c.fillText('Это было не один раз.',180,320);
+  }
+  c.restore();
+  fbFilter(c,t,W,H,len);
+  if(t<0.25){ c.fillStyle=`rgba(255,255,255,${1-t/0.25})`; c.fillRect(0,0,W,H); }
+  if((t>3.7&&t<3.9)||(t>8.1&&t<8.3)){ c.fillStyle='rgba(255,255,255,.85)'; c.fillRect(0,0,W,H); }
+  if(t>len-0.8){ c.fillStyle=`rgba(0,0,0,${iSm(len-0.8,len,t)})`; c.fillRect(0,0,W,H); }
+  fbBars(c,W,H,t, t<3.7?'Пост № 4. Глеб кивал тебе каждое утро.':(t<8.1?'Медблок.':null));
+}
+function drawFB4(c,t,V){
+  const {W,H,SC,OX,OY}=V, E=OX/SC+40, len=FLASH.fb4.len;
+  c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H);
+  const amp=(t<0.4?6:0)+(t>len-0.8?10:0)+(t>8.4&&t<8.6?10:0), sx=Math.sin(t*93)*amp, sy=Math.sin(t*71)*amp;
+  c.translate(OX+sx*SC,OY+sy*SC); c.scale(SC,SC);
+  if(t<4.3){
+    c.fillStyle='#5a4632'; c.fillRect(-E,-500,360+2*E,1640);
+    for(let y=-500;y<1140;y+=26){ c.fillStyle='rgba(0,0,0,.08)'; c.fillRect(-E,y,360+2*E,2); }
+    const push=iSm(2.6,3.4,t)*120;
+    c.save(); c.translate(-push*0.2,-push); c.rotate(-0.04-push*0.0006);
+    c.save(); c.shadowColor='rgba(0,0,0,.4)'; c.shadowBlur=20; c.fillStyle='#f4f1e8'; c.fillRect(60,140,240,330); c.restore();
+    c.fillStyle='#1d2228'; c.textAlign='center'; c.font='bold 18px "Times New Roman", serif'; c.fillText('А К Т',180,182);
+    c.font='12px "Times New Roman", serif'; c.fillText('о готовности системы «ПОЛДЕНЬ»',180,204); c.fillText('к боевому дежурству',180,220);
+    for(let i=0;i<8;i++){ c.fillStyle='rgba(29,34,40,.35)'; c.fillRect(82,244+i*16,196-(i%3)*30,3); }
+    c.font='12px "Times New Roman", serif'; c.textAlign='left'; c.fillStyle='#1d2228'; c.fillText('Инженер узла связи № 7:',82,410);
+    c.fillRect(82,436,150,1.5); c.font='italic 10px serif'; c.fillText('(подпись)',140,450);
+    c.restore();
+    c.save(); c.translate(250,500); c.rotate(-0.6); c.fillStyle='#1a1a1a'; c.fillRect(-4,-70,8,90); c.fillStyle='#c9a227'; c.fillRect(-4,-74,8,8); c.restore();
+    fbHand(c,300-push*0.4,470-push*0.6,-1.2,'#3a4a5a');
+    c.fillStyle='#f6f7f8'; c.font='bold 15px "Courier New", monospace'; c.textAlign='center';
+    c.fillStyle='rgba(10,14,20,.55)'; if(t>1) c.fillRect(-E,538,360+2*E,62);
+    c.fillStyle='#f6f7f8'; iType(c,'«Я это не подпишу.',180,560,1.0,t,22); iType(c,'Система неисправна».',180,586,1.9,t,22);
+  } else if(t<8.5){
+    c.fillStyle='#2a3038'; c.fillRect(-E,-500,360+2*E,1640);
+    const wg=c.createLinearGradient(0,120,0,420); wg.addColorStop(0,'#c9d0d6'); wg.addColorStop(1,'#9aa3ab');
+    c.fillStyle=wg; c.fillRect(70,120,220,300); c.strokeStyle='#1a1d22'; c.lineWidth=8; c.strokeRect(70,120,220,300); c.lineWidth=4; c.beginPath(); c.moveTo(180,120); c.lineTo(180,420); c.moveTo(70,270); c.lineTo(290,270); c.stroke();
+    // Ракитин со спины
+    c.fillStyle='#14181d'; c.beginPath(); c.moveTo(118,640); c.lineTo(126,380); c.quadraticCurveTo(180,340,234,380); c.lineTo(242,640); c.closePath(); c.fill();
+    c.beginPath(); c.arc(180,330,30,0,7); c.fill(); c.fillRect(146,296,68,10);
+    c.fillStyle='#c9a227'; c.fillRect(124,378,30,6); c.fillRect(206,378,30,6);
+    for(let i=0;i<3;i++){ c.strokeStyle=`rgba(230,230,235,${0.35-i*0.1})`; c.lineWidth=2; c.beginPath(); for(let y=0;y<60;y+=3){ const x=226+Math.sin(y*0.15+t*2+i)*6+i*4; y?c.lineTo(x,350-y-i*20):c.moveTo(x,350); } c.stroke(); }
+    c.fillStyle='rgba(10,14,20,.55)'; if(t>4.9) c.fillRect(-E,538,360+2*E,62);
+    c.fillStyle='#f6f7f8'; c.font='bold 15px "Courier New", monospace'; c.textAlign='center';
+    iType(c,'«Жаль. Ты нам ещё понадобишься,',180,560,5.0,t,22); iType(c,'Связист. Но не таким».',180,586,6.5,t,22);
+  } else {
+    c.fillStyle='#06080b'; c.fillRect(-E,-500,360+2*E,1640);
+    const bl=Math.sin(t*9)>0;
+    c.save(); c.shadowColor='#ff3b2a'; c.shadowBlur=24; c.fillStyle=bl?'#ff4a3a':'#a8241a'; c.textAlign='center';
+    c.font='bold 40px "Courier New", monospace'; c.fillText('ЭТАП 2',180+Math.sin(t*50)*2,270);
+    c.font='bold 26px "Courier New", monospace'; c.fillText('Д+40 · 12:00',180,320); c.restore();
+    c.fillStyle='#ff8a7a'; c.font='bold 12px "Courier New", monospace'; c.textAlign='center'; c.fillText('АВТОМАТИЧЕСКИЙ ПУСК',180,356);
+    for(let i=0;i<6;i++){ const y=((t*300+i*90)%640); c.fillStyle='rgba(255,60,40,.12)'; c.fillRect(-E,y,360+2*E,3); }
+  }
+  c.restore();
+  fbFilter(c,t,W,H,len);
+  if(t<0.25){ c.fillStyle=`rgba(255,255,255,${1-t/0.25})`; c.fillRect(0,0,W,H); }
+  if((t>4.2&&t<4.4)||(t>8.4&&t<8.6)){ c.fillStyle='rgba(255,255,255,.85)'; c.fillRect(0,0,W,H); }
+  if(t>len-0.8){ c.fillStyle=`rgba(0,0,0,${iSm(len-0.8,len,t)})`; c.fillRect(0,0,W,H); }
+  fbBars(c,W,H,t, t<4.2?'Кабинет. Акт о готовности.':(t<8.4?'Ракитин.':'Второй полдень.'));
+}
 function playFlashback(key, done){
   if(!FLASH[key]){ done(); return; }
   bgm.stop();
-  const draw = key==='fb1' ? drawFB1 : drawFB2;
-  runCutscene(draw, FLASH[key].len, ()=>fbAudio(key), [0.1, key==='fb1'?5.0:10.4], ()=>{ bgm.play(); done(); });
+  const draw = {fb1:drawFB1, fb2:drawFB2, fb3:drawFB3, fb4:drawFB4}[key];
+  runCutscene(draw, FLASH[key].len, ()=>fbAudio(key), [0.1, {fb1:5.0,fb2:10.4,fb3:6.0,fb4:8.4}[key]], ()=>{ bgm.play(); done(); });
 }
 
 /* =========================================================
