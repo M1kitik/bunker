@@ -1127,20 +1127,20 @@ const EM = {
     pre:()=>{ S.em.v=(rnd(adults().filter(p=>p.name!=='Ты'))||P('Ты')).name; },
     text:()=>'Шипение из трубы над жилым отсеком. Резкий запах газа. Вентиль — в конце коридора, прямо в облаке.',
     choices:()=>[
-      {t:`${S.em.v==='Ты'?'Бежать к вентилю':S.em.v+' — к вентилю!'}`, go:()=>{ const v=P(S.em.v); if(v) emHurt(v,25); S.res.morale+=3; return `${S.em.v} задерживает дыхание и бежит в облако. Вентиль скрипит — и шипение стихает. ${S.em.v} кашляет до утра (❤ −25).`; }},
-      {t:'Всех — в шлюз!', go:()=>{ people().forEach(p=>emHurt(p,5)); S.res.morale-=3; S.res.food=Math.max(0,S.res.food-3); return 'Все теснятся в шлюзе, пока газ выветривается через вентиляцию. Продукты на столе пришлось выбросить. Все надышались дымом.'; }},
-      {t:'Сам к вентилю', go:()=>{ emHurt(P('Ты'),22); S.res.morale+=5; return 'Ты бежишь сам. Глаза режет, горло горит — но вентиль перекрыт. Люди видели, кто пошёл в газ первым. Мораль +5.'; }},
+      {k:'valve', t:`${S.em.v==='Ты'?'Бежать к вентилю':S.em.v+' — к вентилю!'}`, go:()=>{ const v=P(S.em.v); if(v) emHurt(v,25); S.res.morale+=3; return `${S.em.v} задерживает дыхание и бежит в облако. Вентиль скрипит — и шипение стихает. ${S.em.v} кашляет до утра (❤ −25).`; }},
+      {k:'airlock', t:'Всех — в шлюз!', go:()=>{ people().forEach(p=>emHurt(p,5)); S.res.morale-=3; S.res.food=Math.max(0,S.res.food-3); return 'Все теснятся в шлюзе, пока газ выветривается через вентиляцию. Продукты на столе пришлось выбросить. Все надышались дымом.'; }},
+      {k:'self', t:'Сам к вентилю', go:()=>{ emHurt(P('Ты'),22); S.res.morale+=5; return 'Ты бежишь сам. Глаза режет, горло горит — но вентиль перекрыт. Люди видели, кто пошёл в газ первым. Мораль +5.'; }},
     ],
-    timeout:()=>{ people().forEach(p=>emHurt(p,12)); const w=people().sort((a,b)=>a.hp-b.hp)[0]; if(w) emHurt(w,15); S.res.morale-=6; return `Ты замер. Газ расползается по отсеку. Все отравлены, ${w?w.name+' — тяжелее всех':''}.`; },
+    timeout:()=>{ people().forEach(p=>emHurt(p,12)); const w=people().sort((a,b)=>a.hp-b.hp)[0]; if(w){ emHurt(w,15); S.em.w=w.name; } S.res.morale-=6; return `Ты замер. Газ расползается по отсеку. Все отравлены, ${w?w.name+' — тяжелее всех':''}.`; },
   },
   fire:{
     title:'ПОЖАР В ГЕНЕРАТОРНОЙ',
     pre:()=>{ const g=assigned('generator').filter(p=>!p.sick)[0]; S.em.v=(g||pickVictim(p=>p.name!=='Ты')).name; },
     text:()=>`Пламя в генераторной! ${S.em.v} внутри, дверь заклинило. Дым ползёт по коридору.`,
     choices:()=>[
-      {t:'Тушить огнетушителем', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,15); emHurt(P('Ты'),10); return `Пена, дым, крики. Огонь сбит. ${S.em.v} выбирается обожжённым, у тебя ожоги на руках.`; }},
-      {t:'Закрыть отсек — пусть задохнётся', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,40); S.rooms.generator.lvl=Math.max(1,S.rooms.generator.lvl-1); return `Без воздуха огонь гаснет. ${S.em.v} выбирается через вентиляцию — чёрный от копоти. Генератор потерял уровень.`; }},
-      {t:'Вырубить всё питание', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,12); S.res.food=Math.max(0,S.res.food-4); S.res.morale-=4; return `Тьма. Огонь без тока гаснет сам. ${S.em.v} цел, но сутки без света: испортилась еда (−4 🍞), мораль −4.`; }},
+      {k:'ext', t:'Тушить огнетушителем', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,15); emHurt(P('Ты'),10); return `Пена, дым, крики. Огонь сбит. ${S.em.v} выбирается обожжённым, у тебя ожоги на руках.`; }},
+      {k:'seal', t:'Закрыть отсек — пусть задохнётся', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,40); S.rooms.generator.lvl=Math.max(1,S.rooms.generator.lvl-1); return `Без воздуха огонь гаснет. ${S.em.v} выбирается через вентиляцию — чёрный от копоти. Генератор потерял уровень.`; }},
+      {k:'power', t:'Вырубить всё питание', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,12); S.res.food=Math.max(0,S.res.food-4); S.res.morale-=4; return `Тьма. Огонь без тока гаснет сам. ${S.em.v} цел, но сутки без света: испортилась еда (−4 🍞), мораль −4.`; }},
     ],
     timeout:()=>{ const v=P(S.em.v); if(v) emHurt(v,45); S.rooms.generator.lvl=Math.max(1,S.rooms.generator.lvl-1); S.res.materials=Math.max(0,S.res.materials-5); S.res.morale-=8; return `Никто не знает, что делать. Огонь выгрызает генераторную. ${S.em.v} вытаскивают уже без сознания. Генератор −1 ур., −5 🛠.`; },
   },
@@ -1149,9 +1149,9 @@ const EM = {
     pre:()=>{ const k=people(p=>p.prof==='child' && !p.away); S.em.v=(k.length?rnd(k):pickVictim(p=>p.name!=='Ты')).name; },
     text:()=>`${S.em.v} полез к щитку за упавшей вещью. Искры! ${S.em.v} не может отпустить провод — тело трясёт.`,
     choices:()=>[
-      ...((S.memories||[]).some(m=>m.startsWith('Щиток')) ? [{t:'Третий рубильник слева!', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,8); S.res.morale+=4; return `Рука сама находит рубильник — третий слева, как во сне. Ток пропадает. ${S.em.v} отделался ожогом. 🧠 Память спасла жизнь.`; }}] : []),
-      {t:'Оттолкнуть сухой доской', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,20); emHurt(P('Ты'),5); return `Удар доской — ${S.em.v} отлетает от щитка. Ожоги, но жив(а).`; }},
-      {t:'Схватить руками', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,12); emHurt(P('Ты'),30); return `Ты хватаешь — и ток бьёт через вас обоих. ${S.em.v} отпускает провод. Тебя отбрасывает к стене.`; }},
+      ...((S.memories||[]).some(m=>m.startsWith('Щиток')) ? [{k:'mem', t:'Третий рубильник слева!', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,8); S.res.morale+=4; return `Рука сама находит рубильник — третий слева, как во сне. Ток пропадает. ${S.em.v} отделался ожогом. 🧠 Память спасла жизнь.`; }}] : []),
+      {k:'board', t:'Оттолкнуть сухой доской', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,20); emHurt(P('Ты'),5); return `Удар доской — ${S.em.v} отлетает от щитка. Ожоги, но жив(а).`; }},
+      {k:'hands', t:'Схватить руками', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,12); emHurt(P('Ты'),30); return `Ты хватаешь — и ток бьёт через вас обоих. ${S.em.v} отпускает провод. Тебя отбрасывает к стене.`; }},
     ],
     timeout:()=>{ const v=P(S.em.v); if(v) emHurt(v,45); S.res.morale-=6; return `Секунды тянутся вечностью. Кто-то наконец вырубает свет. ${S.em.v} без сознания.`; },
   },
@@ -1161,9 +1161,9 @@ const EM = {
       const st=adults().filter(p=>p.name!==S.em.v && (p.trait==='tough'||p.trait==='worker')); S.em.s=st.length?st[0].name:null; },
     text:()=>`Треск бетона — и потолок в коридоре рушится. ${S.em.v} под балкой. Сверху сыплется крошка: может обвалиться ещё.`,
     choices:()=>[
-      {t:'Вытаскивать руками — сейчас', go:()=>{ const v=P(S.em.v); if(chance(.7)){ if(v) emHurt(v,20); return `Ты разгребаешь обломки голыми руками. ${S.em.v} на свободе.`; } if(v) emHurt(v,30); emHurt(P('Ты'),20); return `Второй обвал! Балка придавливает и тебя. Вас вытаскивают вместе (${S.em.v} ранен, ты −20 ❤).`; }},
-      ...(S.rooms.workshop.lvl>0 ? [{t:'Бежать за домкратом', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,25); return `Минута — и домкрат под балкой. Медленно, надёжно. ${S.em.v} спасён(а), но долго лежал(а) под бетоном.`; }}] : []),
-      ...(S.em.s ? [{t:`Поднять балку вдвоём с ${S.em.s}`, go:()=>{ const v=P(S.em.v), s=P(S.em.s); if(v) emHurt(v,10); if(s) emHurt(s,10); S.res.morale+=3; return `${S.em.s} упирается плечом рядом с тобой. Балка поддаётся. ${S.em.v} вытащен(а) почти целым(ой).`; }}] : []),
+      {k:'hands', t:'Вытаскивать руками — сейчас', go:()=>{ const v=P(S.em.v); if(chance(.7)){ if(v) emHurt(v,20); return `Ты разгребаешь обломки голыми руками. ${S.em.v} на свободе.`; } S.em.k='hands_fail'; if(v) emHurt(v,30); emHurt(P('Ты'),20); return `Второй обвал! Балка придавливает и тебя. Вас вытаскивают вместе (${S.em.v} ранен, ты −20 ❤).`; }},
+      ...(S.rooms.workshop.lvl>0 ? [{k:'jack', t:'Бежать за домкратом', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,25); return `Минута — и домкрат под балкой. Медленно, надёжно. ${S.em.v} спасён(а), но долго лежал(а) под бетоном.`; }}] : []),
+      ...(S.em.s ? [{k:'lift', t:`Поднять балку вдвоём с ${S.em.s}`, go:()=>{ const v=P(S.em.v), s=P(S.em.s); if(v) emHurt(v,10); if(s) emHurt(s,10); S.res.morale+=3; return `${S.em.s} упирается плечом рядом с тобой. Балка поддаётся. ${S.em.v} вытащен(а) почти целым(ой).`; }}] : []),
     ],
     timeout:()=>{ const v=P(S.em.v); if(v) emHurt(v,40); S.res.materials=Math.max(0,S.res.materials-4); S.res.morale-=5; return `Пока все кричали, обвалился второй пролёт. ${S.em.v} откапывают час. Коридор завален (−4 🛠).`; },
   },
@@ -1172,9 +1172,9 @@ const EM = {
     pre:()=>{ S.em.v=(rnd(adults())||P('Ты')).name; },
     text:()=>'Лопнула магистраль водоочистки! Вода хлещет в склад, где еда. Рядом искрит проводка.',
     choices:()=>[
-      {t:'Перекрыть магистраль', go:()=>{ S.res.water=Math.max(0,S.res.water-8); const v=P(S.em.v); if(v) emHurt(v,10); return `${S.em.v} ныряет к задвижке в ледяной воде. Поток остановлен. −8 💧, ${S.em.v} −10 ❤.`; }},
-      {t:'Спасать еду со склада', go:()=>{ S.res.water=Math.max(0,S.res.water-18); return 'Все таскают ящики наверх, пока вода заливает пол. Еда спасена, но вода ушла в слив (−18 💧).'; }},
-      {t:'Обесточить отсек', go:()=>{ S.res.water=Math.max(0,S.res.water-12); S.res.food=Math.max(0,S.res.food-5); S.res.morale-=2; return 'Свет гаснет, искры прекращаются. Пока искали задвижку в темноте, вода испортила часть еды. −12 💧, −5 🍞.'; }},
+      {k:'shut', t:'Перекрыть магистраль', go:()=>{ S.res.water=Math.max(0,S.res.water-8); const v=P(S.em.v); if(v) emHurt(v,10); return `${S.em.v} ныряет к задвижке в ледяной воде. Поток остановлен. −8 💧, ${S.em.v} −10 ❤.`; }},
+      {k:'food', t:'Спасать еду со склада', go:()=>{ S.res.water=Math.max(0,S.res.water-18); return 'Все таскают ящики наверх, пока вода заливает пол. Еда спасена, но вода ушла в слив (−18 💧).'; }},
+      {k:'power', t:'Обесточить отсек', go:()=>{ S.res.water=Math.max(0,S.res.water-12); S.res.food=Math.max(0,S.res.food-5); S.res.morale-=2; return 'Свет гаснет, искры прекращаются. Пока искали задвижку в темноте, вода испортила часть еды. −12 💧, −5 🍞.'; }},
     ],
     timeout:()=>{ S.res.water=Math.max(0,S.res.water-20); S.res.food=Math.max(0,S.res.food-8); const v=P(S.em.v); if(v) emHurt(v,15); return `Вода добирается до проводки — вспышка. ${S.em.v} бьёт током. −20 💧, −8 🍞.`; },
   },
@@ -1183,20 +1183,20 @@ const EM = {
     cond:()=>!!S.flags.raidersHostile,
     text:()=>'Удары в шлюз. Рейдеры ломают гермодверь ломами. Замок вот-вот сорвётся.',
     choices:()=>[
-      {t:'Держать дверь плечами', go:()=>{ const st=adults().sort((a,b)=>b.hp-a.hp).slice(0,2); st.forEach(p=>emHurt(p,15)); if(defense()>=6){ S.res.morale+=4; return `${st.map(p=>p.name).join(' и ')} держат дверь, пока рейдеры не устают. Дверь выдержала (ранен каждому).`; } S.res.food=Math.max(0,S.res.food-10); return 'Вас слишком мало. Дверь приоткрывается — рейдеры хватают ящик с едой и уходят (−10 🍞).'; }},
-      {t:'Сигнальная ракета в окошко (−3 🛠)', req:()=>S.res.materials>=3, go:()=>{ S.res.materials-=3; S.res.morale+=6; return 'Красная вспышка и грохот. Рейдеры с руганью разбегаются в темноту. Мораль +6.'; }},
-      {t:'Отдать склад', go:()=>{ S.res.food=Math.max(0,S.res.food-12); S.res.materials=Math.max(0,S.res.materials-6); S.flags.raidersHostile=0; S.flags.tribute=1; return 'Ты открываешь окошко: «Берите». Бес смеётся. −12 🍞, −6 🛠, и теперь — дань.'; }},
+      {k:'hold', t:'Держать дверь плечами', go:()=>{ const st=adults().sort((a,b)=>b.hp-a.hp).slice(0,2); S.em.h=st.map(p=>p.name).join(' и '); st.forEach(p=>emHurt(p,15)); if(defense()>=6){ S.res.morale+=4; return `${st.map(p=>p.name).join(' и ')} держат дверь, пока рейдеры не устают. Дверь выдержала (ранен каждому).`; } S.em.k='hold_fail'; S.res.food=Math.max(0,S.res.food-10); return 'Вас слишком мало. Дверь приоткрывается — рейдеры хватают ящик с едой и уходят (−10 🍞).'; }},
+      {k:'flare', t:'Сигнальная ракета в окошко (−3 🛠)', req:()=>S.res.materials>=3, go:()=>{ S.res.materials-=3; S.res.morale+=6; return 'Красная вспышка и грохот. Рейдеры с руганью разбегаются в темноту. Мораль +6.'; }},
+      {k:'give', t:'Отдать склад', go:()=>{ S.res.food=Math.max(0,S.res.food-12); S.res.materials=Math.max(0,S.res.materials-6); S.flags.raidersHostile=0; S.flags.tribute=1; return 'Ты открываешь окошко: «Берите». Бес смеётся. −12 🍞, −6 🛠, и теперь — дань.'; }},
     ],
-    timeout:()=>{ S.res.food=Math.max(0,S.res.food-15); S.res.materials=Math.max(0,S.res.materials-8); const v=rnd(adults()); if(v) emHurt(v,25); S.res.morale-=8; return `Замок срывается. Рейдеры врываются на склад. −15 🍞, −8 🛠${v?', '+v.name+' ранен(а)':''}.`; },
+    timeout:()=>{ S.res.food=Math.max(0,S.res.food-15); S.res.materials=Math.max(0,S.res.materials-8); const v=rnd(adults()); if(v){ emHurt(v,25); S.em.r=v.name; } S.res.morale-=8; return `Замок срывается. Рейдеры врываются на склад. −15 🍞, −8 🛠${v?', '+v.name+' ранен(а)':''}.`; },
   },
   airlock:{
     title:'ПЫЛЬНАЯ БУРЯ',
     pre:()=>{ S.em.v=S.exp.who; },
     text:()=>`Стена пепла идёт на гаражи. ${S.em.v} возвращается с вылазки — до шлюза двадцать метров. Дозиметр зашкаливает.`,
     choices:()=>[
-      {t:'Держать шлюз открытым', go:()=>{ S.res.rad+=7; return `${S.em.v} влетает в шлюз вместе с пеплом. Все живы — но радиация в бункере +7.`; }},
-      {t:'Закрыть шлюз', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,35); S.res.morale-=5; return `Дверь закрывается перед лицом ${S.em.v}. Ночь в буре у порога. Утром дверь открывают. Никто не смотрит тебе в глаза.`; }},
-      ...(canWalk(P('Ты')) && S.em.v!=='Ты' ? [{t:'Выбежать навстречу', go:()=>{ emHurt(P('Ты'),15); const v=P(S.em.v); if(v) emHurt(v,5); S.res.rad+=3; S.res.morale+=4; return `Ты выбегаешь в бурю, хватаешь ${S.em.v} за рукав и тащишь к двери. Вы оба облучены (ты ранен), но живы.`; }}] : []),
+      {k:'open', t:'Держать шлюз открытым', go:()=>{ S.res.rad+=7; return `${S.em.v} влетает в шлюз вместе с пеплом. Все живы — но радиация в бункере +7.`; }},
+      {k:'close', t:'Закрыть шлюз', go:()=>{ const v=P(S.em.v); if(v) emHurt(v,35); S.res.morale-=5; return `Дверь закрывается перед лицом ${S.em.v}. Ночь в буре у порога. Утром дверь открывают. Никто не смотрит тебе в глаза.`; }},
+      ...(canWalk(P('Ты')) && S.em.v!=='Ты' ? [{k:'runout', t:'Выбежать навстречу', go:()=>{ emHurt(P('Ты'),15); const v=P(S.em.v); if(v) emHurt(v,5); S.res.rad+=3; S.res.morale+=4; return `Ты выбегаешь в бурю, хватаешь ${S.em.v} за рукав и тащишь к двери. Вы оба облучены (ты ранен), но живы.`; }}] : []),
     ],
     timeout:()=>{ S.res.rad+=8; const v=P(S.em.v); if(v) emHurt(v,20); return `Пока ты медлил, шлюз застрял на полпути. Пепел внутри (☢ +8), ${S.em.v} протиснулся(ась) с ожогами.`; },
   },
@@ -1205,9 +1205,9 @@ const EM = {
     cond:()=>!!P('Пётр') && !P('Пётр').locked && !S.flags.peterConfessed,
     text:()=>'Ночь. Пётр у рации диктует цифры — координаты Узла 7. И… твоё полное имя. Его палец уже на кнопке «Передать».',
     choices:()=>[
-      {t:'Вырвать рацию', go:()=>{ trustP(-10); S.flags.peterInterrupted=1; clue('p_radio','Ты застал Петра, когда он диктовал «Заре» координаты Узла 7 и твоё имя.'); return 'Ты вырываешь трубку. Пётр отшатывается: «Я… я не хотел». Передача не ушла.'; }},
-      {t:'Дать договорить — и проследить', go:()=>{ S.flags.zaryaAlert=1; clue('p_radio','Пётр передал «Заре» координаты Узла 7 и твоё имя. Ты дал ему договорить.'); return 'Ты стоишь в темноте и слушаешь. «Заря» отвечает одним словом: «Принято». Теперь ты знаешь точно.'; }},
-      {t:'Оглушить', go:()=>{ const p=P('Пётр'); if(p) emHurt(p,20); trustP(-20); S.res.morale-=3; S.flags.peterInterrupted=1; return 'Удар — и Пётр оседает на пол. Передача не ушла. Утром у него огромная шишка и взгляд, полный страха.'; }},
+      {k:'grab', t:'Вырвать рацию', go:()=>{ trustP(-10); S.flags.peterInterrupted=1; clue('p_radio','Ты застал Петра, когда он диктовал «Заре» координаты Узла 7 и твоё имя.'); return 'Ты вырываешь трубку. Пётр отшатывается: «Я… я не хотел». Передача не ушла.'; }},
+      {k:'listen', t:'Дать договорить — и проследить', go:()=>{ S.flags.zaryaAlert=1; clue('p_radio','Пётр передал «Заре» координаты Узла 7 и твоё имя. Ты дал ему договорить.'); return 'Ты стоишь в темноте и слушаешь. «Заря» отвечает одним словом: «Принято». Теперь ты знаешь точно.'; }},
+      {k:'knock', t:'Оглушить', go:()=>{ const p=P('Пётр'); if(p) emHurt(p,20); trustP(-20); S.res.morale-=3; S.flags.peterInterrupted=1; return 'Удар — и Пётр оседает на пол. Передача не ушла. Утром у него огромная шишка и взгляд, полный страха.'; }},
     ],
     timeout:()=>{ S.flags.zaryaAlert=1; clue('p_radio','Пётр успел передать «Заре» координаты Узла 7 и твоё имя.'); return '«Передаю». Щелчок. Пётр снимает наушники и видит тебя. Поздно.'; },
   },
@@ -1252,20 +1252,24 @@ function emFinish(text){
   cancelAnimationFrame(emRaf); emStopAudio(); emRunning=false;
   const E=EM[S.em.id];
   clamp();
-  let extra='';
-  people(p=>p.hp<=0).forEach(p=>{ killResident(p.name); S.res.morale-=7; extra+=` ☠ ${p.name} не выжил(а).`; });
+  let extra=''; const dead=[];
+  const vk=S.em.v && P(S.em.v) && P(S.em.v).prof==='child';
+  people(p=>p.hp<=0).forEach(p=>{ dead.push(p.name); killResident(p.name); S.res.morale-=7; extra+=` ☠ ${p.name} не выжил(а).`; });
   clamp();
   S.em.result=text+extra;
   S.flags['em_'+S.em.id]=(S.flags['em_'+S.em.id]||0)+1;
-  S.journal=S.journal||[]; S.journal.push({d:S.day-(S.em.deferEnd?0:1), t:'⚠ '+E.title, c:S.em.choice||'Не успел', r:S.em.result});
+  S.journal=S.journal||[]; const clip={id:S.em.id, k:S.em.k, v:S.em.v, s:S.em.s, h:S.em.h, r:S.em.r, w:S.em.w, vk, dead};
+  S.journal.push({d:S.day-(S.em.deferEnd?0:1), t:'⚠ '+E.title, c:S.em.choice||'Не успел', r:S.em.result, clip: ecHas(clip.id,clip.k)?clip:undefined});
+  if(S.journal.length>40) S.journal.shift();
   haptic('medium'); save(); render();
+  if(ecHas(clip.id,clip.k)) playEmClip(clip, ()=>render());
 }
 function emChoose(i){
   if(!S.em || S.em.result) return;
   const c=EM[S.em.id].choices()[i]; if(!c || (c.req && !c.req())) return;
-  S.em.choice=c.t; emFinish(c.go());
+  S.em.choice=c.t; S.em.k=c.k; emFinish(c.go());
 }
-function emTimeout(){ if(!S.em || S.em.result) return; S.em.choice='⏱ Не успел'; emFinish('⏱ '+EM[S.em.id].timeout()); }
+function emTimeout(){ if(!S.em || S.em.result) return; S.em.choice='⏱ Не успел'; S.em.k='timeout'; emFinish('⏱ '+EM[S.em.id].timeout()); }
 function emContinue(){
   const em=S.em; if(!em || !em.result) return;
   const line=`<span class="${/☠|⏱/.test(em.result)?'bad':'warn'}">⚠ ${EM[em.id].title}: ${em.result}</span>`;
@@ -1871,12 +1875,12 @@ function render(){
     }
     if(tab==='map') body=mapTab();
     if(tab==='journal'){
-      const J=(S.journal||[]).slice().reverse();
+      const J=(S.journal||[]).map((j,i)=>Object.assign({_i:i},j)).reverse();
       const M=S.memories||[], C=S.clues||[];
       body=`<h2>Журнал</h2>
         <div class="card"><b>🧠 Воспоминания · ${M.length}</b>${M.length?M.map((m,i)=>{ const k=(S.memKeys||[])[i]; return `<p class="small" style="margin-top:6px">— ${m}</p>${k&&FLASH[k]?`<button onclick="playFlashback('${k}',()=>render())" style="padding:7px 12px;margin:4px 0 8px;width:auto;font-size:13px">▶ Пересмотреть: «${FLASH[k].title}»</button>`:''}`; }).join(''):`<p class="small dim">${S.flags.onPills?'Таблетки держат память в тумане.':'Пока ничего. Но что-то царапается изнутри.'}</p>`}</div>
         <div class="card"><b>🔍 Улики · ${C.length}</b>${C.length?C.map(c=>`<p class="small" style="margin-top:6px"><span class="dim">День ${c.d}.</span> ${c.t}</p>`).join(''):'<p class="small dim">Пока ничего подозрительного.</p>'}</div>
-        <h2 style="font-size:15px">Решения</h2>`+(J.length?J.map(j=>`<div class="jr"><small>ДЕНЬ ${j.d} · ${j.t.toUpperCase()}</small><b>› ${j.c.replace(/\s*\([^)]*\)\s*$/,'')}</b><p>${j.r}</p></div>`).join(''):'<p class="dim">Пока пусто.</p>');
+        <h2 style="font-size:15px">Решения</h2>`+(J.length?J.map(j=>`<div class="jr"><small>ДЕНЬ ${j.d} · ${j.t.toUpperCase()}</small><b>› ${j.c.replace(/\s*\([^)]*\)\s*$/,'')}</b><p>${j.r}</p>${j.clip?`<button onclick="replayEm(${j._i})" style="padding:6px 12px;margin:6px 0 0;width:auto;font-size:13px">▶ Пересмотреть</button>`:''}</div>`).join(''):'<p class="dim">Пока пусто.</p>');
     }
     app.innerHTML = hud() + body + dock();
     return;
@@ -2992,6 +2996,632 @@ function playFlashback(key, done){
   const draw = {fb1:drawFB1, fb2:drawFB2, fb3:drawFB3, fb4:drawFB4}[key];
   runCutscene(draw, FLASH[key].len, ()=>fbAudio(key), [0.1, {fb1:5.0,fb2:10.4,fb3:6.0,fb4:8.4}[key]], ()=>{ bgm.play(); done(); });
 }
+
+
+/* =========================================================
+   7.8 РОЛИКИ ИСХОДОВ ЭКСТРЕННЫХ СИТУАЦИЙ
+   После выбора (или «не успел») — короткий ролик в стиле
+   воспоминаний: что именно произошло.
+   ========================================================= */
+const EC_COL = { hero:'#2c4462', vic:'#5c3c26', oth:'#2e3237', raid:'#0b0d0f', s:'#3d4c30' };
+const ecH = i => { const h=Math.sin(i*127.1+311.7)*43758.5453; return h-Math.floor(h); };
+const ecL = (a,b,k) => a+(b-a)*k;
+function ecLimb(c,x,y,a1,l1,a2,l2){ const x1=x+Math.sin(a1)*l1, y1=y+Math.cos(a1)*l1, x2=x1+Math.sin(a2)*l2, y2=y1+Math.cos(a2)*l2; c.beginPath(); c.moveTo(x,y); c.lineTo(x1,y1); c.lineTo(x2,y2); c.stroke(); return [x2,y2]; }
+// силуэт человека; y — уровень ступней. Возвращает положение кисти первой руки.
+function ecMan(c,x,y,o){
+  o=o||{}; const s=(o.s||1.25)*(o.kid?0.72:1), d=o.dir||1, sw=Math.sin(o.ph||0), pose=o.pose||'stand', T=o.t||0;
+  let hipY=-62, lean=0.02, lA=[0.06,-0.06], lB=[0.02,-0.04], aA=[0.18,-0.12], aB=[0.12,0.02];
+  if(pose==='walk'||pose==='carry'||pose==='drag'){ lA=[sw*0.45,-sw*0.45]; lB=[lA[0]-Math.max(0,-sw)*0.6,lA[1]-Math.max(0,sw)*0.6]; aA=[-sw*0.45,sw*0.45]; aB=[aA[0]+0.3,aA[1]+0.3]; lean=0.06; }
+  if(pose==='run'){ lA=[sw*0.85,-sw*0.85]; lB=[lA[0]-0.5-0.6*Math.max(0,-sw),lA[1]-0.5-0.6*Math.max(0,sw)]; aA=[-sw*1.0,sw*1.0]; aB=[aA[0]+1.3,aA[1]+1.3]; lean=0.24; hipY=-58; }
+  if(pose==='carry'){ aA=[0.8,0.8]; aB=[1.9,1.9]; }
+  if(pose==='drag'){ aA=[1.0,0.9]; aB=[1.1,1.0]; lean=-0.25; }
+  if(pose==='crouch'){ hipY=-34; lA=[1.35,0.95]; lB=[-0.2,-0.5]; aA=[0.7,0.5]; aB=[1.2,1.0]; lean=0.45; }
+  if(pose==='cough'){ hipY=-40; lA=[1.2,0.8]; lB=[-0.2,-0.4]; aA=[0.9,0.8]; aB=[2.7,2.6]; lean=0.6+Math.sin(T*9)*0.08; }
+  if(pose==='kneel'){ hipY=-40; lA=[1.5,0.15]; lB=[0.05,-1.45]; aA=[0.9+sw*0.5,0.7-sw*0.5]; aB=[0.5+sw*0.4,0.4-sw*0.4]; lean=0.55; }
+  if(pose==='push'){ aA=[1.45,1.3]; aB=[1.6,1.45]; lean=0.4; lA=[-0.35,0.2]; lB=[-0.4,0.1]; }
+  if(pose==='lift'){ const k=o.k||0; hipY=ecL(-36,-60,k); lA=[ecL(1.3,0.2,k),ecL(0.9,-0.2,k)]; lB=[ecL(-0.2,0.05,k),ecL(-0.5,-0.05,k)]; aA=[ecL(1.0,2.6,k),ecL(0.9,2.7,k)]; aB=[ecL(1.4,2.9,k),ecL(1.3,3.0,k)]; lean=ecL(0.5,0.05,k); }
+  if(pose==='up'){ aA=[2.6+sw*0.25,-2.6-sw*0.25]; aB=[2.95,-2.95]; }
+  if(pose==='reach'){ aA=[2.4,0.1]; aB=[2.75,0.05]; lean=0.08; }
+  if(pose==='shake'){ aA=[1.3,1.1]; aB=[1.45,1.3]; lean=0.15; }
+  if(pose==='sit'){ hipY=-30; lA=[1.55,1.4]; lB=[0.25,0.1]; aA=[0.45,0.3]; aB=[0.9,0.8]; lean=0.12; }
+  if(pose==='swing'){ const k=o.k||0; aA=[ecL(3.0,1.2,k),ecL(2.8,1.0,k)]; aB=[ecL(3.1,1.4,k),ecL(2.9,1.2,k)]; lean=ecL(-0.1,0.35,k); lA=[0.3,-0.3]; lB=[0.1,-0.2]; }
+  if(o.lean!=null) lean=o.lean;
+  c.save(); c.translate(x,y);
+  if(o.jit) c.translate(Math.sin(T*97+x)*o.jit, Math.cos(T*83+x)*o.jit*0.6);
+  c.save(); c.globalAlpha=o.a==null?1:Math.max(0,Math.min(1,o.a)); c.scale(s*d,s);
+  if(pose==='lie'){ c.translate(0,-10); c.rotate(-Math.PI/2); }
+  const col=o.col||EC_COL.oth; c.strokeStyle=col; c.fillStyle=col; c.lineCap='round'; c.lineJoin='round';
+  c.lineWidth=12; ecLimb(c,0,hipY,lA[1],30,lB[1],30); ecLimb(c,0,hipY,lA[0],30,lB[0],30);
+  const shx=Math.sin(lean)*42, shy=hipY-Math.cos(lean)*42, hx=shx+Math.sin(lean)*17, hy=shy-Math.cos(lean)*17;
+  c.lineWidth=24; c.beginPath(); c.moveTo(0,hipY); c.lineTo(shx,shy); c.stroke();
+  c.beginPath(); c.arc(hx,hy,11.5,0,7); c.fill();
+  if(o.mask){ c.fillStyle='#59625c'; c.beginPath(); c.arc(hx+8,hy+4,5.5,0,7); c.fill(); c.fillStyle='rgba(255,90,60,.8)'; c.fillRect(hx+2,hy-4,7,3); c.fillStyle=col; }
+  if(o.phones){ c.strokeStyle='#111'; c.lineWidth=3; c.beginPath(); c.arc(hx,hy,14,Math.PI*1.1,Math.PI*1.9); c.stroke(); c.strokeStyle=col; }
+  c.lineWidth=8.5; const h1=ecLimb(c,shx,shy,aA[0],25,aB[0],24); ecLimb(c,shx,shy,aA[1],25,aB[1],24);
+  if(pose==='carry'){ c.fillStyle='#6a5236'; c.fillRect(h1[0]-8,h1[1]-26,32,24); c.strokeStyle='rgba(0,0,0,.4)'; c.lineWidth=2; c.strokeRect(h1[0]-8,h1[1]-26,32,24); }
+  c.restore();
+  if(o.name){
+    const ly = pose==='lie' ? -30*s : (hipY-80)*s-8;
+    c.font='bold 12px "Courier New", monospace'; c.textAlign='center';
+    const w=c.measureText(o.name).width+8; c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2,ly-11,w,15);
+    c.fillStyle='#ffe2a8'; c.fillText(o.name,0,ly);
+  }
+  c.restore();
+  return [x+h1[0]*s*d, y+h1[1]*s];
+}
+function ecGlow(c,x,y,R,rgb,a){ if(a<=0.003||R<=0) return; const g=c.createRadialGradient(x,y,0,x,y,R); g.addColorStop(0,`rgba(${rgb},${Math.min(1,a)})`); g.addColorStop(1,`rgba(${rgb},0)`); c.fillStyle=g; c.fillRect(x-R,y-R,2*R,2*R); }
+function ecRoom(c,E,t,o){
+  o=o||{};
+  const g=c.createLinearGradient(0,-100,0,500); g.addColorStop(0,'#24282b'); g.addColorStop(1,o.wall||'#4b5156');
+  c.fillStyle=g; c.fillRect(-E,-500,360+2*E,1000);
+  c.strokeStyle='rgba(0,0,0,.28)'; c.lineWidth=2;
+  for(let x=-450;x<810;x+=90){ c.beginPath(); c.moveTo(x,100); c.lineTo(x,495); c.stroke(); }
+  c.beginPath(); c.moveTo(-E,300); c.lineTo(360+E,300); c.stroke();
+  for(let i=0;i<10;i++){ c.fillStyle='rgba(0,0,0,.12)'; c.fillRect(-E+ecH(i+3)*(360+2*E),120+ecH(i+8)*340,14+ecH(i)*30,3+ecH(i+1)*6); }
+  c.fillStyle='#25282b'; c.fillRect(-E,492,360+2*E,10);
+  const f=c.createLinearGradient(0,500,0,700); f.addColorStop(0,'#34383b'); f.addColorStop(1,'#141618'); c.fillStyle=f; c.fillRect(-E,500,360+2*E,700);
+  c.strokeStyle='rgba(0,0,0,.3)'; c.lineWidth=1.5;
+  for(let i=-7;i<=7;i++){ c.beginPath(); c.moveTo(180+i*60,502); c.lineTo(180+i*150,720); c.stroke(); }
+  if(o.pipe!==false){ c.fillStyle='#6c7379'; c.fillRect(-E,80,360+2*E,16); c.fillStyle='rgba(255,255,255,.12)'; c.fillRect(-E,82,360+2*E,3); c.fillStyle='#4c5257'; for(let x=-420;x<780;x+=70) c.fillRect(x,74,8,28); }
+  const L=o.light==null?1:o.light;
+  c.fillStyle='#3a3f44'; c.fillRect(150,30,60,10);
+  if(L>0.02){ c.fillStyle=`rgba(255,240,200,${L})`; c.fillRect(156,40,48,6); ecGlow(c,180,50,330,'255,228,170',0.26*L); }
+  if(o.alarm){ const a=0.5+0.5*Math.sin(t*9), ax=o.ax||36; c.fillStyle=`rgba(255,${60+50*a},40,${0.5+0.5*a})`; c.beginPath(); c.arc(ax,140,7,0,7); c.fill(); ecGlow(c,ax,140,240,'255,45,30',0.26*a); }
+}
+function ecShade(c,E,a){ if(a>0.01){ c.fillStyle=`rgba(3,4,6,${a})`; c.fillRect(-E,-500,360+2*E,1640); } }
+function ecCloud(c,E,t,amt,ox,oy,rgb,spread){
+  if(amt<=0.01) return;
+  for(let i=0;i<24;i++){ const r1=ecH(i+1), r2=ecH(i+51), life=(t*0.14+r1)%1;
+    const x=ox+(r2-0.5)*(60+life*spread), y=oy+life*(160+r1*300)+Math.sin(t*0.8+i)*12, R=40+life*130;
+    ecGlow(c,x,y,R,rgb,0.3*amt*(1-life*0.4)); }
+  c.fillStyle=`rgba(${rgb},${0.24*Math.min(1.2,amt)})`; c.fillRect(-E,-500,360+2*E,1640);
+}
+function ecSmoke(c,E,t,amt){
+  if(amt<=0.01) return; const Wd=360+2*E;
+  for(let i=0;i<18;i++){ const x=-E+(((ecH(i+7)*Wd+t*22*(i%2?1:-1))%Wd)+Wd)%Wd, y=50+ecH(i+90)*220*Math.min(1.4,amt)+Math.sin(t+i)*8, R=60+ecH(i+30)*80; ecGlow(c,x,y,R,'18,18,20',0.5*amt); }
+  c.fillStyle=`rgba(18,18,20,${0.22*Math.min(1.3,amt)})`; c.fillRect(-E,-500,360+2*E,1640);
+}
+function ecFire(c,x,y,w,h,t,amt){
+  if(amt<=0.02) return;
+  ecGlow(c,x,y-h*0.3,(w+h)*1.1,'255,120,40',0.35*Math.min(1,amt));
+  c.save(); c.globalCompositeOperation='lighter';
+  const N=Math.round(38*Math.min(1.7,amt));
+  for(let i=0;i<N;i++){ const r1=ecH(i*3+1), r2=ecH(i*7+2), life=(t*(1.2+r1*0.8)+r2)%1;
+    const px=x+(r1-0.5)*w*(1-life*0.5)*Math.min(1.5,amt+0.3)+Math.sin(t*7+i)*5, py=y-life*h*Math.min(1.5,amt), R=(14+r2*16)*(1-life*0.7)*Math.min(1.3,0.4+amt);
+    ecGlow(c,px,py,R,life<0.25?'255,235,160':life<0.55?'255,150,50':'210,60,20',0.62*(1-life)); }
+  c.restore();
+}
+function ecSparks(c,x,y,t,amt){
+  if(amt<=0.02) return; const fr=Math.floor(t*30);
+  ecGlow(c,x,y,60*amt+20,'190,215,255',0.55*amt*(0.5+0.5*ecH(fr)));
+  c.save(); c.globalCompositeOperation='lighter'; c.strokeStyle='rgba(255,245,190,.95)'; c.lineWidth=1.8;
+  for(let i=0;i<Math.round(12*amt);i++){ const a=ecH(fr*13+i)*6.28, L=8+ecH(fr*7+i*3)*34*amt; c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a)*L,y+Math.sin(a)*L+L*0.3); c.stroke(); }
+  c.restore();
+}
+const ecSurf = (x,top,t) => top+Math.sin(x*0.045+t*3.2)*3+Math.sin(x*0.11-t*2)*1.5;
+function ecWater(c,E,lvl,t){
+  if(lvl<=0) return; const top=610-lvl;
+  c.fillStyle='rgba(48,92,128,.66)'; c.beginPath(); c.moveTo(-E,1140);
+  for(let x=-E;x<=360+E;x+=12) c.lineTo(x,ecSurf(x,top,t)); c.lineTo(360+E,1140); c.closePath(); c.fill();
+  c.strokeStyle='rgba(190,220,240,.55)'; c.lineWidth=2; c.beginPath();
+  for(let x=-E;x<=360+E;x+=12){ const yy=ecSurf(x,top,t); x===-E?c.moveTo(x,yy):c.lineTo(x,yy); } c.stroke();
+}
+function ecJet(c,x,y,tx,ty,t,amt){
+  if(amt<=0.02) return; c.save(); c.globalAlpha=Math.min(1,amt);
+  const cx=x-150, cy=y+10;
+  for(let j=0;j<6;j++){ c.strokeStyle=`rgba(175,210,235,${0.35-j*0.04})`; c.lineWidth=10-j*1.4; c.beginPath(); c.moveTo(x,y); c.quadraticCurveTo(cx-j*10, cy+j*6, tx-j*12+Math.sin(t*20+j)*6, ty); c.stroke(); }
+  for(let i=0;i<40;i++){ const l=(t*1.6+ecH(i))%1, sp=(ecH(i+5)-0.5)*24; const px=(1-l)*(1-l)*x+2*(1-l)*l*cx+l*l*tx+sp*l, py=(1-l)*(1-l)*y+2*(1-l)*l*cy+l*l*ty+sp*l*0.5; c.fillStyle='rgba(215,235,248,.8)'; c.fillRect(px,py,2.5,3.5); }
+  for(let i=0;i<18;i++){ const l=(t*2.2+ecH(i))%1; c.fillStyle='rgba(205,228,242,.75)'; c.fillRect(tx+(ecH(i+9)-0.5)*70*l, ty-l*45+l*l*45, 3,3); }
+  c.restore();
+}
+function ecDark(c,E,amt,bx,by,br){
+  if(amt<=0.01) return;
+  c.save(); c.fillStyle=`rgba(3,4,6,${amt})`; c.beginPath(); c.rect(-E,-500,360+2*E,1640);
+  if(br>1){ c.moveTo(bx+br,by); c.arc(bx,by,br,0,Math.PI*2); }
+  c.fill('evenodd');
+  if(br>1){ const g=c.createRadialGradient(bx,by,br*0.55,bx,by,br*1.02); g.addColorStop(0,'rgba(3,4,6,0)'); g.addColorStop(1,`rgba(3,4,6,${amt})`); c.fillStyle=g; c.beginPath(); c.arc(bx,by,br*1.02,0,7); c.fill(); ecGlow(c,bx,by,br,'255,245,210',0.14); }
+  c.restore();
+}
+function ecRock(c,x,y,r,rot,col){
+  c.save(); c.translate(x,y); c.rotate(rot); c.fillStyle=col||'#6b665f'; c.beginPath();
+  for(let i=0;i<6;i++){ const a=i/6*6.283, rr=r*(0.7+ecH(i+r*3)*0.5); i?c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):c.moveTo(Math.cos(a)*rr,Math.sin(a)*rr); }
+  c.closePath(); c.fill(); c.fillStyle='rgba(0,0,0,.28)'; c.fillRect(-r*0.4,r*0.05,r*0.8,r*0.35); c.restore();
+}
+function ecDust(c,E,t,amt){
+  if(amt<=0.01) return;
+  c.fillStyle=`rgba(118,108,94,${0.6*Math.min(1,amt)})`; c.fillRect(-E,-500,360+2*E,1640);
+  for(let i=0;i<50;i++){ const l=(t*0.25+ecH(i))%1; c.fillStyle=`rgba(200,188,165,${0.55*Math.min(1,amt)})`; c.fillRect(-E+ecH(i+3)*(360+2*E)+Math.sin(t+i)*10, l*640, 2,2); }
+}
+function ecFalling(c,x0,x1,t,amt){
+  if(amt<=0.01) return;
+  for(let i=0;i<22;i++){ const l=(t*0.9+ecH(i+40))%1; c.fillStyle=`rgba(170,160,145,${0.8*amt})`; c.fillRect(x0+ecH(i+11)*(x1-x0), 100+l*470, 2+ecH(i)*2, 3); }
+}
+function ecAsh(c,E,t,amt){
+  if(amt<=0.01) return;
+  c.strokeStyle=`rgba(175,165,150,${0.5*Math.min(1,amt)})`; c.lineWidth=1.4; const Wd=360+2*E;
+  for(let i=0;i<70;i++){ const x=-E+((ecH(i)*Wd+t*(260+ecH(i+5)*240))%Wd), y=ecH(i+20)*640; c.beginPath(); c.moveTo(x,y); c.lineTo(x-14-ecH(i+2)*20,y+3); c.stroke(); }
+}
+function ecPlank(c,x,y,ang,len){ c.save(); c.translate(x,y); c.rotate(ang); c.fillStyle='#8a6a42'; c.fillRect(-6,-len,12,len+10); c.fillStyle='rgba(0,0,0,.2)'; c.fillRect(-6,-len,4,len+10); c.restore(); }
+
+/* ---------- сцены ---------- */
+function ecGasScene(c,t,P,k,E){
+  ecRoom(c,E,t,{alarm:1});
+  // трещина в трубе
+  c.fillStyle='#16181a'; c.beginPath(); c.moveTo(282,82); c.lineTo(290,95); c.lineTo(296,84); c.lineTo(303,96); c.lineTo(285,97); c.closePath(); c.fill();
+  // шлюз слева
+  const dc = k==='airlock' ? iSm(3.2,3.9,t) : 0;
+  c.fillStyle='#0a0c0e'; c.fillRect(8,320,72,180); c.strokeStyle='#636a70'; c.lineWidth=8; c.strokeRect(8,320,72,180);
+  if(dc>0){ c.fillStyle='#5b6268'; c.fillRect(12,324,64,172*dc); c.fillStyle='#3d4247'; c.fillRect(12,324+172*dc-8,64,8); }
+  // стол с едой
+  c.fillStyle='#3b3128'; c.fillRect(170,468,90,10); c.fillRect(176,478,6,40); c.fillRect(248,478,6,40);
+  c.fillStyle='#8c7a55'; c.fillRect(182,452,18,16); c.fillStyle='#9aa0a5'; c.fillRect(206,456,12,12); c.fillRect(222,454,12,14); c.fillStyle='#7a5a3a'; c.fillRect(238,458,16,10);
+  const fixer = k==='valve'?P.v : k==='self'?'Ты' : null;
+  const stop = fixer ? iSm(3.1,3.9,t) : 0;
+  // вентиль
+  const vr = fixer ? iSm(2.75,3.75,t)*6.5 : 0;
+  c.save(); c.fillStyle='#55595d'; c.fillRect(322,390,8,110); c.translate(326,390); c.rotate(vr);
+  c.strokeStyle='#b3261e'; c.lineWidth=6; c.beginPath(); c.arc(0,0,20,0,7); c.stroke(); c.lineWidth=4;
+  for(let i=0;i<3;i++){ c.beginPath(); c.moveTo(0,0); c.lineTo(Math.cos(i*2.094)*20,Math.sin(i*2.094)*20); c.stroke(); } c.restore();
+  let gas;
+  if(fixer){
+    gas=(0.5+0.35*iSm(0,2.8,t))*(1-iSm(3.3,5.7,t)*0.92);
+    const x0 = k==='self'?150:70, x = t<0.6 ? x0 : ecL(x0,298,iSm(0.6,2.7,t)), pose = t<0.6?'stand': t<2.7?'run': t<3.95?'reach':'cough';
+    if(k==='valve'){ if(P.v!=='Ты') ecMan(c,30,560,{name:'Ты',col:EC_COL.hero}); }
+    else { ecMan(c,22,560,{col:EC_COL.oth}); ecMan(c,76,566,{name:P.v!=='Ты'?P.v:'',col:EC_COL.vic, pose:t>4.4?'up':'stand', ph:t*3}); }
+    ecMan(c,x,560,{name:fixer, col:k==='self'?EC_COL.hero:EC_COL.vic, pose, ph:t*13, t, jit:pose==='cough'?1.2:0, dir:pose==='cough'?-1:1});
+  } else if(k==='airlock'){
+    gas=0.45+0.75*iSm(0.3,4.6,t);
+    [['Ты',150,EC_COL.hero,0],[P.v,215,EC_COL.vic,0.15],['',275,EC_COL.oth,0.3]].forEach(([n,x0,col,dl])=>{
+      if(n==='Ты'&&P.v==='Ты'&&col===EC_COL.vic) return;
+      const u=iSm(0.4+dl,2.3+dl,t), x=ecL(x0,44,u); if(u>=1) return;
+      ecMan(c,x,560-u*40,{name:n,col,pose:'run',ph:t*13+dl*5,dir:-1,s:1.25-u*0.35,a:x<75?(x-40)/35:1});
+    });
+  } else {
+    gas=0.45+0.8*iSm(0,4.6,t);
+    const w=P.w||P.v;
+    [['Ты',90,EC_COL.hero,3.4],[P.v,175,EC_COL.vic,2.8],[w!==P.v&&w!=='Ты'?w:'',260,EC_COL.oth,2.4]].forEach(([n,x,col,tc],i)=>{
+      const lie = n===w && t>4.3;
+      ecMan(c,x,560,{name:n,col,t,pose: lie?'lie': t>tc?'cough':'stand', jit:t>tc&&!lie?1:0.4, dir:i%2?-1:1});
+    });
+  }
+  ecGlow(c,292,102,46,'190,215,120',0.45*(1-stop));
+  ecCloud(c,E,t,gas,290,92,'150,182,80',620);
+}
+
+function ecFireScene(c,t,P,k,E){
+  const L = k==='power' ? 1-iSm(1.15,1.3,t) : 1;
+  ecRoom(c,E,t,{alarm:1, light:L});
+  const dx=100,dy=250,dw=160,dh=250;
+  const fire = k==='ext' ? 1-iSm(1.3,3.9,t) : k==='seal' ? 1-iSm(2.2,4.4,t) : k==='power' ? 1-iSm(1.6,4.6,t) : 1+0.7*iSm(0.5,3.5,t);
+  // генераторная
+  const ig=c.createLinearGradient(0,dy,0,dy+dh); ig.addColorStop(0,'#120a06'); ig.addColorStop(1,iMix('#1a0e08','#7a2c0c',Math.min(1,fire))); c.fillStyle=ig; c.fillRect(dx,dy,dw,dh);
+  c.fillStyle='#0b0908'; c.fillRect(128,402,104,98); c.fillRect(150,382,60,20); c.fillStyle='#1d1a18'; for(let i=0;i<5;i++) c.fillRect(136,412+i*16,88,5);
+  const inside = k==='ext' ? t<4.0 : k==='seal' ? t<4.05 : k==='power' ? t<3.9 : t<3.3;
+  if(inside) ecMan(c,206,500,{name:P.v,col:EC_COL.vic,s:0.95,pose:'up',ph:t*14,t,jit:1});
+  c.save(); c.beginPath(); c.rect(dx,dy,dw,dh); c.clip(); ecFire(c,180,500,150,200,t,fire); c.restore();
+  if(k==='timeout') ecFire(c,180,505,250,120,t,iSm(1.4,3.5,t)*1.1);
+  // дверь (закрыть отсек)
+  if(k==='seal'){ const pw=dw*iSm(0.8,1.9,t);
+    c.fillStyle='#5b6268'; c.fillRect(dx,dy,pw,dh); c.fillStyle='rgba(0,0,0,.25)'; c.fillRect(dx+pw-10,dy,10,dh);
+    c.fillStyle='#41474c'; for(let i=0;i<5;i++) if(pw>20){ c.beginPath(); c.arc(dx+12,dy+30+i*48,3,0,7); c.fill(); }
+    if(pw>=dw-1){ c.fillStyle=`rgba(255,140,50,${0.8*(1-iSm(2.2,4.4,t))})`; c.fillRect(dx,dy+dh-5,dw,5); ecGlow(c,180,dy+dh,120,'255,120,40',0.3*(1-iSm(2.2,4.4,t))); }
+    // вентиляция
+    const gy = t<4.0?0:iSm(4.0,4.4,t)*300, ga=t<4.0?0:iSm(4.0,4.4,t)*1.6;
+    c.save(); c.translate(306,190+gy); c.rotate(ga); c.fillStyle='#6a7176'; c.fillRect(-22,-14,44,28); c.fillStyle='#2a2e31'; for(let i=0;i<4;i++) c.fillRect(-18,-10+i*6,36,3); c.restore();
+    if(t>4.0) c.fillStyle='#050505', c.fillRect(284,176,44,28);
+    if(t>4.05){ const fy=ecL(205,560,iSm(4.05,4.45,t)); ecMan(c,306,fy,{name:P.v,col:'#0d0d0d',pose:t<4.9?'lie':'cough',dir:-1,t,jit:t>4.9?1:0}); }
+  }
+  c.strokeStyle='#5c6166'; c.lineWidth=10; c.strokeRect(dx,dy,dw,dh);
+  // рычаг питания
+  if(k==='power'){ const lv=iSm(0.95,1.15,t); c.fillStyle='#3a3f44'; c.fillRect(326,360,22,50); c.strokeStyle='#c9a227'; c.lineWidth=5; c.beginPath(); c.moveTo(337,385); c.lineTo(337+Math.sin(-0.8+lv*1.6)*-22, 385-Math.cos(-0.8+lv*1.6)*22); c.stroke(); }
+  // герой
+  if(k==='ext'){
+    const x=ecL(318,282,iSm(0,0.9,t)), pose=t<0.9?'walk':t<4.0?'push':'stand';
+    const hnd=ecMan(c,x,560,{name:'Ты',col:EC_COL.hero,pose,ph:t*10,dir:-1});
+    c.fillStyle='#b3261e'; c.fillRect(hnd[0]-6,hnd[1]-4,14,30);
+    if(t>1.0&&t<3.95){ for(let i=0;i<30;i++){ const l=(t*2.6+ecH(i))%1; c.fillStyle=`rgba(240,245,250,${0.8*(1-l)})`; c.beginPath(); c.arc(ecL(hnd[0]-8,170,l)+(ecH(i+3)-0.5)*40*l, ecL(hnd[1],440,l)+(ecH(i+7)-0.5)*60*l, 3+l*9,0,7); c.fill(); } }
+    if(t>4.0){ const u=iSm(4.0,5.8,t); ecMan(c,ecL(200,60,u),560,{name:P.v,col:'#241812',pose:'walk',ph:t*8,dir:-1}); }
+    ecSmoke(c,E,t,0.35+0.45*iSm(1,4,t));
+  } else if(k==='seal'){
+    ecMan(c,t<2.2?ecL(300,272,iSm(0.4,0.8,t)):ecL(272,200,iSm(2.2,3.2,t)),560,{name:'Ты',col:EC_COL.hero,pose:t<1.95?'push':t<3.2&&t>2.2?'walk':'stand',ph:t*8,dir:-1});
+    ecSmoke(c,E,t,0.35);
+  } else if(k==='power'){
+    ecMan(c,312,560,{name:'Ты',col:EC_COL.hero,pose:t<1.4&&t>0.6?'reach':'stand'});
+    if(t>3.9){ const u=iSm(3.9,5.6,t); ecMan(c,ecL(190,110,u),560,{name:P.v,col:EC_COL.vic,pose:'walk',ph:t*8,dir:-1}); }
+    const br = t>3.4 ? 85*iSm(3.4,3.7,t) : 0;
+    ecDark(c,E,0.93*iSm(1.15,1.3,t),ecL(180,140,iSm(3.9,5.6,t)),470,br);
+    if(t>1.15){ c.save(); c.beginPath(); c.rect(dx,dy,dw,dh); c.clip(); ecFire(c,180,500,150,200,t,fire); c.restore(); }
+    ecSmoke(c,E,t,0.25);
+  } else {
+    if(t<3.3) ecMan(c,300,560,{name:'Ты',col:EC_COL.hero,pose:'up',ph:t*10,t,jit:1.2});
+    else { const u=iSm(3.3,5.6,t), x=ecL(150,330,u);
+      ecMan(c,x-70,566,{name:P.v,col:'#1a120d',pose:'lie',dir:-1});
+      ecMan(c,x,560,{name:'Ты',col:EC_COL.hero,pose:'drag',ph:t*8,dir:-1}); ecMan(c,x+34,566,{col:EC_COL.oth,pose:'drag',ph:t*8+1,dir:-1}); }
+    ecSmoke(c,E,t,0.4+0.9*iSm(0.5,4,t));
+  }
+}
+
+function ecShockScene(c,t,P,k,E){
+  const cut = k==='mem'?1.9 : k==='timeout'?3.4 : 99;
+  const flick = (k==='hands'&&t>1.15&&t<2.9)||(k==='timeout'&&t<3.4) ? 0.55+0.45*Math.sin(t*41)*Math.sin(t*17) : 1;
+  ecRoom(c,E,t,{alarm:1, light:t>cut&&k==='timeout'?0:flick});
+  // щиток
+  c.fillStyle='#596066'; c.fillRect(216,330,110,170); c.fillStyle='#2b3034'; c.fillRect(224,338,94,154);
+  c.fillStyle='#4a5157'; c.save(); c.translate(216,330); c.transform(1,0.25,0,1,0,0); c.fillRect(-60,0,60,170); c.restore();
+  [240,268,296].forEach((x,i)=>{ const up = i===2 && t>cut && k!=='timeout'; c.fillStyle='#7d858b'; c.fillRect(x-8,348,16,34); c.fillStyle=i===2?'#c0392b':'#22272b'; c.fillRect(x-6, up?346:368, 12,14);
+    c.fillStyle='#e9e3c6'; c.fillRect(x-6,386,12,9); c.fillStyle='#222'; c.font='bold 8px sans-serif'; c.textAlign='center'; c.fillText(i+1,x,393); });
+  for(let i=0;i<5;i++){ c.strokeStyle=['#c0392b','#e2b13c','#3b6fb0','#2b2b2b','#3c8a3c'][i]; c.lineWidth=3; c.beginPath(); c.moveTo(236+i*16,404); c.lineTo(236+i*16,470); c.stroke(); }
+  const contact = k==='mem'?t<1.9 : k==='board'?t<1.75 : k==='hands'?t<2.8 : t<3.4;
+  let vx=180, vpose='shake', vjit=contact?2.2:0;
+  if(k==='board'&&t>=1.75){ vx=ecL(180,105,iSm(1.75,2.15,t)); vpose=t<3.6?'lie':'sit'; }
+  if(k==='mem'&&!contact) vpose='sit';
+  if(k==='hands'&&!contact) vpose='sit';
+  if(k==='timeout'&&!contact) vpose='lie';
+  // герой
+  if(k==='mem'){ const x=ecL(-30,257,iSm(0.2,1.5,t)); ecMan(c,x,560,{name:'Ты',col:EC_COL.hero,s:1.35,pose:t<1.5?'run':t<2.6?'reach':'stand',ph:t*13}); }
+  if(k==='board'){ const x=ecL(-40,96,iSm(0.2,1.3,t))-36*iSm(2.3,3.0,t), sk=iSm(1.3,1.72,t)*(1-iSm(2.4,2.9,t));
+    const hnd=ecMan(c,x,560,{name:'Ты',col:EC_COL.hero,pose:t<1.3||(t>2.3&&t<3.0)?'walk':'swing',k:sk,ph:t*10});
+    ecPlank(c,hnd[0],hnd[1],ecL(0.15,1.55,sk),96); }
+  if(k==='hands'){ const fly=iSm(2.8,3.2,t), x=t<2.8?ecL(-30,128,iSm(0.2,1.1,t)):ecL(128,20,fly);
+    ecMan(c,x,560,{name:'Ты',col:EC_COL.hero,pose:t<1.1?'run':t<2.8?'push':'lie',ph:t*13,t,jit:t>1.15&&t<2.8?2.4:0,dir:t<2.8?1:-1}); }
+  const vh=ecMan(c,vx,560,{name:P.v,kid:P.vk,col:EC_COL.vic,pose:vpose,t,jit:vjit,ph:t*3});
+  if(contact){ c.strokeStyle='#111'; c.lineWidth=3; c.beginPath(); c.moveTo(236,470); c.quadraticCurveTo(225,480,vh[0],vh[1]); c.stroke(); }
+  else { c.strokeStyle='#111'; c.lineWidth=3; c.beginPath(); c.moveTo(236,470); c.quadraticCurveTo(236,520,215,555); c.stroke(); }
+  ecSparks(c,224,468,t, contact ? 1 : (k==='board'?0.6*(1-iSm(1.8,3.5,t)):0));
+  if(contact) ecSparks(c,vh[0],vh[1],t+0.5,0.5);
+  if(k==='hands'&&contact&&t>1.15) ecSparks(c,150,440,t+1,0.6);
+  if(k==='timeout'&&t>3.4){ const br=t>4.2?70*iSm(4.2,4.6,t):0; ecDark(c,E,0.93,150,540,br); ecMan(c,40,560,{col:EC_COL.oth,pose:'stand'}); }
+  if(k==='mem'&&t>1.8&&t<3.0){ const a=Math.sin(Math.PI*iCl((t-1.8)/1.2));
+    c.fillStyle=`rgba(205,222,245,${0.62*a})`; c.fillRect(-E,-500,360+2*E,1640);
+    c.globalAlpha=a; c.fillStyle='#16233a'; c.font='bold 18px "Courier New", monospace'; c.textAlign='center'; c.fillText('«Третий слева, Связист.',180,240); c.fillText('Запомни».',180,266); c.globalAlpha=1; }
+}
+
+function ecCollapseScene(c,t,P,k,E){
+  ecRoom(c,E,t,{alarm:1});
+  // дыра в потолке
+  c.fillStyle='#0b0c0d'; c.beginPath(); c.moveTo(135,0); for(let i=0;i<=10;i++) c.lineTo(135+i*14, 96+ecH(i+4)*40); c.lineTo(275,0); c.closePath(); c.fill();
+  c.fillStyle='#6c7379'; c.fillRect(120,84,16,12); c.fillRect(270,84,16,12);
+  const lift = k==='jack' ? iSm(3.2,4.4,t)*0.32 : k==='lift' ? iSm(1.0,3.0,t)*0.4 : 0;
+  // пострадавший под балкой
+  let vxo = 0;
+  if(k==='hands') vxo=-110*iSm(3.1,4.3,t);
+  if(k==='jack') vxo=-95*iSm(4.3,5.3,t);
+  if(k==='lift') vxo=-120*iSm(3.0,4.4,t);
+  const freed = vxo<-60;
+  if(k!=='timeout'||t<2.2){
+    const sit = freed&&t>4.7&&k!=='hands_fail'; ecMan(c,sit?262+vxo-120:262+vxo,572,{name:P.v,kid:P.vk,col:EC_COL.vic,pose: sit?'sit':'lie', dir:1});
+  }
+  // балка (шарнир справа на завале)
+  ecRock(c,104,566,16,0.4,'#5e5953'); c.save(); c.translate(312,512); c.rotate(2.96+lift); c.fillStyle='#77726a'; c.fillRect(0,-14,228,28); c.fillStyle='rgba(0,0,0,.25)'; c.fillRect(0,6,228,8);
+  c.strokeStyle='#4a3a2a'; c.lineWidth=3; c.beginPath(); c.moveTo(228,-6); c.lineTo(246,-12); c.moveTo(228,6); c.lineTo(244,12); c.stroke(); c.restore();
+  // завал
+  for(let i=0;i<14;i++){ let x=230+ecH(i+1)*100, y=540+ecH(i+2)*36, r=10+ecH(i+3)*16, rot=ecH(i+4)*3;
+    if((k==='hands'||k==='hands_fail')&&i<6){ const u=iSm(0.6+i*0.3,0.9+i*0.3,k==='hands_fail'?Math.min(t,2.2):t); x+=u*(60+i*8); y-=Math.sin(u*Math.PI)*30; rot+=u*3; }
+    ecRock(c,x,y,r,rot); }
+  // домкрат
+  if(k==='jack'&&t>2.9){ const jh=20+lift*120; c.fillStyle='#b3261e'; c.fillRect(170,575-jh,22,jh); c.fillStyle='#333'; c.fillRect(166,575,30,8); }
+  // повторный обвал
+  const second = k==='hands_fail'?2.2 : k==='timeout'?1.8 : 99;
+  if(t>second){ for(let i=0;i<16;i++){ const tf=second+ecH(i+60)*0.6, u=iCl((t-tf)/0.45); if(t<tf) continue;
+    const x=150+ecH(i+61)*120, y=ecL(90,520+ecH(i+62)*55,u*u); ecRock(c,x,y,10+ecH(i+63)*18,u*4+i); } }
+  // люди
+  if(k==='hands') ecMan(c,ecL(98,10,iSm(3.1,4.3,t)),560,{name:'Ты',col:EC_COL.hero,pose:t<3.1?'kneel':'drag',ph:t*9});
+  if(k==='hands_fail'){ ecMan(c,100,t<2.6?560:566,{name:'Ты',col:EC_COL.hero,pose:t<2.6?'kneel':'lie',ph:t*9});
+    if(t>3.8){ const u=iSm(3.8,5.4,t); ecMan(c,ecL(-70,20,u),560,{col:EC_COL.oth,pose:'walk',ph:t*9}); ecMan(c,ecL(-110,-20,u),560,{col:EC_COL.oth,pose:'walk',ph:t*9+2}); } }
+  if(k==='jack'){ let x,pose,dir=1;
+    if(t<1.0){ x=ecL(120,-70,iSm(0.3,1.0,t)); pose=t<0.3?'stand':'run'; dir=-1; }
+    else if(t<1.9){ x=-90; pose='stand'; }
+    else if(t<2.75){ x=ecL(-70,118,iSm(1.9,2.75,t)); pose='carry'; }
+    else { x=118; pose=t<3.4?'kneel':'stand'; }
+    ecMan(c,x,560,{name:'Ты',col:EC_COL.hero,pose,ph:t*12,dir}); }
+  if(k==='lift'){ const lk=iSm(0.6,3.0,t);
+    ecMan(c,128,560,{name:'Ты',col:EC_COL.hero,pose:'lift',k:lk}); ecMan(c,196,560,{name:P.s,col:EC_COL.s,pose:'lift',k:lk*0.9,dir:-1}); }
+  if(k==='timeout'){ ecMan(c,64,560,{name:'Ты',col:EC_COL.hero,pose:t<1.8?'up':'stand',ph:t*10}); ecMan(c,350,560,{col:EC_COL.oth,pose:t<1.8?'up':'stand',ph:t*9,dir:-1});
+    if(t>4.6){ c.strokeStyle=EC_COL.vic; c.lineWidth=9; c.lineCap='round'; c.beginPath(); c.moveTo(208,560); c.lineTo(196,540); c.lineTo(184,536); c.stroke(); } }
+  ecFalling(c,140,270,t, k==='timeout'||k==='hands_fail' ? 1 : 0.5);
+  if(second<99) ecDust(c,E,t, iSm(second,second+0.5,t)*(1-iSm(second+1.6,second+3.6,t)*0.65));
+}
+
+function ecFloodScene(c,t,P,k,E){
+  const L = k==='power' ? 1-iSm(0.95,1.05,t) : 1;
+  ecRoom(c,E,t,{alarm:1, light:L});
+  // стеллаж
+  const left = k==='food' ? Math.max(0,6-Math.floor(t*1.25)) : k==='power'?4:6;
+  c.fillStyle='#3a3026'; c.fillRect(20,300,8,200); c.fillRect(146,300,8,200); c.fillRect(20,380,134,7); c.fillRect(20,450,134,7);
+  for(let i=0;i<6;i++){ if(i>=left) continue; const r=Math.floor(i/3), cx=30+(i%3)*40; c.fillStyle=['#7a5c38','#6a5030','#86663f'][i%3]; c.fillRect(cx,(r?450:380)-30,34,30); c.fillStyle='rgba(0,0,0,.2)'; c.fillRect(cx,(r?450:380)-30,34,5); }
+  // проводка справа
+  c.fillStyle='#596066'; c.fillRect(300,438,44,54); c.fillStyle='#2b3034'; c.fillRect(306,444,32,42);
+  // разрыв трубы
+  c.fillStyle='#16181a'; c.beginPath(); c.moveTo(262,82); c.lineTo(272,98); c.lineTo(282,82); c.closePath(); c.fill();
+  // задвижка
+  c.fillStyle='#55595d'; c.fillRect(286,500,8,64);
+  const vr = k==='shut' ? iSm(2.2,3.2,t)*6 : 0;
+  c.save(); c.translate(290,566); c.rotate(vr); c.strokeStyle='#b3261e'; c.lineWidth=5; c.beginPath(); c.arc(0,0,15,0,7); c.stroke(); c.beginPath(); c.moveTo(-15,0); c.lineTo(15,0); c.moveTo(0,-15); c.lineTo(0,15); c.stroke(); c.restore();
+  let lvl, jet=1, spark=0.45;
+  if(k==='shut'){ lvl=12+62*iSm(0,3.2,t); jet=1-iSm(2.9,3.3,t); }
+  else if(k==='food'){ lvl=12+75*iSm(0,4.2,t)-65*iSm(4.3,5.8,t); jet=1-iSm(4.0,4.3,t); }
+  else if(k==='power'){ lvl=12+90*iSm(0,5.5,t); spark=t<1.0?0.45:0; }
+  else { lvl=12+128*iSm(0,3.0,t); spark=t<3.0?0.45:0; }
+  const top=610-lvl;
+  // люди (до воды — вода закрывает ноги)
+  if(k==='shut'){ const x=ecL(90,266,iSm(0.3,2.0,t)); ecMan(c,x,t>2.0&&t<3.4?600:572,{name:P.v,col:EC_COL.vic,pose:t<2.0?'walk':t<3.4?'crouch':'stand',ph:t*7,t,jit:t>3.4?0.9:0});
+    ecMan(c,40,568,{name:P.v==='Ты'?'':'Ты',col:EC_COL.hero}); }
+  if(k==='food'){ [['Ты',0,EC_COL.hero],[P.v,1.1,EC_COL.vic],['',2.2,EC_COL.oth]].forEach(([n,o,col])=>{ if(n==='Ты'&&col===EC_COL.vic) return;
+    const ph=((t*0.55+o/3.3)%1), x=ecL(150,-90,ph); ecMan(c,x,572,{name:n,col,pose:'carry',dir:-1,ph:t*9+o}); }); }
+  if(k==='power'){ ecMan(c,60,572,{name:'Ты',col:EC_COL.hero,pose:t>0.6&&t<1.0?'reach':'stand'}); ecMan(c,ecL(110,250,iSm(2.0,5.5,t)),572,{name:P.v,col:EC_COL.vic,pose:'walk',ph:t*6}); }
+  let vic=null;
+  if(k==='timeout'){ const z = t<3.0?'stand':t<3.85?'shake':'lie'; vic=ecMan(c,200,z==='lie'?top+6:572,{name:P.v,col:EC_COL.vic,pose:z,t,jit:z==='shake'?3:0.3});
+    ecMan(c,70,572,{name:P.v==='Ты'?'':'Ты',col:EC_COL.hero,pose:t>3.0?'up':'stand',ph:t*8}); }
+  ecJet(c,272,94,200,Math.min(600,top+4),t,jet);
+  ecWater(c,E,lvl,t);
+  if(k==='power'&&t>2.5){ [90,150].forEach((x,i)=>{ const y=ecSurf(x,top,t); c.fillStyle='#6a5030'; c.save(); c.translate(x,y-8); c.rotate(Math.sin(t*2+i)*0.15); c.fillRect(-16,-6,32,18); c.restore(); }); }
+  ecSparks(c,322,465,t,spark);
+  if(k==='timeout'&&t>3.0&&t<3.9){ for(let i=0;i<5;i++) ecSparks(c,120+i*50,ecSurf(120+i*50,top,t),t+i,0.8); }
+  if(k==='power'){ const bx=180+110*Math.sin(t*1.1), br=t>1.5?78*iSm(1.5,1.9,t):0; ecDark(c,E,0.92*iSm(0.95,1.05,t),bx,520,br); }
+}
+
+function ecRaidScene(c,t,P,k,E){
+  const B = {hold:[0.3,0.9,1.5,2.1,2.8,3.6], hold_fail:[0.3,0.9,1.5,2.1,2.6], flare:[0.3,0.9,1.4], give:[0.3,0.9], timeout:[0.3,0.8,1.2,1.55,1.85,2.1]}[k];
+  let jolt=0; B.forEach(b=>{ if(t>b) jolt+=6*Math.exp(-(t-b)*10); });
+  const red = k==='flare' && t>1.5 ? (0.6+0.4*Math.sin(t*23)*Math.sin(t*7)) : 0;
+  ecRoom(c,E,t,{alarm:1, ax:330});
+  // наружная стена и проём
+  c.fillStyle='#1b1d1f'; c.fillRect(-E,-500,E+36,1640);
+  const gap = k==='hold_fail' ? 34*iSm(2.6,2.9,t)*(1-iSm(4.4,4.75,t)) : 0;
+  const fall = k==='timeout' ? iSm(2.2,2.65,t) : 0;
+  const outsideA = gap>1 ? 1 : fall>0 ? 1 : 0;
+  if(outsideA){ c.fillStyle=red?'#ff5030':'#b9c4cc'; c.fillRect(30,300,50,260); }
+  // дверь
+  c.save(); c.translate(80+jolt+gap,560); c.rotate(fall*Math.PI/2*0.97);
+  c.fillStyle='#626a70'; c.fillRect(-44,-262,44,262); c.fillStyle='rgba(0,0,0,.3)'; c.fillRect(-44,-262,6,262);
+  c.fillStyle='#4b5257'; for(let i=0;i<6;i++){ c.beginPath(); c.arc(-8,-240+i*44,3,0,7); c.fill(); }
+  // окошко
+  const port = k==='give' ? iSm(1.0,1.3,t) : k==='flare' ? iSm(0.7,1.0,t) : 0;
+  c.fillStyle='#1a1d20'; c.fillRect(-36,-200,26,22); if(port>0){ c.fillStyle=red?`rgba(255,70,40,${red})`:'#8d979e'; c.fillRect(-36,-200,26,22*port); }
+  c.strokeStyle='#c9a227'; c.lineWidth=4; c.beginPath(); c.arc(4,-140,14,0,7); c.stroke();
+  c.restore();
+  if(red){ ecGlow(c,40,360,260,'255,50,30',0.45*red); }
+  // вмятины-удары
+  B.forEach(b=>{ if(t>b&&t<b+0.25) ecGlow(c,70,300+ecH(b*10)*200,40,'255,255,255',0.3*(1-(t-b)/0.25)); });
+  const st=(P.h||'').split(' и ');
+  if(k==='hold'||k==='hold_fail'){
+    const back = k==='hold_fail' ? 50*iSm(2.6,3.0,t) : 0, relax = k==='hold'&&t>4.4;
+    ecMan(c,112+back+jolt*0.6,560,{name:st[0]||'Ты',col:EC_COL.hero,pose:relax?'stand':'push',dir:-1,t,jit:relax?0:0.6});
+    ecMan(c,156+back*1.3+jolt*0.4,560,{name:st[1]||'',col:EC_COL.vic,pose:relax?'stand':'push',dir:-1,t,jit:relax?0:0.6});
+    if(k==='hold_fail'){
+      if(t>2.9&&t<4.5){ const u=iSm(2.9,3.2,t); ecMan(c,ecL(-10,40,u),560,{col:EC_COL.raid,mask:1,pose:'push',a:u}); }
+      if(t<4.1){ const bx=t<3.1?94:ecL(94,20,iSm(3.1,4.0,t)); c.fillStyle='#7a5c38'; c.fillRect(bx-16,532,34,28); c.fillStyle='rgba(0,0,0,.2)'; c.fillRect(bx-16,532,34,5); }
+    }
+  }
+  if(k==='flare'){ ecMan(c,104,560,{name:'Ты',col:EC_COL.hero,pose:t>0.6&&t<1.6?'reach':'stand',dir:-1}); ecMan(c,190,560,{col:EC_COL.oth,pose:t>1.6?'stand':'up',ph:t*8,dir:-1});
+    if(t>1.5){ for(let i=0;i<3;i++){ const u=iSm(1.8+i*0.3,3.2+i*0.3,t); if(u>0&&u<1) ecMan(c,ecL(20,-120,u),560,{col:'#000',mask:1,pose:'run',dir:-1,ph:t*13+i,s:1.1,a:0.7}); } }
+    c.fillStyle=`rgba(255,40,25,${0.25*red})`; c.fillRect(-E,-500,360+2*E,1640); }
+  if(k==='give'){ ecMan(c,104,560,{name:'Ты',col:EC_COL.hero,pose:t>0.8&&t<1.4?'reach':'stand',dir:-1});
+    [1.8,3.0].forEach(t0=>{ const u=iSm(t0,t0+0.9,t); if(t>t0-0.3&&t<t0+1.1) ecMan(c,ecL(240,124,u),560,{name:P.v||'',col:EC_COL.vic,pose:u<1?'carry':'reach',dir:-1,ph:t*9}); });
+    [2.7,3.9].forEach(t0=>{ if(t>t0&&t<t0+0.5){ const u=Math.sin(Math.PI*(t-t0)/0.5); c.strokeStyle=EC_COL.raid; c.lineWidth=9; c.lineCap='round'; c.beginPath(); c.moveTo(48,372); c.lineTo(48+u*40,368); c.stroke(); } }); }
+  if(k==='timeout'){
+    if(fall>0) ecGlow(c,30,420,300,'200,215,225',0.4*fall);
+    const vt=P.r; ecMan(c,230,560,{name:vt||'',col:EC_COL.vic,pose:t>3.0?'lie':'up',ph:t*10,dir:-1});
+    ecMan(c,300,560,{name:vt==='Ты'?'':'Ты',col:EC_COL.hero,pose:t>2.2?'stand':'up',ph:t*9,dir:-1});
+    for(let i=0;i<3;i++){ const u=iSm(2.4+i*0.35,4.4+i*0.35,t); if(u>0) ecMan(c,ecL(-30,330,u),560+i*4,{col:EC_COL.raid,mask:1,pose:'run',ph:t*13+i*2}); }
+  }
+}
+
+function ecAirlockScene(c,t,P,k,E){
+  // наружа
+  const storm = iSm(0,5,t);
+  const sky=c.createLinearGradient(0,150,0,430); sky.addColorStop(0,'#6e6456'); sky.addColorStop(1,'#9a8f7c'); c.fillStyle=sky; c.fillRect(-E,-500,360+2*E,940);
+  c.fillStyle='#3e3a34'; c.beginPath(); c.moveTo(-E,430); for(let x=-E;x<=360+E;x+=30) c.lineTo(x,430-Math.max(0,Math.sin(x*0.07)*10)-(ecH(x)*6)); c.lineTo(360+E,430); c.closePath(); c.fill();
+  c.fillStyle='#2a2723'; for(let i=0;i<5;i++) c.fillRect(20+i*70,404,40,26);
+  c.fillStyle='#4f4a42'; c.fillRect(-E,430,360+2*E,800);
+  const wallH = 60+220*storm; const wg=c.createLinearGradient(0,430-wallH,0,430); wg.addColorStop(0,'rgba(40,36,32,0)'); wg.addColorStop(0.35,'rgba(40,36,32,.85)'); wg.addColorStop(1,'rgba(30,27,24,.95)'); c.fillStyle=wg; c.fillRect(-E,430-wallH,360+2*E,wallH+20);
+  ecAsh(c,E,t,0.5+0.5*storm);
+  // бегущий
+  let z=0, zh=null;
+  if(k==='open') z=iSm(0.2,3.1,t)*1.15;
+  if(k==='close') z=iSm(0.2,4.0,t)*0.55;
+  if(k==='timeout') z=iSm(0.6,3.0,t)*1.12;
+  if(k==='runout'){ zh = t<2.3 ? 1.25-iSm(0.3,1.9,t)*0.8 : 0.45+iSm(2.3,4.4,t)*0.75; z = t<2.3 ? iSm(0,1.9,t)*0.45 : zh; }
+  const runner=(zz,n,col,dx,dir)=>{ const s=0.3+1.3*zz*zz, y=440+150*zz; ecMan(c,180+dx*s+Math.sin(t*5)*3,y,{name:n,col,pose:'run',ph:t*13+dx,s,dir:dir||1}); };
+  c.save(); if(z<0.97){ c.beginPath(); c.rect(70,150,220,410); c.clip(); }
+  if(k==='runout'){ runner(z,P.v,EC_COL.vic,-12); if(zh!=null) runner(zh,'Ты',EC_COL.hero,14,t<2.3?-1:1); }
+  else if(z<1.12) runner(z,P.v,EC_COL.vic,0);
+  c.restore();
+  // створки
+  let dk = k==='open'?iSm(4.0,5.0,t) : k==='close'?iSm(1.0,2.6,t) : k==='runout'?iSm(4.3,5.2,t) : iSm(0.4,1.4,t)*0.7+(t>1.4?Math.sin(t*40)*0.006:0);
+  c.fillStyle='#565d63'; c.fillRect(70,150,110*dk,410); c.fillRect(290-110*dk,150,110*dk,410);
+  c.fillStyle='#3e4449'; c.fillRect(70+110*dk-6,150,6,410); c.fillRect(290-110*dk,150,6,410);
+  c.fillStyle='#c9a227'; for(let i=0;i<6;i++){ c.fillRect(74,170+i*66,10*dk,26); c.fillRect(286-10*dk,170+i*66,10*dk,26); }
+  // рама шлюза
+  c.fillStyle='#1c1f22'; c.fillRect(-E,-500,70+E,1640); c.fillRect(290,-500,70+E,1640); c.fillRect(-E,-500,360+2*E,650); c.fillRect(-E,560,360+2*E,700);
+  c.strokeStyle='#6c7379'; c.lineWidth=10; c.strokeRect(70,150,220,410);
+  ecGlow(c,30,140,200,'255,45,30',0.25*(0.5+0.5*Math.sin(t*9)));
+  if(k!=='runout') ecMan(c,32,640,{name:'Ты',col:EC_COL.hero,pose:'reach',s:1.5});
+  // пепел внутри
+  const ashIn = k==='open' ? iSm(2.8,3.6,t)*(1-iSm(4.8,5.8,t)*0.5) : k==='timeout' ? iSm(2.9,3.7,t) : k==='runout' ? iSm(4.0,4.6,t)*0.5 : 0;
+  if(ashIn>0){ c.fillStyle=`rgba(150,140,125,${0.45*ashIn})`; c.fillRect(-E,-500,360+2*E,1640); ecAsh(c,E,t*1.3,ashIn); }
+  if(k==='close'&&t>2.6) ecShade(c,E,0.25*iSm(2.6,3.4,t));
+}
+
+function ecPeterScene(c,t,P,k,E){
+  ecRoom(c,E,t,{light:0, pipe:true});
+  ecShade(c,E,0.55);
+  // дверной проём
+  c.fillStyle='#4b4434'; c.fillRect(-E,300,E+56,200); ecGlow(c,20,420,140,'230,200,140',0.25);
+  // стол и рация
+  c.fillStyle='#2e2720'; c.fillRect(212,472,140,10); c.fillRect(220,482,8,60); c.fillRect(336,482,8,60);
+  c.fillStyle='#3d4440'; c.fillRect(262,410,78,62); c.fillStyle='#1b1f1c'; c.fillRect(268,418,40,26);
+  const tx = k==='listen' ? t>3.4&&t<4.0 : k==='timeout' ? t>1.0 : false;
+  c.fillStyle='#5cff8a'; c.globalAlpha=0.6+0.4*Math.sin(t*5); c.fillRect(270,422,36,3); for(let i=0;i<6;i++) c.fillRect(272+i*6,430+Math.sin(t*9+i)*4,2,8); c.globalAlpha=1;
+  ecGlow(c,288,431,70,'90,255,140',0.25);
+  c.fillStyle=tx?'#ff3020':'#3a1410'; c.beginPath(); c.arc(326,426,5,0,7); c.fill(); if(tx) ecGlow(c,326,426,50,'255,48,32',0.6);
+  c.fillStyle='#888'; c.font='bold 7px sans-serif'; c.textAlign='center'; c.fillText('ПЕРЕД.',326,442);
+  c.strokeStyle='#777'; c.lineWidth=2; c.beginPath(); c.moveTo(334,410); c.lineTo(346,330); c.stroke();
+  // настольная лампа
+  ecGlow(c,236,456,90,'255,200,120',0.35); c.fillStyle='#222'; c.fillRect(230,446,14,26);
+  // Пётр
+  const pDown = k==='knock' && t>2.05;
+  const turn = k==='timeout' && t>3.4;
+  const recoil = k==='grab' && t>1.9 ? -0.45 : null;
+  let ph=null;
+  if(pDown) ecMan(c,318,566,{name:'Пётр',col:'#3a3428',pose:'lie',dir:1});
+  else ph=ecMan(c,240,548,{name:'Пётр',col:'#3a3428',pose:'sit',phones:!turn,dir:turn?-1:1,lean:recoil, jit:recoil!=null?0.6:0, t});
+  c.fillStyle='#3a3020'; c.fillRect(226,520,30,6); c.fillRect(236,526,8,30);
+  // трубка
+  let hx=262, hy=440;
+  if(ph && !(k==='grab'&&t>1.9) && !turn){ hx=ph[0]; hy=ph[1]; }
+  // герой
+  if(k==='listen'||k==='timeout') ecMan(c,34,560,{name:'Ты',col:EC_COL.hero,a:0.9});
+  if(k==='grab'){ const x=ecL(24,168,iSm(0.3,1.7,t)); const hd=ecMan(c,x,560,{name:'Ты',col:EC_COL.hero,pose:t<1.7?'walk':t<2.4?'reach':'stand',ph:t*8}); if(t>1.9){ hx=ecL(hx,hd[0],iSm(1.9,2.1,t)); hy=ecL(hy,hd[1],iSm(1.9,2.1,t)); } }
+  if(k==='knock'){ const x=ecL(24,170,iSm(0.3,1.6,t)); ecMan(c,x,560,{name:'Ты',col:EC_COL.hero,pose:t<1.6?'walk':t<2.3?'swing':'stand',k:iSm(1.6,2.0,t),ph:t*8}); }
+  if(!pDown){ c.strokeStyle='#111'; c.lineWidth=2; c.beginPath(); c.moveTo(300,470); c.quadraticCurveTo(280,500,hx,hy); c.stroke(); c.fillStyle='#151515'; c.fillRect(hx-7,hy-5,14,10); }
+}
+
+const EMC = {
+  gas:{ title:'УТЕЧКА ГАЗА', scene:ecGasScene, clips:{
+    valve:{caps:P=>[[0,'Шипение. Запах газа.'],[0.7,`${P.v} бежит к вентилю`],[2.8,'Вентиль скрипит…'],[3.8,'Шипение стихает.'],[4.6,`${P.v} кашляет до утра.`]], sfx:[[2.8,'clank'],[3.35,'clank']], ae:3.6},
+    self:{caps:P=>[[0,'Шипение. Запах газа.'],[0.7,'Ты бежишь сам.'],[2.8,'Глаза режет, горло горит…'],[3.9,'Вентиль перекрыт.'],[4.6,'Люди видели, кто пошёл первым.']], sfx:[[2.8,'clank'],[3.35,'clank']], ae:3.6},
+    airlock:{caps:P=>[[0,'Всех — в шлюз!'],[2.3,'Газ заполняет отсек.'],[4.1,'Еду со стола придётся выбросить.']], sfx:[[3.85,'slam']]},
+    timeout:{caps:P=>[[0,'Ты замер.'],[1.8,'Газ расползается по отсеку.'],[3.9,P.w?`Хуже всех — ${P.w}.`:'Отравлены все.']], sfx:[[4.3,'thud']]},
+  }},
+  fire:{ title:'ПОЖАР В ГЕНЕРАТОРНОЙ', scene:ecFireScene, clips:{
+    ext:{caps:P=>[[0,`${P.v} в огне за дверью!`],[1.0,'Огнетушитель!'],[2.4,'Пена, дым, крики.'],[4.0,'Огонь сбит.'],[4.7,`${P.v} — в ожогах, но жив(а).`]], sfx:[[1.0,'whoosh'],[2.2,'whoosh']], ae:4.0},
+    seal:{caps:P=>[[0,`${P.v} в огне за дверью!`],[0.8,'Закрыть отсек.'],[2.2,'Без воздуха огонь гаснет…'],[4.1,`${P.v} — через вентиляцию!`],[5.0,'Генератор повреждён.']], sfx:[[1.9,'slam'],[4.05,'clank'],[4.45,'thud']], ae:4.3},
+    power:{caps:P=>[[0,`${P.v} в огне за дверью!`],[0.6,'Вырубить всё питание!'],[1.4,'Тьма.'],[2.6,'Без тока огонь слабеет.'],[4.2,`${P.v} цел(а). Но еда испортится.`]], sfx:[[1.15,'clank'],[1.2,'thud']], ae:4.6},
+    timeout:{caps:P=>[[0,'Никто не знает, что делать.'],[1.6,'Огонь выгрызает генераторную.'],[3.5,`${P.v} вытаскивают без сознания.`]], sfx:[[1.6,'boom'],[3.0,'crack']]},
+  }},
+  shock:{ title:'УДАР ТОКОМ', scene:ecShockScene, clips:{
+    mem:{caps:P=>[[0,`${P.v} под током!`],[1.5,'Рука сама тянется к щитку…'],[3.0,'Третий слева. Как во сне.'],[4.0,'Ток пропал.'],[4.6,`${P.v} — лишь ожог.`]], sfx:[[1.8,'chime'],[1.9,'clank']], ae:1.9},
+    board:{caps:P=>[[0,`${P.v} под током!`],[0.4,'Сухая доска!'],[1.75,'Удар!'],[2.6,`${P.v} отлетает от щитка.`],[4.2,'Ожоги — но жив(а).']], sfx:[[1.75,'thud']], ae:1.8},
+    hands:{caps:P=>[[0,`${P.v} под током!`],[0.5,'Схватить руками!'],[1.3,'Ток бьёт через вас обоих.'],[3.0,'Тебя отбрасывает к стене.'],[4.4,`${P.v} свободен(а).`]], sfx:[[1.15,'zap'],[2.8,'zap'],[3.15,'thud']], ae:2.8},
+    timeout:{caps:P=>[[0,`${P.v} под током!`],[1.2,'Секунды тянутся вечностью.'],[3.4,'Кто-то вырубает свет.'],[4.5,`${P.v} без сознания.`]], sfx:[[3.4,'clank']], ae:3.4},
+  }},
+  collapse:{ title:'ОБВАЛ', scene:ecCollapseScene, clips:{
+    hands:{caps:P=>[[0,`${P.v} под балкой!`],[0.5,'Разгребать руками — сейчас!'],[3.1,'Тянешь изо всех сил…'],[4.4,`${P.v} на свободе.`]], sfx:[[0.9,'crack'],[1.8,'crack'],[2.6,'crack']]},
+    hands_fail:{caps:P=>[[0,`${P.v} под балкой!`],[0.5,'Разгребать руками!'],[2.2,'Второй обвал!'],[3.4,'Придавило и тебя.'],[4.5,'Вас вытаскивают вместе.']], sfx:[[2.2,'boom'],[2.5,'crack'],[2.7,'thud']]},
+    jack:{caps:P=>[[0,`${P.v} под балкой!`],[0.4,'За домкратом!'],[2.8,'Домкрат под балку.'],[3.5,'Медленно… надёжно.'],[4.6,`${P.v} спасён(а).`]], sfx:[[2.9,'clank'],[3.45,'clank'],[4.0,'clank']]},
+    lift:{caps:P=>[[0,`${P.v} под балкой!`],[0.6,`${P.s} — плечом рядом.`],[1.8,'Балка поддаётся…'],[3.4,`${P.v} — почти без царапин.`]], sfx:[[1.0,'crack'],[3.2,'thud']]},
+    timeout:{caps:P=>[[0,`${P.v} под балкой!`],[0.6,'Все кричат…'],[1.8,'Второй пролёт рушится!'],[4.0,`${P.v} откапывают час.`]], sfx:[[1.8,'boom'],[2.2,'crack'],[2.6,'crack']]},
+  }},
+  flood:{ title:'ПРОРЫВ ТРУБЫ', scene:ecFloodScene, clips:{
+    shut:{caps:P=>[[0,'Вода хлещет на склад!'],[0.5,`${P.v} — к задвижке.`],[2.1,'Ледяная вода по пояс…'],[3.4,'Поток остановлен.']], sfx:[[2.2,'splash'],[3.1,'clank']], ae:3.2},
+    food:{caps:P=>[[0,'Спасать еду!'],[0.8,'Все таскают ящики наверх.'],[3.0,'Вода заливает пол…'],[4.4,'Еда спасена. Вода — в слив.']], sfx:[[4.3,'whoosh']], ae:4.2},
+    power:{caps:P=>[[0,'Искрит проводка!'],[0.6,'Обесточить отсек!'],[1.2,'Темнота.'],[2.6,'Задвижку ищут на ощупь…'],[4.4,'Часть еды испорчена.']], sfx:[[1.0,'clank']]},
+    timeout:{caps:P=>[[0,'Никто не двигается.'],[1.4,'Вода поднимается…'],[3.0,'Вспышка!'],[4.0,`${P.v} бьёт током.`]], sfx:[[3.0,'zap'],[3.05,'boom']]},
+  }},
+  raiders_door:{ title:'РЕЙДЕРЫ У ДВЕРИ', scene:ecRaidScene, clips:{
+    hold:{caps:P=>[[0,'Рейдеры ломают дверь!'],[0.6,`${P.h||'Вы'} держат плечами.`],[2.9,'Удары всё реже…'],[4.3,'Дверь выдержала.']], sfx:[[0.3,'bang'],[0.9,'bang'],[1.5,'bang'],[2.1,'bang'],[2.8,'bang'],[3.6,'bang']]},
+    hold_fail:{caps:P=>[[0,'Рейдеры ломают дверь!'],[0.6,'Держать плечами!'],[2.6,'Дверь поддаётся!'],[3.3,'Хватают ящик с едой…'],[4.8,'…и уходят.']], sfx:[[0.3,'bang'],[0.9,'bang'],[1.5,'bang'],[2.1,'bang'],[2.6,'slam'],[4.7,'slam']]},
+    flare:{caps:P=>[[0,'Рейдеры ломают дверь!'],[0.6,'Сигнальная ракета!'],[1.6,'Красная вспышка и грохот.'],[3.0,'Рейдеры разбегаются с руганью.']], sfx:[[0.3,'bang'],[0.9,'bang'],[1.4,'bang'],[1.5,'boom']]},
+    give:{caps:P=>[[0,'Рейдеры ломают дверь!'],[1.0,'«Берите».'],[2.0,'Ящик за ящиком — наружу.'],[4.2,'Бес смеётся.'],[5.0,'Теперь — дань.']], sfx:[[0.3,'bang'],[0.9,'bang'],[1.1,'clank'],[4.2,'laugh']]},
+    timeout:{caps:P=>[[0,'Удары всё чаще…'],[2.2,'Замок срывается!'],[2.9,'Рейдеры врываются на склад.'],[4.4,P.r?`${P.r} ранен(а).`:'Склад пуст.']], sfx:[[0.3,'bang'],[0.8,'bang'],[1.2,'bang'],[1.55,'bang'],[1.85,'bang'],[2.1,'bang'],[2.2,'slam'],[2.65,'boom'],[3.0,'thud']]},
+  }},
+  airlock:{ title:'ПЫЛЬНАЯ БУРЯ', scene:ecAirlockScene, clips:{
+    open:{caps:P=>[[0,`${P.v} в двадцати метрах.`],[0.6,'Держать шлюз открытым!'],[2.9,`${P.v} влетает внутрь…`],[3.6,'…вместе с пеплом.'],[4.9,'Все живы. ☢ +7']], sfx:[[3.0,'whoosh'],[4.95,'slam']]},
+    close:{caps:P=>[[0,`${P.v} в двадцати метрах.`],[0.8,'Закрыть шлюз.'],[2.0,'Створки сходятся…'],[2.9,'Ночь в буре у порога.'],[4.4,'Никто не смотрит тебе в глаза.']], sfx:[[2.6,'slam'],[3.4,'thud'],[3.9,'thud']]},
+    runout:{caps:P=>[[0,`${P.v} в двадцати метрах.`],[0.5,'Ты выбегаешь в бурю.'],[1.9,'Хватаешь за рукав…'],[3.0,'…и тащишь к двери.'],[4.6,'Оба облучены. Но живы.']], sfx:[[5.2,'slam']]},
+    timeout:{caps:P=>[[0,'Пока ты медлил…'],[1.4,'Шлюз застрял на полпути!'],[2.8,`${P.v} протискивается…`],[3.9,'Пепел внутри. ☢ +8']], sfx:[[1.4,'clank'],[1.6,'clank'],[3.0,'whoosh']]},
+  }},
+  peter_radio:{ title:'ПЁТР У РАЦИИ', scene:ecPeterScene, clips:{
+    grab:{caps:P=>[[0,'«…координаты Узла семь…»'],[0.9,'Ты выходишь из темноты.'],[1.9,'Вырвать трубку!'],[2.8,'«Я… я не хотел».'],[4.2,'Передача не ушла.']], sfx:[[1.9,'clank']], ae:1.9},
+    listen:{caps:P=>[[0,'«…координаты Узла семь…»'],[1.5,'«…Связист. Полное имя…»'],[3.4,'«Передаю».'],[4.1,'«Заря»: «Принято».'],[5.0,'Теперь ты знаешь точно.']], sfx:[[3.4,'beep'],[3.6,'beep'],[4.1,'beep']]},
+    knock:{caps:P=>[[0,'«…координаты Узла семь…»'],[0.9,'Ты подходишь сзади.'],[2.0,'Удар!'],[2.8,'Пётр оседает на пол.'],[4.2,'Передача не ушла.']], sfx:[[2.0,'thud']], ae:2.0},
+    timeout:{caps:P=>[[0,'«…и полное имя Связиста».'],[1.0,'«Передаю». Щелчок.'],[3.4,'Пётр снимает наушники…'],[4.3,'…и видит тебя. Поздно.']], sfx:[[1.0,'beep'],[1.15,'clank']]},
+  }},
+};
+const EC_LEN = 6.2;
+const EC_HEAVY = {boom:12, slam:9, bang:6, zap:9, thud:7};
+
+function ecFilter(c,t,W,H,len){
+  c.save(); c.globalCompositeOperation='multiply'; c.fillStyle='rgb(240,212,196)'; c.fillRect(0,0,W,H); c.restore();
+  c.fillStyle='rgba(255,240,230,.05)'; c.fillRect(0,0,W,H);
+  const fr=Math.floor(t*24);
+  for(let i=0;i<160;i++){ const h=Math.sin(i*127.1+fr*311.7)*43758.5453, x=(h-Math.floor(h))*W, y=((h*9.7)-Math.floor(h*9.7))*H; c.fillStyle=i%2?'rgba(0,0,0,.2)':'rgba(255,255,255,.2)'; c.fillRect(x,y,1.6,1.6); }
+  if(Math.sin(t*7.3)>0.92 || t<0.35){ for(let i=0;i<3;i++){ const y=((Math.sin(fr*3.1+i*9)+1)/2)*H; c.fillStyle='rgba(255,255,255,.45)'; c.fillRect(0,y,W,2+i*2); } }
+  const vg=c.createRadialGradient(W/2,H/2,Math.min(W,H)*0.25,W/2,H/2,Math.max(W,H)*0.75); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(14,6,4,.8)');
+  c.fillStyle=vg; c.fillRect(0,0,W,H);
+}
+function ecBars(c,W,H,t,title,cap,capAt){
+  const bh=Math.round(H*0.085); c.fillStyle='#000'; c.fillRect(0,0,W,bh); c.fillRect(0,H-bh,W,bh);
+  c.textAlign='center'; c.textBaseline='middle';
+  c.font=`bold ${Math.round(Math.min(12,W/32))}px "Courier New", monospace`; c.fillStyle=`rgba(255,${120+40*Math.sin(t*6)},100,.85)`;
+  c.fillText('⚠ '+title, W/2, bh/2);
+  if(cap){
+    const fs=Math.round(Math.min(16,W/24)); c.font=`bold ${fs}px "Courier New", monospace`; c.fillStyle='#ffe2c8';
+    const shown=cap.slice(0,Math.floor((t-capAt)*34));
+    if(c.measureText(cap).width<W*0.92) c.fillText(shown,W/2,H-bh/2);
+    else { const sp=cap.lastIndexOf(' ',Math.ceil(cap.length/2)+3), a=cap.slice(0,sp), b=cap.slice(sp+1);
+      c.fillText(shown.slice(0,a.length),W/2,H-bh/2-fs*0.6); if(shown.length>a.length+1) c.fillText(shown.slice(a.length+1),W/2,H-bh/2+fs*0.6); }
+  }
+  c.textBaseline='alphabetic';
+}
+function ecAudio(id,clip){
+  let ac=null;
+  try{
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    const T=ac.currentTime, len=EC_LEN, ae=clip.ae==null?len:clip.ae;
+    const out=ac.createGain(); out.gain.value=0.9; out.connect(ac.destination);
+    const noise=l=>{ const b=ac.createBuffer(1,Math.floor(ac.sampleRate*l),ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; const n=ac.createBufferSource(); n.buffer=b; return n; };
+    const env=(node,at,peak,dur)=>{ const g=ac.createGain(); g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(peak,at+0.015); g.gain.exponentialRampToValueAtTime(0.0001,at+dur); node.connect(g).connect(out); };
+    const filt=(type,f,q)=>{ const b=ac.createBiquadFilter(); b.type=type; b.frequency.value=f; if(q) b.Q.value=q; return b; };
+    const osc=(type,f0,f1,at,peak,dur)=>{ const o=ac.createOscillator(); o.type=type; o.frequency.setValueAtTime(f0,at); if(f1) o.frequency.exponentialRampToValueAtTime(f1,at+dur); env(o,at,peak,dur); o.start(at); o.stop(at+dur+0.05); };
+    const nz=(type,f,at,peak,dur,q)=>{ const n=noise(dur+0.1), fl=filt(type,f,q); n.connect(fl); env(fl,at,peak,dur); n.start(at); };
+    // гул
+    const dr=ac.createOscillator(), dg=ac.createGain(), dl=filt('lowpass',150); dr.type='sawtooth'; dr.frequency.value=44;
+    dg.gain.setValueAtTime(0,T); dg.gain.linearRampToValueAtTime(0.1,T+0.5); dg.gain.setValueAtTime(0.1,T+len-0.8); dg.gain.linearRampToValueAtTime(0,T+len);
+    dr.connect(dl).connect(dg).connect(out); dr.start(T); dr.stop(T+len+0.1);
+    // фон ситуации
+    const A={gas:['highpass',2600,0.08],fire:['lowpass',700,0.34],shock:['bandpass',3200,0.06],collapse:['lowpass',220,0.25],flood:['bandpass',900,0.24],raiders_door:['lowpass',320,0.07],airlock:['bandpass',420,0.32],peter_radio:['bandpass',1900,0.035]}[id];
+    const an=noise(len+0.5), af=filt(A[0],A[1]), ag=ac.createGain();
+    ag.gain.setValueAtTime(0.0001,T); ag.gain.exponentialRampToValueAtTime(A[2],T+0.3); ag.gain.setValueAtTime(A[2],T+Math.max(0.35,ae)); ag.gain.exponentialRampToValueAtTime(0.0001,T+Math.min(len,ae+0.8));
+    an.connect(af).connect(ag).connect(out); an.start(T); an.stop(T+len+0.4);
+    if(id==='airlock'){ const lfo=ac.createOscillator(), lg=ac.createGain(); lfo.frequency.value=0.7; lg.gain.value=180; lfo.connect(lg).connect(af.frequency); lfo.start(T); lfo.stop(T+len); }
+    if(id==='shock'||id==='flood'&&clip===EMC.flood.clips.timeout){ const b=ac.createOscillator(), bg=ac.createGain(); b.type='sawtooth'; b.frequency.value=100; const at=id==='flood'?3.0:0, en=id==='flood'?3.85:ae;
+      bg.gain.setValueAtTime(0.0001,T+at); bg.gain.exponentialRampToValueAtTime(0.05,T+at+0.05); bg.gain.setValueAtTime(0.05,T+en); bg.gain.exponentialRampToValueAtTime(0.0001,T+en+0.1); b.connect(filt('lowpass',900)).connect(bg).connect(out); b.start(T+at); b.stop(T+en+0.2); }
+    if(id==='fire'||id==='collapse') for(let i=0;i<ae*5;i++) nz('highpass',1200,T+Math.random()*ae,0.06+Math.random()*0.1,0.05);
+    if(id==='peter_radio') for(let x=0.2;x<ae-0.2;x+=0.12+Math.random()*0.25) osc('sine',1100,0,T+x,0.03,0.06+Math.random()*0.12);
+    const SFX={
+      boom:a=>{ nz('lowpass',260,a,0.9,2.0); osc('sine',60,24,a,0.6,1.6); },
+      thud:a=>{ osc('sine',95,38,a,0.6,0.3); nz('lowpass',500,a,0.35,0.2); },
+      bang:a=>{ nz('bandpass',1100,a,0.55,0.25,2); osc('square',140,90,a,0.12,0.3); osc('triangle',233,0,a,0.08,0.6); },
+      slam:a=>{ osc('sine',80,30,a,0.7,0.4); nz('lowpass',700,a,0.5,0.3); osc('triangle',180,0,a,0.12,1.2); },
+      clank:a=>{ osc('triangle',620,0,a,0.16,0.4); osc('triangle',930,0,a,0.08,0.3); },
+      zap:a=>{ osc('sawtooth',80,60,a,0.25,0.5); nz('highpass',1500,a,0.45,0.4); },
+      crack:a=>{ nz('highpass',800,a,0.5,0.12); osc('sine',120,50,a,0.2,0.2); },
+      whoosh:a=>{ const n=noise(1.2), f=filt('bandpass',300,1.5); f.frequency.setValueAtTime(300,a); f.frequency.exponentialRampToValueAtTime(2200,a+0.9); n.connect(f); env(f,a,0.4,1.0); n.start(a); },
+      splash:a=>{ nz('bandpass',1500,a,0.35,0.6); },
+      beep:a=>{ osc('sine',1000,0,a,0.12,0.12); },
+      chime:a=>{ osc('sine',880,0,a,0.12,1.4); osc('sine',1320,0,a+0.05,0.07,1.2); },
+      laugh:a=>{ for(let i=0;i<5;i++){ const o=ac.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(170-i*6,a+i*0.17); o.frequency.exponentialRampToValueAtTime(120,a+i*0.17+0.12); const f=filt('bandpass',650,3); o.connect(f); env(f,a+i*0.17,0.35,0.13); o.start(a+i*0.17); o.stop(a+i*0.17+0.16); } },
+    };
+    (clip.sfx||[]).forEach(([at,n])=>{ if(SFX[n]) SFX[n](T+at); });
+  }catch(e){ ac=null; }
+  return ac;
+}
+function ecHas(id,k){ return !!(EMC[id] && EMC[id].clips[k]); }
+function playEmClip(P, done){
+  const G=EMC[P.id]; const clip=G&&G.clips[P.k]; if(!clip){ done(); return; }
+  const caps=clip.caps(P).slice();
+  if(P.dead&&P.dead.length) caps.push([EC_LEN-1.6,'☠ '+P.dead.join(', ')+(P.dead.length>1?' — не выжили.':' — не выжил(а).')]);
+  const draw=(c,t,V)=>{
+    const {W,H,SC,OX,OY}=V, E=OX/SC+40;
+    let amp=t<0.3?5:0; (clip.sfx||[]).forEach(([at,n])=>{ if(EC_HEAVY[n] && t>at) amp+=EC_HEAVY[n]*Math.exp(-(t-at)*7); });
+    c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H);
+    c.translate(OX+Math.sin(t*93)*amp*SC, OY+Math.sin(t*71)*amp*SC); c.scale(SC,SC);
+    G.scene(c,t,P,P.k,E);
+    c.restore();
+    ecFilter(c,t,W,H,EC_LEN);
+    (clip.sfx||[]).forEach(([at,n])=>{ if((n==='zap'||n==='boom') && t>at && t<at+0.25){ c.fillStyle=`rgba(255,250,235,${0.75*(1-(t-at)/0.25)})`; c.fillRect(0,0,W,H); } });
+    if(t<0.25){ c.fillStyle=`rgba(255,255,255,${1-t/0.25})`; c.fillRect(0,0,W,H); }
+    if(t>EC_LEN-0.7){ c.fillStyle=`rgba(0,0,0,${iSm(EC_LEN-0.7,EC_LEN,t)})`; c.fillRect(0,0,W,H); }
+    let cap=null, at=0; caps.forEach(([a,s])=>{ if(t>=a){ cap=s; at=a; } });
+    ecBars(c,W,H,t,G.title,cap,at);
+  };
+  const buzz=[0.05].concat((clip.sfx||[]).filter(([a,n])=>EC_HEAVY[n]).map(x=>x[0]));
+  bgm.stop();
+  runCutscene(draw, EC_LEN, ()=>ecAudio(P.id,clip), buzz, ()=>{ bgm.play(); done(); });
+}
+function replayEm(i){ const j=(S.journal||[])[i]; if(j&&j.clip) playEmClip(j.clip,()=>render()); }
 
 /* =========================================================
    8. ЗАПУСК
