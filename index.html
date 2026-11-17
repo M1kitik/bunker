@@ -21,8 +21,8 @@
   body::after{width:320px;height:320px;right:-140px;top:45%;background:radial-gradient(circle,rgba(40,220,190,.2),transparent 70%)}
   #app{max-width:520px;margin:0 auto;padding:0 14px 40px;position:relative;z-index:1}
   #app.tabs-on{padding-bottom:150px}
-  h1{font-family:Unbounded,sans-serif;font-size:30px;letter-spacing:3px;margin:36px 0 4px}
-  h2{font-family:Unbounded,sans-serif;font-size:17px;margin:16px 0 8px}
+  h1{font-family:Unbounded,system-ui,-apple-system,sans-serif;font-size:30px;letter-spacing:3px;margin:36px 0 4px}
+  h2{font-family:Unbounded,system-ui,-apple-system,sans-serif;font-size:17px;margin:16px 0 8px}
   p{margin:6px 0}
   .dim{color:var(--dim)} .small{font-size:13px}
   .good{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
@@ -41,7 +41,7 @@
   .hud{position:sticky;top:0;z-index:5;padding:10px 0 8px;background:linear-gradient(var(--bg) 75%,rgba(9,11,17,0))}
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:6px;flex-wrap:wrap}
   .chips{flex-wrap:wrap;justify-content:flex-end}
-  .topbar b{font-family:Unbounded;font-size:17px}
+  .topbar b{font-family:Unbounded,system-ui,sans-serif;font-size:17px}
   .chips{display:flex;gap:6px;align-items:center}
   .chip{background:var(--glass);border:1px solid var(--gline);border-radius:20px;padding:4px 10px;font-size:12px;white-space:nowrap}
   .chip.btn{cursor:pointer;width:auto;margin:0;padding:4px 9px}
@@ -62,7 +62,7 @@
   @keyframes float{50%{transform:translateY(-6px)}}
   .ev .art em{position:absolute;left:14px;top:12px;z-index:2;font-style:normal;font-size:11px;font-weight:800;background:var(--acc);color:#140a04;border-radius:10px;padding:3px 9px}
   .ev .body{padding:4px 16px 14px}
-  .ev h3{font-family:Unbounded;font-size:18px;margin-bottom:6px}
+  .ev h3{font-family:Unbounded,system-ui,sans-serif;font-size:18px;margin-bottom:6px}
   .ev .body p{color:#c3c7d4;font-size:14px}
 
   /* отсеки */
@@ -90,6 +90,29 @@
   .tabbar div.on{color:var(--acc)} .tabbar div.on b{filter:none;opacity:1}
   .person{display:flex;gap:12px;align-items:flex-start;position:relative}
   .av{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:22px;flex:none;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
+  .av.ptw{width:84px;height:100px;border-radius:14px;overflow:hidden;padding:0;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+  .ptr{width:100%;height:100%;display:block}
+  .ptr .pt-breath{animation:ptBreath 4.2s ease-in-out infinite;transform-box:view-box;transform-origin:50px 120px}
+  @keyframes ptBreath{0%,100%{transform:scale(1,1)}50%{transform:scale(1.008,1.02)}}
+  .ptr .pt-head{animation:ptHead 7s ease-in-out infinite;transform-box:view-box}
+  .ptr .pt-head.kid{animation-duration:3.6s}
+  @keyframes ptHead{0%,100%{transform:rotate(0)}25%{transform:rotate(1.6deg)}55%{transform:rotate(-1.2deg)}80%{transform:rotate(.6deg)}}
+  .ptr .pt-lid{animation:ptBlink 4.8s infinite;transform-box:fill-box;transform-origin:50% 0;transform:scaleY(0)}
+  @keyframes ptBlink{0%,92%,100%{transform:scaleY(0)}95%{transform:scaleY(1)}}
+  .ptr .pt-look{animation:ptLook 8s ease-in-out infinite}
+  @keyframes ptLook{0%,35%{transform:translate(0,0)}40%,58%{transform:translate(1.1px,0)}63%,80%{transform:translate(-1px,.3px)}85%,100%{transform:translate(0,0)}}
+  .ptr .pt-sway{animation:ptSway 3s ease-in-out infinite;transform-box:view-box} .ptr .pt-sway.r{animation-direction:reverse}
+  @keyframes ptSway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg)}}
+  .ptr.sick .pt-head{animation:ptShiver .3s linear infinite}
+  @keyframes ptShiver{0%,100%{transform:translate(0,0)}25%{transform:translate(.4px,0)}75%{transform:translate(-.4px,0)}}
+  .ptr .pt-drop{animation:ptDrop 2.4s ease-in infinite} @keyframes ptDrop{0%{transform:translateY(0);opacity:.9}80%{transform:translateY(6px);opacity:0}100%{opacity:0}}
+  .ptr .pt-throb{animation:ptThrob .9s ease-in-out infinite} @keyframes ptThrob{50%{opacity:.15}}
+  .ptr .pt-snow{animation:ptSnow 4s linear infinite} @keyframes ptSnow{from{transform:translateY(-20px)}to{transform:translateY(120px)}}
+  @media (prefers-reduced-motion:reduce){.ptr *{animation:none!important}}
+  .ptmodal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:20px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+  .ptbox{background:#16181f;border:1px solid var(--gline);border-radius:22px;padding:18px;max-width:340px;width:100%;text-align:center}
+  .ptbox button{justify-content:center;text-align:center}
+  .ptbig{width:200px;height:240px;margin:0 auto;border-radius:18px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.5)}
   .pinfo{flex:1;min-width:0}
   .pname{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
   .pname b{font-size:16px}
@@ -112,10 +135,10 @@
     background:radial-gradient(circle at 50% 30%,#5a0d0a,#1a0505 70%);animation:empulse 1s ease-in-out infinite}
   .emerg.done{animation:none;background:radial-gradient(circle at 50% 30%,#2a0d0a,#0d0505 70%)}
   @keyframes empulse{50%{background:radial-gradient(circle at 50% 30%,#7a1410,#220606 70%)}}
-  .emhead{font-family:Unbounded,sans-serif;font-weight:700;letter-spacing:2px;color:#ffb3a8;font-size:13px;margin-top:8px}
+  .emhead{font-family:Unbounded,system-ui,-apple-system,sans-serif;font-weight:700;letter-spacing:2px;color:#ffb3a8;font-size:13px;margin-top:8px}
   .emring{position:relative;width:132px;height:132px;margin:14px auto 6px}
   .emring svg{width:100%;height:100%}
-  .emring b{position:absolute;inset:0;display:grid;place-items:center;font-family:Unbounded,sans-serif;font-size:44px;color:#fff;text-shadow:0 0 18px rgba(255,74,58,.8)}
+  .emring b{position:absolute;inset:0;display:grid;place-items:center;font-family:Unbounded,system-ui,-apple-system,sans-serif;font-size:44px;color:#fff;text-shadow:0 0 18px rgba(255,74,58,.8)}
   .emtitle{color:#fff;font-size:20px;margin:6px 0}
   .emtext{color:#ffd8d2;font-size:15px;max-width:420px;margin:0 auto 14px}
   .embtn{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,160,150,.6);font-size:16px;padding:16px;justify-content:center;max-width:460px;margin:8px auto;color:#fff}
@@ -252,6 +275,8 @@ const PROFS = {
   farmer:  {n:'Агроном',   i:'🌾', room:'farm'},
   mechanic:{n:'Механик',   i:'🔧', room:'workshop'},
   plumber: {n:'Сантехник', i:'🚰', room:'water'},
+  radioman:{n:'Радист',    i:'📻', room:'radio'},
+  chemist: {n:'Химик',     i:'🧪', room:'filter'},
   child:   {n:'Ребёнок',   i:'🧸', room:null},
 };
 // Черты характера
@@ -304,6 +329,12 @@ const chance = p => Math.random() < p;
 
 function makePerson(name, prof, trait){
   return {name, prof, trait: trait || rnd(prof==='child' ? CHILD_TRAITS : ADULT_TRAITS), hp:100, sick:false, isolated:false, job:null};
+}
+const DECODE_COST = () => P('Арсений') ? 10 : 15;
+function rollExtras(f){
+  f.arsDay  = Math.random()<0.45 ? 4+Math.floor(Math.random()*5) : 0;   // Арсений: дни 4–8, шанс 45%
+  f.zoyaDay = Math.random()<0.45 ? 9+Math.floor(Math.random()*7) : 0;   // Зоя Павловна: дни 9–15, шанс 45%
+  f.extrasRolled = 1;
 }
 function newState(){
   const s = {
@@ -883,6 +914,45 @@ const EVENTS = {
       {t:'Молчать', go:()=>{ S.pendingAct=3; return 'Ты молчишь. Отсчёт продолжается. ⏳'; }},
     ]
   },
+  /* ===================== СЛУЧАЙНЫЕ ЖИТЕЛИ ===================== */
+  ars_arrive:{
+    once:true, queued:true,
+    title:'Голос в эфире',
+    text:()=>'Рация ловит чужой, совсем молодой голос: «…кто-нибудь в районе гаражей? Я Арсений, радиофак, четвёртый курс. Сижу в подвале общаги, батарея садится. Я слышу ваш генератор — по наводкам. Можно к вам?»',
+    choices:[
+      {t:'«Иди к нам. Шлюз за гаражами»', go:()=>{ addResident('Арсений','radioman'); S.flags.arsJoin=S.day; S.res.signal+=3; return 'Через час у шлюза — худой парень в очках, с паяльником и мешком радиодеталей. «Я полезный, честно». 📻 Арсений — радист: в радиорубке работает в полтора раза лучше. +3 📡'; }},
+      {t:'Промолчать', go:()=>{ S.res.morale-=2; return 'Голос в эфире зовёт ещё минут десять. Потом — только шипение.'; }},
+    ]
+  },
+  ars_tape:{
+    once:true, queued:true,
+    title:'Склейка на плёнке',
+    text:()=>`Арсений третью ночь сидит над записью отсчёта. «Это не живой эфир. Магнитная лента, склейки — видно по фазе. Голос записан до войны».${lucid()?' Он долго смотрит на тебя. «И голос мне знаком».':''}`,
+    choices:()=>[
+      {t:'«Чей голос?»', go:()=>{ S.res.signal+=4; if(lucid()){ clue('ars_tape','Арсений: отсчёт — довоенная запись на плёнке. Голос похож на твой.'); return 'Арсений включает запись и твой голос из динамика одновременно. Совпадают. Он ничего не говорит — просто выключает магнитофон. +4 📡'; } return 'Арсений пожимает плечами: «Не знаю. Какой-то диктор». +4 📡'; }},
+      {t:'«Не лезь в это»', go:()=>{ S.res.signal+=4; S.res.morale-=2; return 'Арсений обиженно сворачивает провода. Но запись не стирает. +4 📡'; }},
+    ]
+  },
+  zoya_arrive:{
+    once:true, queued:true,
+    title:'Химичка',
+    text:()=>'В шлюз стучат — аккуратно, три раза. Пожилая женщина в противогазе, с чемоданчиком: «Зоя Павловна. Тридцать лет в лаборатории водоканала. Умею чистить воду и варить йод. Пустите старуху?»',
+    choices:[
+      {t:'Впустить', go:()=>{ addResident('Зоя Павловна','chemist',rnd(ADULT_TRAITS.filter(x=>x!=='thief'))); S.flags.zoyaJoin=S.day; return 'Зоя Павловна снимает противогаз, осматривает фильтр и цокает языком: «Кто ж так угли меняет». 🧪 Зоя Павловна — химик: на фильтре работает в полтора раза лучше.'; }},
+      {t:'Дать воды и отправить дальше (−3 💧)', req:()=>S.res.water>=3, go:()=>{ S.res.water-=3; S.res.morale+=1; return '«Спасибо, деточка». Она уходит в метель с бутылкой воды. Ни одной жалобы.'; }},
+      {t:'Не открывать', go:()=>{ S.res.morale-=3; return 'Стук повторяется ещё раз. Потом шаги удаляются.'; }},
+    ]
+  },
+  zoya_iodine:{
+    once:true, queued:true,
+    title:'Склянки Зои Павловны',
+    text:()=>'Зоя Павловна ставит на стол две мутные бутыли: «Йодная настойка — из того, что было. А это посильнее: от лучевой и от заразы. Но реактивов на всё не хватит».',
+    choices:()=>[
+      {t:'Раздать йод всем (−3 🛠)', req:()=>S.res.materials>=3, go:()=>{ S.res.materials-=3; S.res.rad=Math.max(0,S.res.rad-10); return 'Все морщатся от вкуса. Но дозиметр к вечеру тикает реже. ☢ −10'; }},
+      {t:'Сделать лекарства (−4 🛠)', req:()=>S.res.materials>=4, go:()=>{ S.res.materials-=4; S.res.meds=(S.res.meds||0)+2; return 'Две ампулы, подписанные аккуратным учительским почерком. +2 💊'; }},
+      {t:'«Поберегите реактивы»', go:()=>'«Как скажешь, командир». Зоя Павловна убирает склянки в чемоданчик.'},
+    ]
+  },
   /* ===================== АКТ 3 «ПОЛДЕНЬ» ===================== */
   act3_open:{
     story:true, once:true,
@@ -1155,6 +1225,8 @@ function epilogue(){
   else if(P('Вера')) out.push('Вера ведёт медпункт и учит детей перевязывать раны.');
   if(S.flags.leshaWithMarina) out.push('Лёша живёт с мамой у Беса — и иногда приходит в гости.');
   else if(S.flags.leshaLost) out.push('Лёша так и не вернулся. У шлюза до сих пор горит лампа.');
+  if(P('Арсений')) out.push(good?'Арсений собрал из обломков передатчик. Каждый вечер он выходит в эфир: «Говорит Узел 7. Мы живы».':'Арсений слушает эфир по ночам. Иногда там кто-то отвечает.');
+  if(P('Зоя Павловна')) out.push(P('Соня')?'Зоя Павловна учит Соню химии по старому учебнику. Соня рисует колбы.':'Зоя Павловна держит фильтры в идеальной чистоте и никому не доверяет угли.');
   if(P('Соня')) out.push((S.flags.drawings||0)>=3?'Соня больше не рисует людей в противогазах. Только солнце. Одно.':'Соня растёт и всё время что-то рисует.');
   return out;
 }
@@ -1169,7 +1241,7 @@ function pickEvent(){
   if(st && !S.seen.includes(st) && (!EVENTS[st].cond || EVENTS[st].cond())) return st;
   S.queue=S.queue||[];
   while(S.queue.length){ const q=S.queue.shift(); if(EVENTS[q] && (!EVENTS[q].cond||EVENTS[q].cond())) return q; }
-  if(S.flags.folder && !S.flags.knowStrike && !S.flags.decodeShown && S.rooms.radio.lvl>=2 && S.res.signal>=15){ S.flags.decodeShown=1; S.res.signal-=15; return 'folder_decoded'; }
+  if(S.flags.folder && !S.flags.knowStrike && !S.flags.decodeShown && S.rooms.radio.lvl>=2 && S.res.signal>=DECODE_COST()){ S.flags.decodeShown=1; S.res.signal-=DECODE_COST(); return 'folder_decoded'; }
   if(S.flags.thiefCaught && !S.flags.thiefDone && P(S.flags.thiefCaught)) return 'thief_judge';
   const pool = Object.keys(EVENTS).filter(id=>{
     const e=EVENTS[id];
@@ -1615,6 +1687,7 @@ function togglePick(id){
 }
 function descend(){
   haptic('medium');
+  if(!S.flags.extrasRolled) rollExtras(S.flags);
   S.picked.forEach(id=>{
     if(id==='food') S.res.food+=15;
     if(id==='water') S.res.water+=15;
@@ -1658,7 +1731,12 @@ function choose(i){
 function nextExtra(){
   S.queue=S.queue||[];
   while(S.queue.length){ const q=S.queue.shift(); if(EVENTS[q] && !S.seen.includes(q) && (!EVENTS[q].cond||EVENTS[q].cond())) return q; }
-  if(S.flags.folder && !S.flags.knowStrike && !S.flags.decodeShown && S.rooms.radio.lvl>=2 && S.res.signal>=15){ S.flags.decodeShown=1; S.res.signal-=15; return 'folder_decoded'; }
+  if(S.flags.folder && !S.flags.knowStrike && !S.flags.decodeShown && S.rooms.radio.lvl>=2 && S.res.signal>=DECODE_COST()){ S.flags.decodeShown=1; S.res.signal-=DECODE_COST(); return 'folder_decoded'; }
+  const F=S.flags, seen=id=>S.seen.includes(id);
+  if(F.arsDay && S.day>=F.arsDay && S.day<=F.arsDay+4 && !seen('ars_arrive')) return 'ars_arrive';
+  if(F.zoyaDay && S.day>=F.zoyaDay && S.day<=F.zoyaDay+4 && !seen('zoya_arrive')) return 'zoya_arrive';
+  if(F.arsJoin && P('Арсений') && S.day>=F.arsJoin+7 && !seen('ars_tape')) return 'ars_tape';
+  if(F.zoyaJoin && P('Зоя Павловна') && S.day>=F.zoyaJoin+6 && !seen('zoya_iodine')) return 'zoya_iodine';
   return null;
 }
 function afterResult(){
@@ -1716,6 +1794,8 @@ function figure(x, y, p, delay, work){
   else if(p.prof==='medic') hat='<rect x="-4" y="-29.5" width="8" height="4" rx="1" fill="#f2f2f2"/><rect x="-.6" y="-29" width="1.2" height="3" fill="#e05a47"/><rect x="-1.5" y="-28.1" width="3" height="1.2" fill="#e05a47"/>';
   else if(p.prof==='mechanic') hat='<path d="M-4.6 -24 A4.6 4.6 0 0 1 4.6 -24 Z" fill="#4a5a6a"/><rect x="2" y="-25" width="5" height="1.6" rx=".8" fill="#4a5a6a"/>';
   else if(p.prof==='farmer') hat='<ellipse cx="0" cy="-26" rx="7" ry="1.6" fill="#c9a24a"/><path d="M-3.6 -26 A3.6 3.2 0 0 1 3.6 -26 Z" fill="#c9a24a"/>';
+  else if(p.prof==='radioman') hat='<path d="M-4.4 -23.6 A4.4 4.4 0 0 1 4.4 -23.6 Z" fill="'+hair+'"/><path d="M-5 -23 A5 5 0 0 1 5 -23" fill="none" stroke="#222" stroke-width="1.2"/><rect x="-5.8" y="-24.5" width="2" height="3.4" rx=".8" fill="#222"/><rect x="3.8" y="-24.5" width="2" height="3.4" rx=".8" fill="#222"/><circle cx="2.4" cy="-23.3" r="1.3" fill="none" stroke="#333" stroke-width=".5"/>';
+  else if(p.prof==='chemist') hat='<path d="M-4.6 -24 A4.6 4.6 0 0 1 4.6 -24 Z" fill="#c8c8c8"/><circle cx="-3.6" cy="-22.6" r="1.6" fill="#c8c8c8"/><rect x="-.4" y="-24.4" width="4.8" height="1.8" rx=".9" fill="#7ab8c8" opacity=".85"/>';
   else if(p.prof==='boss') hat='<path d="M-4.4 -24 A4.4 4.4 0 0 1 4.4 -24 Z" fill="'+hair+'"/><rect x="-4.2" y="-14" width="8.4" height="1.4" fill="#e8c23a"/>';
   else hat='<path d="M-4.4 -23.6 A4.4 4.4 0 0 1 4.4 -23.6 Z" fill="'+hair+'"/>';
   return `<g transform="translate(${x.toFixed(1)},${y}) scale(${s})"><g class="bob" style="animation-delay:${delay}s">
@@ -1999,6 +2079,7 @@ function focusRoom(id){
 const app = document.getElementById('app');
 const ICONS = { generator:'⚡', water:'💧', filter:'🌀', farm:'🌱', workshop:'🛠', medbay:'➕', radio:'📻' };
 const EVENT_ART = {
+  ars_arrive:['📻','#1e2a3a'], ars_tape:['🎞','#24283a'], zoya_arrive:['🧪','#2a2e24'], zoya_iodine:['💉','#2e2a1e'],
   act3_open:['📻','#3a1414'], ally_choice:['🤝','#2a2a3a'], water_cut:['🚱','#1a2a3a'], gleb_card:['🪪','#1e2a3a'], pills_last:['💊','#2e2440'], drawing3:['🖍','#3a2a3a'], peter_fate:['🎒','#2a2418'], zarya_offer:['🏰','#2a1e3a'], siege:['🔦','#3a1010'], mem5:['🎙','#14141e'], mem5_fog:['🌫','#24283a'], ally_move:['🧭','#2a2a14'], last_prep:['📋','#24283a'], eve:['🌙','#14182a'], noon:['🕛','#3a1010'],
   knock:['🚪','#4a2a18'], rats:['🐀','#3a2a1e'], filter_noise:['🌀','#1f3a3a'], quarrel:['👊','#4a1e1e'],
   sick:['🤒','#2a3a24'], generator_burn:['⚡','#4a3a10'], sortie:['🎒','#3a2c1a'], docs:['📁','#2a2a3e'],
@@ -2009,7 +2090,7 @@ function opCard(){
   if(!S.flags.a3 || S.flags.ally==='zarya') return S.flags.ally==='zarya'&&S.flags.a3 ? '<div class="card"><b>🏰 Узел 7 под «Зарёй»</b><p class="small dim" style="margin-top:6px">В полдень они ждут твой ключ.</p></div>' : '';
   const r=opReady(), row=(ok,t,h)=>`<p class="small" style="margin-top:6px">${ok?'✅':'⬜'} ${t}${ok?'':` <span class="dim">— ${h}</span>`}</p>`;
   return `<div class="card"><b>🕛 Операция «Отмена» · до полудня ${Math.max(0,40-S.day)} дн.</b>
-    ${row(r.folder,'Папка «Полдень» расшифрована', S.flags.folder?'радиорубка 2 ур. и 📡 15':'вылазка в НИИ «Связь»')}
+    ${row(r.folder,'Папка «Полдень» расшифрована', S.flags.folder?`радиорубка 2 ур. и 📡 ${DECODE_COST()}${P('Арсений')?' (Арсений ускоряет)':''}`:'вылазка в НИИ «Связь»')}
     ${row(r.radio,'Радиорубка 3 ур.','вкладка «Стройка» — для эфира на все частоты')}
     ${row(r.power,'Генератор 3 ур.','вкладка «Стройка» — энергия для пульта')}
     ${row(r.card,'Ключ-карта «Полдня»', P('Глеб')?'она у Глеба':'нужен другой путь')}
@@ -2057,7 +2138,8 @@ function roomEffect(id){
   const {out}=compute(), R=ROOMS[id], r=S.rooms[id];
   if(id==='generator') return `+${r.lvl*4+r.w*R.per} ⚡`;
   if(id==='filter') return `−${out[id]} ☢`;
-  return `+${out[id]} ${({food:'🍞',water:'💧',materials:'🛠',morale:'🙂',signal:'📡'})[R.res]}`;
+  if(R.res==='heal') return `+${out[id]||0} ❤`;
+  return `+${out[id]} ${({food:'🍞',water:'💧',materials:'🛠',morale:'🙂',signal:'📡'})[R.res]||''}`;
 }
 function pips(l){ let s='<span class="pips">'; for(let i=0;i<MAX_LVL;i++) s+=`<i class="${i<l?'on':''}"></i>`; return s+'</span>'; }
 
@@ -2180,7 +2262,7 @@ function render(){
             return `<option value="${id}" ${p.job===id?'selected':''} ${full?'disabled':''}>${ICONS[id]} ${ROOMS[id].name.replace(/^\S+\s/,'')} ${assigned(id).length}/${cap(id)}${pr.room===id?' ★':''}</option>`;
           })).join('');
           return `<div class="card person">
-            <div class="av" style="background:${AV_COLORS[i%AV_COLORS.length]}">${pr.i}</div>
+            <div class="av ptw" onclick="openPortrait('${p.name}')" title="${p.name}">${portraitSVG(p)}</div>
             <div class="pinfo">
               <div class="pname"><b>${p.name}</b><span class="dim small">${pr.n}${pr.room?' · ★ '+ICONS[pr.room]:''}</span></div>
               <div class="ptags"><span class="ptag">${known?tr.i+' '+tr.n:'❔ ???'}</span>${p.sick?'<span class="ptag bad">🤒 болен</span>':''}${p.migraine>0?'<span class="ptag bad">🤕 мигрень</span>':''}${p.away?'<span class="ptag">🗺 на вылазке</span>':''}${p.locked?'<span class="ptag bad">🔒 под замком</span>':''}${p.name==='Ты'&&S.flags.pills?`<span class="ptag">${S.flags.onPills?'💊 пьёт таблетки':'🚫 без таблеток'}</span>`:''}${p.isolated?'<span class="ptag">🚪 изолирован</span>':''}</div>
@@ -2226,6 +2308,7 @@ function render(){
   }
 
   if(sc==='ending'){
+    if(!S.endClip && EDCLIP[S.ending]){ S.endClip=1; save(); app.innerHTML=''; bgm.stop(); playEnding(S.ending, ()=>render()); return; }
     const E=ENDINGS[S.ending]||ENDINGS.endure;
     let seen=[]; try{ seen=JSON.parse(localStorage.getItem('bunker_endings')||'[]'); if(!seen.includes(S.ending)){ seen.push(S.ending); localStorage.setItem('bunker_endings',JSON.stringify(seen)); } }catch(e){}
     const MC={best:'#ffd23a',good:'#7be36a',grey:'#c3c7d4',bad:'#ff6a5a',secret:'#b58ad8'}[E.mood]||'#ff8a7a';
@@ -2237,7 +2320,8 @@ function render(){
       ${ep.length?`<div class="card"><b>Что стало с ними</b>${ep.map(x=>`<p class="small" style="margin-top:6px">— ${x}</p>`).join('')}</div>`:''}
       <p class="small dim" style="text-align:center;margin-top:6px">Открыто концовок: ${seen.length} из ${Object.keys(ENDINGS).length}</p>
       <div class="rings">${ring('👥',S.residents.length,'выжило',S.residents.length*12,'#ff8a3d')}${ring('🙂',S.res.morale,'мораль',S.res.morale,'#ff7aa8')}${ring('☢',S.res.rad,'радиация',S.res.rad,'#7be36a')}</div>
-      <button class="main" style="margin-top:14px" onclick="restart()">Начать заново</button>`;
+      ${EDCLIP[S.ending]?`<button style="margin-top:14px" onclick="playEnding(S.ending,()=>render())">▶ Финальный ролик</button>`:''}
+      <button class="main" style="margin-top:10px" onclick="restart()">Начать заново</button>`;
     bgm.stop();
     return;
   }
@@ -2674,11 +2758,11 @@ function iShotInside(c,t,D,E){
   // тени людей на стене — от лампы
   const P=[{x:62,s:1.25,k:0},{x:150,s:1.15,k:2}];
   const PX=232, pOff=(PX-bx)*0.9;
-  for(let l=0;l<3;l++){ c.save(); c.globalAlpha=0.16; iStanding(c,PX+pOff+(l-1)*3,468,96*1.5,1,'#000'); c.restore(); }
+  c.save(); c.filter='blur(5px)'; c.globalAlpha=0.28; iStanding(c,PX+pOff,468,96*1.5,1,'#000'); c.restore();
   // тени на стене: падают от лампы, растут и смещаются при её качании (мягкий край — 3 слоя)
   P.forEach((p,i)=>{
     const off=(p.x+14-bx)*0.9;
-    for(let l=0;l<3;l++){ c.save(); c.globalAlpha=0.16; iSeated(c,p.x+off+(l-1)*3,470-2,p.s*(1.5+l*0.04),Math.sin(u*3+i*2),p.k,'#000'); c.restore(); }
+    c.save(); c.filter='blur(5px)'; c.globalAlpha=0.28; iSeated(c,p.x+off,470-2,p.s*1.52,Math.sin(u*3+i*2),p.k,'#000'); c.restore();
   });
   P.forEach((p,i)=> iSeated(c,p.x,470,p.s,Math.sin(u*3+i*2),p.k,'#050404'));
   // свет лампы
@@ -4014,7 +4098,10 @@ function ecRaidScene(c,t,P,k,E){
   const red = k==='flare' && t>1.5 ? (0.6+0.4*Math.sin(t*23)*Math.sin(t*7)) : 0;
   ecRoom(c,E,t,{alarm:1, ax:330});
   // наружная стена и проём
-  c.fillStyle='#1b1d1f'; c.fillRect(-E,-500,E+36,1640);
+  { const wg=c.createLinearGradient(-E,0,36,0); wg.addColorStop(0,'#141516'); wg.addColorStop(1,'#34373a'); c.fillStyle=wg; c.fillRect(-E,-500,E+36,1640);
+    c.save(); c.beginPath(); c.rect(-E,-500,E+36,1640); c.clip(); c.strokeStyle='rgba(0,0,0,.35)'; c.lineWidth=2; for(let x=-E-640;x<40;x+=16){ c.beginPath(); c.moveTo(x,640); c.lineTo(x+640,0); c.stroke(); }
+    c.fillStyle='rgba(120,90,60,.35)'; for(let i=0;i<40;i++){ c.beginPath(); c.arc(-E+ecH(i+5)*(E+30),60+ecH(i+6)*520,2.2,0,7); c.fill(); } c.restore();
+    c.fillStyle='#4a4d50'; c.fillRect(30,-500,6,1640); c.fillStyle='rgba(255,255,255,.08)'; c.fillRect(30,-500,2,1640); }
   const gap = k==='hold_fail' ? 34*iSm(2.6,2.9,t)*(1-iSm(4.4,4.75,t)) : 0;
   const fall = k==='timeout' ? iSm(2.2,2.65,t) : 0;
   const outsideA = gap>1 ? 1 : fall>0 ? 1 : 0;
@@ -4073,7 +4160,7 @@ function ecAirlockScene(c,t,P,k,E){
   if(k==='runout'){ zh = t<2.3 ? 1.25-iSm(0.3,1.9,t)*0.8 : 0.45+iSm(2.3,4.4,t)*0.75; z = t<2.3 ? iSm(0,1.9,t)*0.45 : zh; }
   const runner=(zz,n,col,dx,dir)=>{ const s=0.3+1.3*zz*zz, y=440+150*zz; ecMan(c,180+dx*s+Math.sin(t*5)*3,y,{name:n,col,pose:'run',ph:t*13+dx,s,dir:dir||1}); };
   c.save(); if(z<0.97){ c.beginPath(); c.rect(70,150,220,410); c.clip(); }
-  if(k==='runout'){ runner(z,P.v,EC_COL.vic,-12); if(zh!=null) runner(zh,'Ты',EC_COL.hero,14,t<2.3?-1:1); }
+  if(k==='runout'){ runner(z,P.v,EC_COL.vic,t<2.3?-6:-30); if(zh!=null) runner(zh,t<2.3?'':'Ты',EC_COL.hero,t<2.3?14:30,t<2.3?-1:1); }
   else if(z<1.12) runner(z,P.v,EC_COL.vic,0);
   c.restore();
   // створки
@@ -4083,6 +4170,11 @@ function ecAirlockScene(c,t,P,k,E){
   c.fillStyle='#c9a227'; for(let i=0;i<6;i++){ c.fillRect(74,170+i*66,10*dk,26); c.fillRect(286-10*dk,170+i*66,10*dk,26); }
   // рама шлюза
   c.fillStyle='#1c1f22'; c.fillRect(-E,-500,70+E,1640); c.fillRect(290,-500,70+E,1640); c.fillRect(-E,-500,360+2*E,650); c.fillRect(-E,560,360+2*E,700);
+  c.strokeStyle='rgba(0,0,0,.45)'; c.lineWidth=2; for(let x=-480;x<840;x+=64){ if(x>60&&x<300) continue; c.beginPath(); c.moveTo(x,-500); c.lineTo(x,560); c.stroke(); }
+  for(let x=-480;x<840;x+=64){ if(x>40&&x<300) continue; for(let y=40;y<560;y+=96){ c.fillStyle='#2c3034'; c.beginPath(); c.arc(x+8,y,2.5,0,7); c.arc(x+56,y,2.5,0,7); c.fill(); } }
+  c.fillStyle='#2e3338'; c.fillRect(-E,60,E+52,12); c.fillRect(308,60,E+52,12); c.fillStyle='rgba(255,255,255,.06)'; c.fillRect(-E,60,E+52,3); c.fillRect(308,60,E+52,3);
+  c.fillStyle='#262a2e'; c.fillRect(-E,560,360+2*E,4); c.fillStyle='#16191b'; c.fillRect(-E,564,360+2*E,700);
+  [[-60,180],[400,180]].forEach(([x,y])=>{ c.fillStyle='#2a2e32'; c.fillRect(x-18,y,36,54); c.fillStyle='#d8c56a'; c.font='bold 8px sans-serif'; c.textAlign='center'; c.fillText('☢',x,y+18); c.fillStyle='#8a8f94'; c.fillText('ДЕЗ.',x,y+40); });
   c.strokeStyle='#6c7379'; c.lineWidth=10; c.strokeRect(70,150,220,410); ecStripes(c,60,128,240,14); ecStripes(c,52,150,12,410); ecStripes(c,296,150,12,410); ecPlate(c,180,112,'ШЛЮЗ  №1',72);
   const dz=t*0.6; c.fillStyle='#2a2a2a'; c.fillRect(20,300,22,60); c.fillStyle='#ff3a2a'; c.globalAlpha=0.5+0.5*Math.sin(t*8); c.fillRect(25,306,12,8); c.globalAlpha=1;
   ecGlow(c,30,140,200,'255,45,30',0.25*(0.5+0.5*Math.sin(t*9)));
@@ -4101,7 +4193,8 @@ function ecPeterScene(c,t,P,k,E){
   [[140,200],[188,226],[206,190]].forEach(([a,b],i)=>{ c.fillStyle=i===2?'#c0392b':'#2a2a2a'; c.beginPath(); c.arc(a,b,3,0,7); c.fill(); });
   c.fillStyle='#d8d0b8'; c.beginPath(); c.arc(300,200,18,0,7); c.fill(); c.strokeStyle='#222'; c.lineWidth=2; c.stroke(); c.beginPath(); c.moveTo(300,200); c.lineTo(300,186); c.moveTo(300,200); c.lineTo(300+Math.sin(t*0.8)*12,200-Math.cos(t*0.8)*12); c.stroke();
   // дверной проём
-  c.fillStyle='#4b4434'; c.fillRect(-E,300,E+56,200); ecGlow(c,20,420,140,'230,200,140',0.25);
+  c.fillStyle='#17191b'; c.fillRect(-6,292,70,210); c.fillStyle='#4b4434'; c.fillRect(0,300,56,200); ecGlow(c,28,420,120,'230,200,140',0.25);
+  c.fillStyle='rgba(230,200,140,.10)'; c.beginPath(); c.moveTo(56,500); c.lineTo(0,500); c.lineTo(40,640); c.lineTo(150,640); c.closePath(); c.fill();
   // стол и рация
   c.fillStyle='#2e2720'; c.fillRect(212,472,140,10); c.fillRect(220,482,8,60); c.fillRect(336,482,8,60);
   c.fillStyle='#3d4440'; c.fillRect(262,410,78,62); c.fillStyle='#1b1f1c'; c.fillRect(268,418,40,26);
@@ -4390,6 +4483,535 @@ function playEmClip(P, done){
   runCutscene(draw, EC_LEN, ()=>ecAudio(P.id,clip), buzz, ()=>{ bgm.play(); done(); });
 }
 function replayEm(i){ const j=(S.journal||[])[i]; if(j&&j.clip) playEmClip(j.clip,()=>render()); }
+
+
+/* =========================================================
+   7.9 РОЛИКИ КОНЦОВОК
+   ========================================================= */
+const ED_LEN = 16;
+const ED_TINT = {best:'rgb(255,234,196)', good:'rgb(232,240,228)', grey:'rgb(220,222,230)', bad:'rgb(244,204,196)', secret:'rgb(214,204,244)'};
+const ED_COL  = {best:'#ffd23a', good:'#7be36a', grey:'#c3c7d4', bad:'#ff6a5a', secret:'#b58ad8'};
+
+/* --- окружение наверху --- */
+function edSky(c,E,mode,t){
+  const P={ash:['#4a4640','#8a8070'], dusk:['#2a2440','#c06a48'], night:['#06080f','#1c2436'], dawn:['#3a3a5a','#f0a070'], noon:['#8a9098','#d8d8d0'], red:['#2a0806','#c8401c'], storm:['#24221e','#5a5448']}[mode];
+  const g=c.createLinearGradient(0,-200,0,480); g.addColorStop(0,P[0]); g.addColorStop(1,P[1]); c.fillStyle=g; c.fillRect(-E,-500,360+2*E,1000);
+  if(mode==='night') for(let i=0;i<40;i++){ c.fillStyle=`rgba(255,255,255,${0.3+0.3*Math.sin(t*2+i)})`; c.fillRect(-E+ecH(i+3)*(360+2*E),ecH(i+4)*300,1.5,1.5); }
+  if(mode==='dawn'||mode==='dusk'){ const sy=mode==='dawn'?470-Math.min(1,t/10)*80:430; ecGlow(c,250,sy,220,'255,190,120',0.55); c.fillStyle='rgba(255,230,180,.9)'; c.beginPath(); c.arc(250,sy,26,0,7); c.fill(); }
+  if(mode==='noon'){ ecGlow(c,180,90,180,'255,255,240',0.5); c.fillStyle='rgba(255,255,245,.95)'; c.beginPath(); c.arc(180,90,20,0,7); c.fill(); }
+}
+function edCity(c,E,t,o){
+  o=o||{}; const base=o.y||470, Wd=360+2*E;
+  // дальний план
+  c.fillStyle=o.far||'rgba(40,38,40,.55)';
+  for(let x=-E,i=0;x<360+E;i++){ const w=20+ecH(i+1)*34, h=40+ecH(i+2)*110; c.fillRect(x,base-h-30,w,h+30); if(ecH(i+7)>0.6){ c.beginPath(); c.moveTo(x,base-h-30); c.lineTo(x+w*0.4,base-h-50); c.lineTo(x+w*0.7,base-h-30); c.fill(); } x+=w+2; }
+  // ближний план: разрушенные дома
+  for(let x=-E-20,i=0;x<360+E;i++){ const w=40+ecH(i+21)*60, h=60+ecH(i+22)*150; c.fillStyle=o.near||'#1b1a1c';
+    c.beginPath(); c.moveTo(x,base); c.lineTo(x,base-h); for(let k=0;k<4;k++) c.lineTo(x+w*(k+1)/4, base-h+(ecH(i*5+k)>0.5? ecH(i+k)*40:0)); c.lineTo(x+w,base); c.closePath(); c.fill();
+    if(o.lights) for(let wy=0;wy<5;wy++) for(let wx=0;wx<3;wx++){ if(ecH(i*31+wy*7+wx)>0.72){ c.fillStyle=`rgba(255,200,120,${0.6*o.lights})`; c.fillRect(x+6+wx*(w/3.2),base-h+16+wy*22,4,6); } }
+    x+=w+6; }
+  // земля
+  const g=c.createLinearGradient(0,base,0,base+200); g.addColorStop(0,o.ground||'#6a665e'); g.addColorStop(1,'#2a2824'); c.fillStyle=g; c.fillRect(-E,base,Wd,700);
+}
+function edSnow(c,E,t,amt,wind){
+  if(amt<=0) return; const Wd=360+2*E;
+  for(let i=0;i<90;i++){ const sp=30+ecH(i)*40, x=-E+((ecH(i+1)*Wd+t*(wind||12)*(0.5+ecH(i+2)))%Wd), y=((ecH(i+3)*700+t*sp)%700)-30; c.fillStyle=`rgba(225,220,210,${(0.35+0.4*ecH(i+4))*amt})`; c.fillRect(x,y,1.8+ecH(i+5)*1.6,1.8+ecH(i+5)*1.6); }
+}
+function edGarages(c,E,y,hatchOpen){
+  for(let i=Math.floor(-E/70)-1;i<Math.ceil((360+E)/70)+1;i++){ const x=i*70; c.fillStyle=i%2?'#4a4844':'#55524c'; c.fillRect(x,y-90,68,90); c.fillStyle='#3a3834'; c.fillRect(x+6,y-78,56,78); c.strokeStyle='rgba(0,0,0,.3)'; c.lineWidth=1; for(let k=0;k<6;k++){ c.beginPath(); c.moveTo(x+6,y-78+k*13); c.lineTo(x+62,y-78+k*13); c.stroke(); } c.fillStyle='rgba(200,195,185,.6)'; c.fillRect(x,y-94,68,5); }
+  // люк бункера
+  c.fillStyle='#2a2c2e'; c.fillRect(150,y-8,60,10); c.save(); c.translate(150,y-6); c.rotate(-hatchOpen*1.2); c.fillStyle='#5b6268'; c.fillRect(0,-6,60,8); c.fillStyle='#c9a227'; c.fillRect(24,-10,12,4); c.restore();
+  if(hatchOpen>0.1) ecGlow(c,180,y-4,60*hatchOpen,'255,210,140',0.6*hatchOpen);
+}
+function edZarya(c,E,t,o){
+  o=o||{}; const fall=o.fall||0;
+  c.fillStyle='#3a3c40'; c.fillRect(-E,330,360+2*E,150);
+  c.fillStyle='#2c2e32'; for(let x=-480;x<840;x+=40) c.fillRect(x,318,22,14);
+  // эмблема «Зари»
+  if(!o.noSign){ c.save(); c.translate(180,300); c.fillStyle='#d8d4c8'; c.fillRect(-60,-34,120,46); c.fillStyle='#b8261e'; c.beginPath(); c.arc(0,-2,16,Math.PI,0); c.fill(); for(let k=0;k<7;k++){ const a=Math.PI+k*Math.PI/6; c.fillRect(Math.cos(a)*20-1,-2+Math.sin(a)*20-1,3,3); } c.fillStyle='#1d2228'; c.font='bold 10px "Courier New", monospace'; c.textAlign='center'; c.fillText('«ЗАРЯ»',0,10); c.restore(); }
+  // ворота
+  c.save(); c.translate(110,480); c.rotate(-fall*1.35); c.fillStyle='#4a5056'; c.fillRect(0,-140,70,140); c.fillStyle='#3a3f44'; for(let k=0;k<4;k++) c.fillRect(6,-132+k*34,58,4); c.restore();
+  c.save(); c.translate(250,480); c.rotate(fall*1.35); c.fillStyle='#4a5056'; c.fillRect(-70,-140,70,140); c.fillStyle='#3a3f44'; for(let k=0;k<4;k++) c.fillRect(-64,-132+k*34,58,4); c.restore();
+  if(fall>0.05) ecGlow(c,180,420,120*fall,'255,200,140',0.5*fall);
+  // прожекторы
+  if(o.lights!==false) [[30,330],[330,330]].forEach(([x,y],i)=>{ const a=Math.sin(t*0.9+i*2)*0.5+(i?-0.4:0.4); c.save(); c.translate(x,y); c.rotate(a+Math.PI); const g=c.createLinearGradient(0,0,0,-420); g.addColorStop(0,'rgba(255,250,220,.4)'); g.addColorStop(1,'rgba(255,250,220,0)'); c.fillStyle=g; c.beginPath(); c.moveTo(-6,0); c.lineTo(-60,-420); c.lineTo(60,-420); c.lineTo(6,0); c.closePath(); c.fill(); c.restore(); c.fillStyle='#fff8d8'; c.beginPath(); c.arc(x,y,5,0,7); c.fill(); });
+}
+function edTable(c,x,y,w){ c.fillStyle='#4a3a28'; c.fillRect(x,y,w,10); c.fillStyle='#3a2c1e'; c.fillRect(x+6,y+10,6,46); c.fillRect(x+w-12,y+10,6,46); c.fillStyle='rgba(255,255,255,.08)'; c.fillRect(x,y,w,2); }
+function edCandle(c,x,y,t){ c.fillStyle='#e8e0c8'; c.fillRect(x-3,y-14,6,14); const f=Math.sin(t*13)*1.2; c.fillStyle='#ffd27a'; c.beginPath(); c.ellipse(x+f*0.3,y-19,2.6,5,0,0,7); c.fill(); ecGlow(c,x,y-18,60,'255,200,120',0.45); }
+function edRadio(c,x,y,t,on){ c.fillStyle='#4a3a2a'; iRR(c,x-30,y-30,60,34,5); c.fill(); c.fillStyle='#d8c890'; c.fillRect(x-22,y-24,30,14); c.fillStyle='#222'; c.beginPath(); c.arc(x+16,y-14,7,0,7); c.fill(); if(on){ ecGlow(c,x-7,y-17,30,'255,220,140',0.5); c.strokeStyle='#b8261e'; c.lineWidth=1.2; c.beginPath(); c.moveTo(x-10+Math.sin(t)*6,y-24); c.lineTo(x-10+Math.sin(t)*6,y-10); c.stroke(); } }
+function edWaves(c,x,y,t,col,n){ for(let i=0;i<(n||4);i++){ const r=((t*70+i*45)%200); c.strokeStyle=`rgba(${col},${0.55*(1-r/200)})`; c.lineWidth=2; c.beginPath(); c.arc(x,y,r,Math.PI*1.05,Math.PI*1.95); c.stroke(); } }
+
+/* --- кадр финала --- */
+function edSubs(c,W,H,bh,t,subs){
+  let cur=null; (subs||[]).forEach(s=>{ if(t>=s[0] && t<s[1]) cur=s; }); if(!cur) return;
+  const fs=Math.round(Math.min(17,W/22)), lines=cur.slice(2), a=Math.max(0,Math.min(1,(t-cur[0])*4,(cur[1]-t)*4)), lh=fs*1.35, y0=H-bh-16-lines.length*lh;
+  const g=c.createLinearGradient(0,y0-24,0,H-bh); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.5,`rgba(0,0,0,${0.55*a})`); g.addColorStop(1,`rgba(0,0,0,${0.75*a})`); c.fillStyle=g; c.fillRect(0,y0-24,W,H-bh-y0+24);
+  c.font=`bold ${fs}px "Courier New", monospace`; c.textAlign='center'; c.textBaseline='top';
+  let n=Math.floor((t-cur[0])*24);
+  lines.forEach((ln,i)=>{ const sh=ln.slice(0,Math.max(0,n)); n-=ln.length+2; c.fillStyle=`rgba(0,0,0,${0.6*a})`; c.fillText(sh,W/2+1.5,y0+i*lh+1.5); c.fillStyle=`rgba(245,240,230,${a})`; c.fillText(sh,W/2,y0+i*lh); });
+  c.textBaseline='alphabetic';
+}
+function edPlay(id, done){
+  const D=EDCLIP[id]; const E0=ENDINGS[id]; if(!D||!E0){ done(); return; }
+  const mood=E0.mood||'grey', col=ED_COL[mood]||'#ff8a7a', len=ED_LEN;
+  const draw=(c,t,V)=>{
+    const {W,H,SC,OX,OY}=V, E=OX/SC+40;
+    let si=0; D.shots.forEach((s,i)=>{ if(t>=s[0]) si=i; }); const s0=D.shots[si][0], s1=si+1<D.shots.length?D.shots[si+1][0]:len-3.2;
+    let amp=0; (D.shake||[]).forEach(([at,a])=>{ if(t>at) amp+=a*Math.exp(-(t-at)*5); });
+    c.save(); c.fillStyle='#000'; c.fillRect(0,0,W,H);
+    c.translate(OX+Math.sin(t*93)*amp*SC,OY+Math.sin(t*71)*amp*SC); c.scale(SC,SC);
+    D.shots[si][1](c,t,t-s0,E);
+    c.restore();
+    c.save(); c.globalCompositeOperation='multiply'; c.fillStyle=ED_TINT[mood]||ED_TINT.grey; c.fillRect(0,0,W,H); c.restore();
+    const fr=Math.floor(t*24); for(let i=0;i<120;i++){ const h=Math.sin(i*127.1+fr*311.7)*43758.5453, x=(h-Math.floor(h))*W, y=((h*9.7)-Math.floor(h*9.7))*H; c.fillStyle=i%2?'rgba(0,0,0,.14)':'rgba(255,255,255,.14)'; c.fillRect(x,y,1.4,1.4); }
+    const vg=c.createRadialGradient(W/2,H/2,Math.min(W,H)*0.3,W/2,H/2,Math.max(W,H)*0.75); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.75)'); c.fillStyle=vg; c.fillRect(0,0,W,H);
+    // переходы между сценами
+    const dip=Math.max(t<0.8?1-t/0.8:0, si>0&&t-s0<0.45?1-(t-s0)/0.45:0, t<s1&&s1-t<0.35?1-(s1-t)/0.35:0);
+    if(dip>0){ c.fillStyle=`rgba(0,0,0,${dip})`; c.fillRect(0,0,W,H); }
+    (D.flash||[]).forEach(f=>{ if(t>f&&t<f+0.3){ c.fillStyle=`rgba(255,252,240,${0.9*(1-(t-f)/0.3)})`; c.fillRect(0,0,W,H); } });
+    const bh=Math.round(H*0.11);
+    // титр
+    if(t>len-3.4){ const k=iSm(len-3.4,len-2.6,t);
+      c.fillStyle=`rgba(0,0,0,${0.82*k})`; c.fillRect(0,0,W,H);
+      c.save(); c.globalAlpha=k; c.textAlign='center'; c.shadowColor=col; c.shadowBlur=24*k;
+      const fs=Math.round(Math.min(30,W/12)); c.font=`900 ${fs}px "Unbounded", "Courier New", sans-serif`; c.fillStyle=col;
+      const words=E0.title.split(' '); const lines=[]; let ln=''; words.forEach(w=>{ const tt=ln?ln+' '+w:w; if(c.measureText(tt).width>W*0.86&&ln){ lines.push(ln); ln=w; } else ln=tt; }); lines.push(ln);
+      lines.forEach((l,i)=>c.fillText(l,W/2,H/2-(lines.length-1)*fs*0.6+i*fs*1.2));
+      c.shadowBlur=0; c.font=`bold ${Math.round(fs*0.42)}px "Courier New", monospace`; c.fillStyle='rgba(235,230,220,.75)'; c.fillText('К О Н Е Ц',W/2,H/2+lines.length*fs*0.7+fs*0.6);
+      c.restore(); }
+    if(t>len-0.6){ c.fillStyle=`rgba(0,0,0,${iSm(len-0.6,len,t)})`; c.fillRect(0,0,W,H); }
+    else if(t<len-3.4) edSubs(c,W,H,bh,t,D.subs);
+    c.fillStyle='#000'; c.fillRect(0,0,W,bh); c.fillRect(0,H-bh,W,bh);
+    c.textAlign='center'; c.textBaseline='middle'; c.font=`bold ${Math.round(Math.min(12,W/32))}px "Courier New", monospace`; c.fillStyle='rgba(230,225,215,.55)'; c.fillText(`ДЕНЬ ${Math.min(40,(typeof S!=='undefined'&&S.day)||40)} · ФИНАЛ`,W/2,bh/2); c.textBaseline='alphabetic';
+  };
+  bgm.stop();
+  runCutscene(draw, len, ()=>edAudio(id,mood,D), [0.2].concat((D.shake||[]).map(x=>x[0])), done);
+}
+function edAudio(id,mood,D){
+  let ac=null;
+  try{
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    const T=ac.currentTime, len=ED_LEN;
+    const out=ac.createGain(); out.gain.value=0.9; out.connect(ac.destination);
+    const noise=l=>{ const b=ac.createBuffer(1,Math.floor(ac.sampleRate*l),ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; const n=ac.createBufferSource(); n.buffer=b; return n; };
+    const env=(node,at,peak,dur,att)=>{ const g=ac.createGain(); g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(peak,at+(att||0.02)); g.gain.exponentialRampToValueAtTime(0.0001,at+dur); node.connect(g).connect(out); };
+    const filt=(type,f,q)=>{ const b=ac.createBiquadFilter(); b.type=type; b.frequency.value=f; if(q) b.Q.value=q; return b; };
+    const osc=(type,f0,f1,at,peak,dur,att)=>{ const o=ac.createOscillator(); o.type=type; o.frequency.setValueAtTime(f0,at); if(f1) o.frequency.exponentialRampToValueAtTime(f1,at+dur); env(o,at,peak,dur,att); o.start(at); o.stop(at+dur+0.05); };
+    const nz=(type,f,at,peak,dur,q)=>{ const n=noise(dur+0.1), fl=filt(type,f,q); n.connect(fl); env(fl,at,peak,dur); n.start(at); };
+    // гармония по настроению: последовательность аккордов
+    const CH={best:[[220,277,330],[196,247,294],[247,311,370],[220,277,330,440]], good:[[196,247,294],[175,220,262],[196,247,294],[220,262,330]], grey:[[196,233,294],[175,220,262],[156,196,233],[175,220,262]],
+      bad:[[110,131,165],[104,123,156],[98,117,147],[92,110,139]], secret:[[185,220,277],[175,208,262],[165,196,247],[185,233,277]]}[mood]||[[196,233,294]];
+    const seg=(len-1)/CH.length;
+    CH.forEach((ch,i)=>ch.forEach((f,j)=>{ const o=ac.createOscillator(), g=ac.createGain(), lp=filt('lowpass',mood==='best'?1800:900); o.type=j%2?'triangle':'sine'; o.frequency.value=f; const a=T+0.3+i*seg;
+      g.gain.setValueAtTime(0.0001,a); g.gain.exponentialRampToValueAtTime(0.03,a+1.2); g.gain.setValueAtTime(0.03,a+seg-0.4); g.gain.exponentialRampToValueAtTime(0.0001,a+seg+0.8);
+      o.connect(lp).connect(g).connect(out); o.start(a); o.stop(a+seg+0.9); }));
+    // колокол на титре
+    const bell=CH[CH.length-1][0]*2; [1,2.01,3.2].forEach((m,k)=>osc('sine',bell*m,0,T+len-3.3,0.08/(k+1),3.0,0.01));
+    osc('sine',55,40,T+len-3.3,0.25,2.5,0.05);
+    // гул/ветер
+    const wn=noise(len+0.5), wf=filt('bandpass',D.wind||380,0.7), wg=ac.createGain(); wg.gain.setValueAtTime(0.0001,T); wg.gain.exponentialRampToValueAtTime(D.windAmt||0.06,T+1.5); wg.gain.setValueAtTime(D.windAmt||0.06,T+len-2); wg.gain.exponentialRampToValueAtTime(0.0001,T+len); wn.connect(wf).connect(wg).connect(out); wn.start(T); wn.stop(T+len+0.4);
+    const SFX={
+      boom:a=>{ nz('lowpass',220,a,0.9,2.6); osc('sine',50,22,a,0.7,2.2); },
+      far:a=>{ nz('lowpass',140,a,0.5,3.5); osc('sine',38,24,a,0.4,3.0,0.3); },
+      zap:a=>{ osc('sawtooth',80,60,a,0.2,0.6); nz('highpass',1500,a,0.35,0.5); },
+      radio:a=>{ for(let x=0;x<1.6;x+=0.08) nz('bandpass',1800,a+x,0.04,0.06,2); },
+      crowd:a=>{ for(let i=0;i<14;i++){ const o=ac.createOscillator(); o.type='sawtooth'; o.frequency.value=110+Math.random()*90; const f=filt('bandpass',500+Math.random()*600,3); o.connect(f); env(f,a+Math.random()*1.4,0.05,0.4); o.start(a); o.stop(a+2); } },
+      cheer:a=>{ for(let i=0;i<10;i++){ const o=ac.createOscillator(); o.type='sawtooth'; const s=a+Math.random()*0.8; o.frequency.setValueAtTime(220+Math.random()*120,s); o.frequency.exponentialRampToValueAtTime(320+Math.random()*120,s+0.4); const f=filt('bandpass',900,2); o.connect(f); env(f,s,0.05,0.5); o.start(s); o.stop(s+0.6); } },
+      steps:a=>{ for(let x=0;x<3;x+=0.42) nz('lowpass',600,a+x,0.1,0.12); },
+      clank:a=>{ osc('triangle',620,0,a,0.14,0.4); osc('triangle',930,0,a,0.07,0.3); },
+      slam:a=>{ osc('sine',80,30,a,0.6,0.4); nz('lowpass',700,a,0.45,0.3); },
+      tick:a=>{ for(let x=0;x<3;x+=1) nz('highpass',4000,a+x,0.08,0.03); },
+      heart:a=>{ for(let x=0;x<4;x+=0.9) [0,0.22].forEach((o,j)=>osc('sine',70,35,a+x+o,j?0.25:0.4,0.18)); },
+      count:a=>{ for(let i=0;i<12;i++) osc('sine',440*(i===11?2:1),0,a+i*0.32,0.06,0.12); },
+      laugh:a=>{ for(let i=0;i<5;i++){ const o=ac.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(170-i*6,a+i*0.17); o.frequency.exponentialRampToValueAtTime(120,a+i*0.17+0.12); const f=filt('bandpass',650,3); o.connect(f); env(f,a+i*0.17,0.3,0.13); o.start(a+i*0.17); o.stop(a+i*0.17+0.16); } },
+      fire:a=>{ for(let i=0;i<30;i++) nz('highpass',1200,a+Math.random()*3,0.05+Math.random()*0.08,0.05); nz('lowpass',600,a,0.2,3); },
+    };
+    (D.sfx||[]).forEach(([at,n])=>{ if(SFX[n]) SFX[n](T+at); });
+  }catch(e){ ac=null; }
+  return ac;
+}
+
+/* --- 13 финалов --- */
+const EDCLIP = {
+  secret:{ wind:500, windAmt:0.04,
+    shots:[
+      [0,(c,t,u,E)=>{ ecFinalScene(c,3.5+u*0.35,{ally:null},'code_full',E); }],
+      [4.6,(c,t,u,E)=>{ edSky(c,E,'night',t); edCity(c,E,t,{y:500,lights:0.4}); edGarages(c,E,500,0);
+        c.strokeStyle='#2a2c2e'; c.lineWidth=4; c.beginPath(); c.moveTo(180,494); c.lineTo(180,330); c.moveTo(170,350); c.lineTo(190,350); c.moveTo(166,370); c.lineTo(194,370); c.stroke(); ecGlow(c,180,326,20,'255,80,60',0.8);
+        for(let i=0;i<5;i++){ const r=((u*90+i*60)%320); c.strokeStyle=`rgba(255,210,80,${0.5*(1-r/320)})`; c.lineWidth=2.5; c.beginPath(); c.arc(180,330,r,0,7); c.stroke(); }
+        edSnow(c,E,t,0.5); }],
+      [9.0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.35,sign:'ПОДВАЛ 12',sx:30,sub:'ул. Садовая'}); ecShade(c,E,0.3); edTable(c,110,470,150); edRadio(c,185,470,t,1); edWaves(c,185,440,t,'255,210,90',3);
+        ecMan(c,90,560,{col:'#5a4a3a',pose:'sit',dir:1,s:1.15}); ecMan(c,280,560,{col:'#3a4a5a',pose:'sit',dir:-1,s:1.15}); ecMan(c,230,560,{col:'#6a3a3a',pose:u>2.2?'up':'stand',dir:-1,s:1.0,kid:true,ph:t*6}); ecMan(c,40,560,{col:'#4a5a3a',pose:'stand',s:1.2,lean:0.12}); }],
+    ],
+    subs:[[0.6,4.3,'«Солнце не встаёт дважды».','ОТМЕНА.'],[5.0,8.7,'А потом — эфир. Все частоты.','Документы «Полдня».'],[9.3,11.0,'Удар не был ответным.'],[11.1,12.5,'В тысячах подвалов','слышат правду.']],
+    sfx:[[0.4,'radio'],[4.8,'radio'],[9.2,'radio'],[11.4,'cheer']],
+  },
+  cancel:{ wind:420, windAmt:0.05,
+    shots:[
+      [0,(c,t,u,E)=>{ ecFinalScene(c,3.0+u*0.4,{ally:null},'code',E); }],
+      [4.4,(c,t,u,E)=>{ edSky(c,E,'noon',t); edCity(c,E,t,{y:470,far:'rgba(90,92,96,.5)',near:'#3a3a3c',ground:'#8a867e'}); edGarages(c,E,470,iSm(1.0,2.5,u));
+        if(u>2.2) ecMan(c,180,474,{name:'Ты',col:EC_COL.hero,s:0.9,pose:'stand',lean:-0.1}); edSnow(c,E,t,0.25); }],
+      [9.0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.85,sign:'ГО-7'}); edTable(c,60,480,240); ['#5a4a3a','#3a4a5a','#6a3a3a','#4a5a3a'].forEach((col,i)=>ecMan(c,80+i*62,560,{col,pose:'sit',dir:i%2?-1:1,s:1.1,kid:i===2}));
+        ecMan(c,330,560,{name:'Ты',col:EC_COL.hero,pose:'stand',dir:-1,lean:0.05}); for(let i=0;i<4;i++){ c.fillStyle='#ddd'; c.fillRect(90+i*55,470,16,10); } }],
+    ],
+    subs:[[0.6,4.1,'ОТМЕНА. Второго залпа не будет.'],[4.8,8.7,'Полдень. Серое небо.','И больше ничего.'],[9.3,12.5,'Никто не узнает,','почему мир не кончился.']],
+    sfx:[[0.4,'radio'],[5.5,'clank']],
+  },
+  noon:{ wind:300, windAmt:0.05, flash:[3.4],
+    shots:[
+      [0,(c,t,u,E)=>{ ecFinalScene(c,Math.min(3.3,1.4+u*0.6),{ally:null},'manual',E); if(u>2.6){ c.fillStyle=`rgba(255,250,235,${iSm(2.6,3.4,u)})`; c.fillRect(-E,-500,360+2*E,1640); } }],
+      [3.6,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.2,sign:'УЗЕЛ 7',sx:24}); ecShade(c,E,0.4);
+        c.fillStyle='#1a1e22'; c.fillRect(60,420,280,140); c.fillStyle='#0c1014'; c.fillRect(80,120,200,150); c.fillStyle='rgba(255,210,60,.5)'; c.font='bold 14px "Courier New", monospace'; c.textAlign='center'; c.fillText('11:59:59',180,200);
+        c.fillStyle='#2c4462'; c.beginPath(); c.moveTo(120,470); c.lineTo(160,470); c.lineTo(166,520); c.lineTo(114,520); c.fill(); c.fillStyle='#d8c56a'; c.fillRect(118,488,46,4);
+        edCandle(c,230,420,t); c.fillStyle='#e8e2c8'; c.fillRect(196,380,90,30); c.fillStyle='#2a2a2a'; c.font='bold 9px "Courier New", monospace'; c.fillText('СВЯЗИСТ-7',241,393); c.fillText('ОН ДОСЧИТАЛ',241,405);
+        ecMan(c,ecL(-20,90,iSm(0.3,2.2,u)),560,{name:'Соня',col:'#7a5a3a',kid:true,pose:u<2.2?'walk':'stand',ph:t*7}); }],
+      [8.2,(c,t,u,E)=>{ edSky(c,E,'noon',t); edCity(c,E,t,{y:470,far:'rgba(90,92,96,.5)',near:'#3a3a3c',ground:'#8a867e'}); edGarages(c,E,470,1);
+        ['#5a4a3a','#3a4a5a','#6a3a3a','#4a5a3a','#4a3f2c'].forEach((col,i)=>ecMan(c,100+i*42,478,{col,s:0.85,pose:'stand',kid:i===2,dir:i<2?1:-1,lean:0.1})); edSnow(c,E,t,0.3); }],
+    ],
+    subs:[[0.5,3.2,'Кабели жгут ладони.','Держать. Держать…'],[4.0,8.0,'Таймер так и не дошёл до полудня.','Ты — тоже.'],[8.6,12.5,'Небо над гаражами — чистое.']],
+    sfx:[[0.3,'zap'],[1.2,'zap'],[2.2,'zap'],[3.4,'far'],[4.2,'heart']],
+  },
+  noon_fail:{ wind:200, windAmt:0.08, shake:[[4.6,6],[6.0,9],[9.6,12]], flash:[4.6,6.0],
+    shots:[
+      [0,(c,t,u,E)=>{ ecFinalScene(c,2.6+u*0.5,{ally:null},'timeout',E); }],
+      [4.2,(c,t,u,E)=>{ edSky(c,E,'ash',t); for(let i=0;i<2;i++){ const at=0.4+i*1.4, k=iCl((u-at)/3); if(k<=0) continue; const x=[90,270][i], r=40+k*90;
+        }
+        edCity(c,E,t,{y:490,far:'rgba(30,28,28,.7)',near:'#121112',ground:'#3a3632'});
+        for(let i=0;i<2;i++){ const at=0.4+i*1.4, k=iCl((u-at)/3); if(k<=0) continue; const x=[90,270][i], r=40+k*80, top=330-k*170;
+          ecGlow(c,x,330,r*3,'255,235,200',0.9*(1-k*0.45)); ecGlow(c,x,top,r*1.6,'255,170,90',0.6);
+          const cg=c.createLinearGradient(0,top,0,330); cg.addColorStop(0,`rgba(240,205,165,${0.95*k})`); cg.addColorStop(1,`rgba(150,110,80,${0.7*k})`); c.fillStyle=cg;
+          c.fillRect(x-r*0.18,top,r*0.36,330-top); c.beginPath(); c.ellipse(x,top,r*0.95,r*0.48,0,0,7); c.fill(); c.fillStyle=`rgba(255,225,175,${0.65*k})`; c.beginPath(); c.ellipse(x,top-4,r*0.6,r*0.24,0,0,7); c.fill(); } }],
+      [9.4,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.5+0.5*Math.sin(t*20)*(u<1.2?1:0),sign:'ГО-7'}); ecDust(c,E,t,0.5*(1-iSm(1,4,u))); ecFalling(c,0,360,t,0.8*(1-iSm(1,4,u)));
+        ['#5a4a3a','#3a4a5a','#6a3a3a','#4a5a3a'].forEach((col,i)=>ecMan(c,70+i*60,560,{col,pose:'crouch',kid:i===2,dir:i%2?-1:1})); ecMan(c,320,560,{name:'Ты',col:EC_COL.hero,pose:'stand',dir:-1}); }],
+    ],
+    subs:[[0.6,3.9,'12:00:00.','ПУСК.'],[4.6,9.1,'Далеко за горизонтом','встаёт второе солнце.'],[9.8,12.5,'Голос в стене больше не считает.']],
+    sfx:[[1.8,'far'],[4.6,'boom'],[6.0,'boom'],[9.6,'far']],
+  },
+  new_order:{ wind:350, windAmt:0.03,
+    shots:[
+      [0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:1,sign:'ГО-7'}); c.save(); c.translate(180,190); c.fillStyle='#d8d4c8'; c.fillRect(-70,-46,140,74); c.fillStyle='#b8261e'; c.beginPath(); c.arc(0,-6,22,Math.PI,0); c.fill(); for(let k=0;k<7;k++){ const a=Math.PI+k*Math.PI/6; c.fillRect(Math.cos(a)*28-1.5,-6+Math.sin(a)*28-1.5,4,4); } c.fillStyle='#1d2228'; c.font='bold 12px "Courier New", monospace'; c.textAlign='center'; c.fillText('«ЗАРЯ»',0,16); c.restore();
+        for(let i=0;i<3;i++){ const k=iSm(0.4+i*0.5,2.6+i*0.5,u); ecMan(c,ecL(-60,90+i*80,k),560,{col:'#d8dde2',mask:true,pose:k<1?'walk':'stand',ph:t*7+i,s:1.2}); } }],
+      [4.6,(c,t,u,E)=>{ ecFinalScene(c,0.3,{ally:'zarya'},'code',E); c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(-E,-500,360+2*E,1640);
+        ecMan(c,250,560,{col:'#33402c',hat:'officer',epaul:true,glasses:true,pose:'stand',dir:-1,s:1.3}); }],
+      [9.0,(c,t,u,E)=>{ edSky(c,E,'storm',t); edCity(c,E,t,{y:480,near:'#1e1d20'}); edZarya(c,E,t,{noSign:false});
+        for(let i=0;i<9;i++) ecMan(c,40+i*34,560,{col:['#5a4a3a','#3a4a5a','#4a5a3a'][i%3],pose:'stand',s:0.95,dir:1,lean:0.12}); ecMan(c,340,560,{name:'Ты',col:'#d8dde2',pose:'stand',dir:-1,s:1.05}); edSnow(c,E,t,0.6); }],
+    ],
+    subs:[[0.6,4.3,'Люди «Зари» вежливы и быстры.'],[5.0,8.7,'Полдень проходит так,','как задумал Ракитин.'],[9.3,12.5,'Свет, врачи, пайки.','Тебе больше не снятся сны.']],
+    sfx:[[0.4,'steps'],[2.0,'steps'],[9.2,'crowd']],
+  },
+  ash_king:{ wind:300, windAmt:0.07, shake:[[1.6,8]], flash:[1.6],
+    shots:[
+      [0,(c,t,u,E)=>{ edSky(c,E,'red',t); edCity(c,E,t,{y:480,near:'#140c0a'}); edZarya(c,E,t,{fall:iSm(1.4,2.2,u)}); ecFire(c,60,470,80,140,t,0.9); ecFire(c,310,470,90,160,t,1.1); ecSmoke(c,E,t,0.6);
+        for(let i=0;i<5;i++){ const k=iSm(2.0+i*0.25,4.2+i*0.25,u); if(k>0) ecMan(c,ecL(-40,180+(i-2)*30,k),560-k*60,{col:EC_COL.raid,mask:true,pose:'run',ph:t*13+i,s:1.2-k*0.4}); } }],
+      [4.6,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.6,sign:'«ЗАРЯ»',sx:130,sub:'КОМАНДНЫЙ ПУНКТ'}); ecShade(c,E,0.2);
+        const x=ecL(300,140,iSm(0.3,3.5,u)); ecMan(c,x,560,{col:'#33402c',hat:'officer',epaul:true,glasses:true,pose:'walk',ph:t*5,dir:-1,lean:0.25}); ecMan(c,x+50,560,{col:EC_COL.raid,mask:true,pose:'walk',ph:t*5+1,dir:-1}); ecMan(c,x-46,560,{col:EC_COL.raid,mask:true,pose:'walk',ph:t*5+2,dir:-1}); }],
+      [9.0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.45,sign:false}); ecShade(c,E,0.3); c.fillStyle='#0d1520'; c.fillRect(100,120,160,220); for(let i=0;i<20;i++){ ecGlow(c,100+ecH(i)*160,200+ecH(i+1)*140,8,'255,120,60',0.5); }
+        c.strokeStyle='#14181d'; c.lineWidth=8; c.strokeRect(100,120,160,220);
+        c.fillStyle='#4a2a1a'; iRR(c,150,420,70,120,10); c.fill(); ecMan(c,186,560,{name:'Ты',col:EC_COL.hero,pose:'sit',s:1.25});
+        ecMan(c,290,560,{name:'Бес',col:EC_COL.raid,pose:u>0.8&&u<2.6?'up':'stand',ph:t*9,dir:-1,s:1.25}); ecMan(c,60,560,{col:'#5a4a3a',pose:'stand',s:1.1,lean:0.15}); }],
+    ],
+    subs:[[0.6,4.3,'Ворота «Зари» падают на рассвете.'],[5.0,8.7,'Ракитина выводят в наручниках.'],[9.3,12.5,'Кто теперь главный?','Ты знаешь ответ.']],
+    sfx:[[0.2,'fire'],[1.6,'boom'],[2.4,'crowd'],[4.8,'steps'],[9.8,'laugh']],
+  },
+  exodus:{ wind:520, windAmt:0.09,
+    shots:[
+      [0,(c,t,u,E)=>{ edSky(c,E,'dusk',t); edCity(c,E,t,{y:470,near:'#1a1618',ground:'#9a948a'});
+        for(let i=0;i<9;i++){ const x=-60+((u*22+i*48)%460); ecMan(c,x,478+(i%2)*6,{col:['#5a4a3a','#3a4a5a','#6a3a3a','#4a5a3a',EC_COL.hero][i%5],pose:i%4===0?'carry':'walk',ph:t*6+i,s:0.8,kid:i===3||i===7,name:i===4?'Ты':null}); }
+        c.fillStyle='#3a2c1e'; c.fillRect(((u*22+100)%460)-90,486,46,10); edSnow(c,E,t,0.8,40); }],
+      [4.8,(c,t,u,E)=>{ edSky(c,E,'night',t); edCity(c,E,t,{y:470,near:'#0e0d10',ground:'#5a564e'});
+        c.fillStyle='#2a2c30'; c.fillRect(120,380,120,100); c.fillStyle='#0a0a0a'; c.fillRect(132,400,96,80); c.fillStyle='#b8261e'; c.font='900 36px sans-serif'; c.textAlign='center'; c.fillText('М',180,372); ecGlow(c,180,360,50,'255,60,40',0.5); ecGlow(c,180,470,80,'255,200,130',0.6);
+        for(let i=0;i<5;i++){ const k=iCl((u-i*0.6)/2.5); if(k>0&&k<1) ecMan(c,ecL(60+i*10,180,k),ecL(480,470,k),{col:['#5a4a3a','#3a4a5a','#6a3a3a','#4a5a3a',EC_COL.hero][i],pose:'walk',ph:t*7+i,s:ecL(0.9,0.5,k),a:1-k*0.8}); }
+        edSnow(c,E,t,0.6,30); }],
+      [9.4,(c,t,u,E)=>{ c.fillStyle='#2a2420'; c.fillRect(-E,-500,360+2*E,1640); c.fillStyle='#4a3e32'; c.beginPath(); c.moveTo(-E,120); c.quadraticCurveTo(180,-10,360+E,120); c.lineTo(360+E,500); c.lineTo(-E,500); c.fill();
+        for(let i=0;i<6;i++){ const x=10+i*68; c.fillStyle='#8a7a5a'; c.fillRect(x,160,10,340); c.fillStyle='rgba(255,220,150,.9)'; c.beginPath(); c.arc(x+5,150,6,0,7); c.fill(); ecGlow(c,x+5,150,80,'255,210,140',0.35); }
+        c.fillStyle='#6a5a44'; c.fillRect(-E,500,360+2*E,200); c.fillStyle='#d8c08a'; c.font='bold 12px "Courier New", monospace'; c.textAlign='center'; c.fillText('ПРОЛЕТАРСКАЯ',180,110);
+        [[40,'#7a3a2a'],[300,'#2a5a6a']].forEach(([x,col])=>{ c.fillStyle=col; c.beginPath(); c.moveTo(x-34,500); c.lineTo(x,440); c.lineTo(x+34,500); c.fill(); });
+        ['#5a4a3a','#3a4a5a','#6a3a3a','#4a5a3a'].forEach((col,i)=>ecMan(c,110+i*46,560,{col,pose:i===2?'up':'stand',kid:i===2,ph:t*4,dir:i%2?-1:1,s:1.1})); ecMan(c,320,560,{name:'Мирон',col:'#6a5a3a',pose:'stand',dir:-1,s:1.15}); }],
+    ],
+    subs:[[0.6,4.5,'Колонна уходит в сумерках.'],[5.2,9.1,'Сорок метров бетона','под «Пролетарской».'],[9.7,12.5,'Вы живы. И вы — вместе.']],
+    sfx:[[0.4,'steps'],[3.4,'steps'],[9.6,'crowd']],
+  },
+  city:{ wind:300, windAmt:0.02, shake:[[11.0,3]],
+    shots:[
+      [0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:1,sign:'ФЕРМА',sx:30,sub:'ГРЯДКА № 3'}); for(let i=0;i<5;i++){ c.fillStyle='#4a3a28'; c.fillRect(30+i*64,470,52,24); for(let k=0;k<4;k++){ c.fillStyle=`hsl(${100+ecH(i*4+k)*30},45%,${35+ecH(k)*15}%)`; c.beginPath(); c.ellipse(38+i*64+k*12,462-Math.sin(t+k)*1,5,10+ecH(i+k)*6,Math.sin(t*0.8+k)*0.1,0,7); c.fill(); } }
+        ecGlow(c,180,60,260,'200,255,180',0.18); ecMan(c,120,560,{col:'#5a6a3a',name:'Марина',pose:'kneel',ph:t*4}); ecMan(c,260,560,{col:'#7a5a3a',kid:true,pose:'carry',ph:t*6,dir:-1}); }],
+      [4.6,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.9,sign:false}); c.fillStyle='#1d2a20'; c.fillRect(70,160,220,140); c.strokeStyle='#8a6a42'; c.lineWidth=8; c.strokeRect(70,160,220,140);
+        c.fillStyle='rgba(240,240,230,.85)'; c.font='bold 30px "Courier New", monospace'; c.textAlign='left'; const s='А Б В Г'; c.fillText(s.slice(0,Math.floor(u*3)),96,230); c.font='16px "Courier New", monospace'; c.fillText('МАМА МЫЛА РАМУ'.slice(0,Math.max(0,Math.floor((u-1.5)*6))),96,272);
+        ecMan(c,320,560,{name:'Вера',col:'#6a4a5a',pose:'reach',dir:-1,grab:[290,230]}); ['#7a5a3a','#5a6a7a','#7a3a4a'].forEach((col,i)=>ecMan(c,90+i*60,560,{col,kid:true,pose:'sit',dir:1})); }],
+      [9.0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.8+0.2*(u>2&&u<2.4?Math.sin(t*40):0),sign:'ГО-7'}); edTable(c,40,480,240); ['#5a4a3a','#3a4a5a','#6a3a3a','#4a5a3a','#2f3e52'].forEach((col,i)=>ecMan(c,60+i*50,560,{col,pose:'sit',dir:i%2?-1:1,s:1.05,kid:i===2}));
+        ecMan(c,330,560,{name:'Ты',col:EC_COL.hero,pose:'stand',dir:-1,lean:0.08}); if(u>2) ecFalling(c,140,240,t,0.4*(1-iSm(2.4,3.5,u))); }],
+    ],
+    subs:[[0.6,4.3,'Грядки, мастерская,','дети учат буквы.'],[5.0,8.7,'Это уже не убежище.','Это город.'],[9.3,12.5,'В полдень лампа качнулась.','Где-то очень далеко.']],
+    sfx:[[11.0,'far']],
+  },
+  endure:{ wind:260, windAmt:0.06, shake:[[5.6,4]],
+    shots:[
+      [0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.4,sign:'ГО-7'}); ecShade(c,E,0.3); edTable(c,90,480,180); c.fillStyle='#ddd'; c.fillRect(170,470,20,10);
+        ['#5a4a3a','#3a4a5a','#4a5a3a'].forEach((col,i)=>ecMan(c,110+i*70,560,{col,pose:'sit',dir:i?-1:1,s:1.05,lean:0.3})); }],
+      [4.6,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.5*(u>1&&u<1.6?(Math.sin(t*30)>0?1:0.2):1),sign:'ГО-7'}); ecShade(c,E,0.35); ecFalling(c,0,360,t,u>1?0.5*(1-iSm(1.5,4,u)):0);
+        c.fillStyle='#3a3f44'; c.beginPath(); c.arc(180,260,40,0,7); c.fill(); c.fillStyle='#14181b'; for(let i=0;i<5;i++) for(let j=0;j<5;j++){ const x=180-24+i*12,y=260-24+j*12; if(Math.hypot(x-180,y-260)<32){ c.beginPath(); c.arc(x,y,2.6,0,7); c.fill(); } } }],
+      [9.0,(c,t,u,E)=>{ edSky(c,E,'ash',t); edCity(c,E,t,{y:470,near:'#242226'}); edGarages(c,E,470,1); ecMan(c,180,478,{name:'Ты',col:EC_COL.hero,s:0.9,pose:'stand',lean:-0.15}); edSnow(c,E,t,0.9,18); }],
+    ],
+    subs:[[0.6,4.3,'Ты не пошёл к пульту.'],[5.0,8.7,'Полдень прошёл над вами','далёким гулом.'],[9.3,12.5,'Наверху всё ещё пепел.','Внизу — всё ещё вы.']],
+    sfx:[[5.6,'far']],
+  },
+  twelve:{ wind:700, windAmt:0.03, flash:[10.9],
+    shots:[
+      [0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.2,sign:'ГО-7'}); ecShade(c,E,0.4);
+        c.fillStyle='#3a3f44'; c.beginPath(); c.arc(180,280,64,0,7); c.fill(); c.fillStyle='#0e1114'; for(let i=0;i<9;i++) for(let j=0;j<9;j++){ const x=132+i*12, y=232+j*12; if(Math.hypot(x-180,y-280)<50){ c.beginPath(); c.arc(x,y,3.2,0,7); c.fill(); } }
+        const n=Math.min(12,1+Math.floor(u/0.34)); c.save(); c.globalAlpha=0.35; c.fillStyle='#d8ccff'; c.font='900 120px "Courier New", monospace'; c.textAlign='center'; c.fillText(String(n),180,320); c.restore();
+        edWaves(c,180,280,t,'200,190,255',4); ecMan(c,128,560,{name:'Ты',col:EC_COL.hero,pose:'reach',grab:[170,300],lean:0.18}); }],
+      [4.6,(c,t,u,E)=>{ edSky(c,E,'storm',t); edCity(c,E,t,{y:470,near:'#1c1a1e'}); edGarages(c,E,470,0); edSnow(c,E,t,1,60);
+        const k=iSm(1.4,3.2,u); ecMan(c,250,478,{col:'#2a2a28',mask:k<0.5,pose:k>0.1&&k<0.9?'reach':'stand',dir:-1,s:1.05,grab:k>0.1&&k<0.9?[244,410]:null});
+        c.fillStyle='rgba(0,0,0,.2)'; c.fillRect(-E,-500,360+2*E,1640); }],
+      [8.6,(c,t,u,E)=>{ c.fillStyle='#08080c'; c.fillRect(-E,-500,360+2*E,1640); c.save(); c.translate(180,300);
+        c.fillStyle='#e8e2d0'; c.beginPath(); c.arc(0,0,120,0,7); c.fill(); c.strokeStyle='#222'; c.lineWidth=6; c.stroke();
+        for(let i=0;i<12;i++){ const a=i/12*6.283; c.fillStyle='#222'; c.fillRect(Math.sin(a)*100-2,-Math.cos(a)*100-8,4,16); }
+        c.fillStyle='#222'; c.font='bold 22px serif'; c.textAlign='center'; c.fillText('XII',0,-70);
+        c.strokeStyle='#222'; c.lineWidth=7; c.beginPath(); c.moveTo(0,0); c.lineTo(0,-62); c.stroke(); c.lineWidth=4; c.beginPath(); c.moveTo(0,0); c.lineTo(Math.sin(-0.02)*90,-Math.cos(-0.02)*90); c.stroke();
+        const tr=Math.sin(t*30)*0.012; c.strokeStyle='#b8261e'; c.lineWidth=2; c.beginPath(); c.moveTo(0,0); c.lineTo(Math.sin(-0.105+tr)*104,-Math.cos(-0.105+tr)*104); c.stroke(); c.fillStyle='#222'; c.beginPath(); c.arc(0,0,7,0,7); c.fill(); c.restore(); }],
+    ],
+    subs:[[0.6,4.3,'Голос в стене считает удары.','Двенадцать.'],[5.0,8.3,'Человек в противогазе','снимает маску. У него твоё лицо.'],[8.9,12.4,'«Ещё рано».']],
+    sfx:[[0.3,'count'],[4.8,'steps'],[8.8,'tick']],
+  },
+  mutiny:{ wind:300, windAmt:0.07,
+    shots:[
+      [0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.5,alarm:1,sign:'ГО-7'}); ecShade(c,E,0.15);
+        for(let i=0;i<5;i++) ecMan(c,40+i*50,560,{col:['#5a4a3a','#3a4a5a','#4a5a3a','#6a3a3a','#4a3f2c'][i],pose:'up',ph:t*9+i,dir:1,s:1.15}); ecMan(c,320,560,{name:'Ты',col:EC_COL.hero,pose:'stand',dir:-1,lean:-0.15}); }],
+      [4.6,(c,t,u,E)=>{ edSky(c,E,'storm',t); edCity(c,E,t,{y:470,near:'#1c1a1e'}); const h=1-iSm(2.2,3.2,u); edGarages(c,E,470,h);
+        ecMan(c,ecL(180,230,iSm(0.4,1.6,u)),478,{name:'Ты',col:EC_COL.hero,s:0.9,pose:u<1.6?'walk':'stand',ph:t*6,dir:1}); edSnow(c,E,t,0.9,40); }],
+      [9.0,(c,t,u,E)=>{ edSky(c,E,'storm',t); edCity(c,E,t,{y:470,near:'#18161a'}); ecAsh(c,E,t,0.9); { const k=iCl(u/3.4); ecMan(c,ecL(180,320,k),478,{name:'Ты',col:EC_COL.hero,s:ecL(0.9,0.6,k),pose:'walk',ph:t*5,dir:1,a:1-iSm(0.85,1,k)}); } edSnow(c,E,t,1,70); }],
+    ],
+    subs:[[0.6,4.3,'«Хватит».','Люди больше не верят тебе.'],[5.0,8.7,'Шлюз закрывается за спиной.'],[9.3,12.5,'Впереди — пепел.','И никого.']],
+    sfx:[[0.3,'crowd'],[1.8,'crowd'],[7.6,'slam']],
+  },
+  silence:{ wind:200, windAmt:0.05,
+    shots:[
+      [0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:Math.max(0,0.7-u*0.15),sign:'ГО-7'}); ecShade(c,E,0.3); edTable(c,90,480,180); c.fillStyle='rgba(180,170,150,.2)'; c.fillRect(90,476,180,4); }],
+      [4.6,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.15,sign:false}); ecShade(c,E,0.45);
+        c.save(); c.translate(180,540); c.rotate(-0.15); c.fillStyle='#e8e2d0'; c.fillRect(-60,-40,120,80); c.strokeStyle='#3a3a6a'; c.lineWidth=2; c.beginPath(); c.arc(-20,-6,12,0,7); c.moveTo(-20,6); c.lineTo(-20,26); c.stroke(); c.strokeStyle='#c0392b'; c.beginPath(); c.arc(28,-8,14,0,7); c.moveTo(28,-8); c.lineTo(28,-18); c.moveTo(28,-8); c.lineTo(36,-8); c.stroke(); c.restore(); ecGlow(c,180,540,90,'255,240,210',0.15); }],
+      [9.0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.08,sign:false}); ecShade(c,E,0.5); edRadio(c,180,470,t,1); edTable(c,120,470,120); edWaves(c,180,440,t,'200,210,230',3); }],
+    ],
+    subs:[[0.6,4.3,'Последняя лампа гаснет.','Чинить её больше некому.'],[5.0,8.7,'Рисунок Сони на полу.'],[9.3,12.5,'А голос в стене','всё считает. «…ноль».']],
+    sfx:[[9.2,'radio']],
+  },
+  fallen:{ wind:260, windAmt:0.05,
+    shots:[
+      [0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.45,sign:'ГО-7'}); ecShade(c,E,0.2); c.fillStyle='#f2f4f6'; iRR(c,80,500,200,16,4); c.fill();
+        ecMan(c,250,510,{col:EC_COL.hero,pose:'lie',dir:1,noShadow:true}); ['#5a4a3a','#3a4a5a','#6a3a3a'].forEach((col,i)=>ecMan(c,60+i*120,560,{col,pose:i===1?'kneel':'stand',kid:i===2,dir:i?-1:1,lean:0.2})); }],
+      [4.6,(c,t,u,E)=>{ edSky(c,E,'ash',t); edCity(c,E,t,{y:470,near:'#242226'}); edGarages(c,E,470,1);
+        c.strokeStyle='#3a3a3a'; c.lineWidth=6; c.beginPath(); c.moveTo(80,478); c.lineTo(80,400); c.moveTo(60,420); c.lineTo(100,420); c.stroke(); c.fillStyle='#5a544c'; c.beginPath(); c.ellipse(80,480,34,8,0,0,7); c.fill();
+        ['#5a4a3a','#3a4a5a','#6a3a3a','#4a5a3a'].forEach((col,i)=>ecMan(c,140+i*36,478,{col,s:0.8,pose:'stand',kid:i===2,dir:-1,lean:0.2})); edSnow(c,E,t,0.8,20); }],
+      [9.0,(c,t,u,E)=>{ ecRoom(c,E,t,{light:0.5*(1-iSm(1.2,2.0,u)),sign:'ГО-7'}); ['#5a4a3a','#3a4a5a','#4a5a3a'].forEach((col,i)=>ecMan(c,90+i*90,560,{col,pose:'up',ph:t*9+i,dir:i===2?-1:1})); }],
+    ],
+    subs:[[0.6,4.3,'Командира больше нет.'],[5.0,8.7,'Крест из арматуры','у гаражей.'],[9.3,12.5,'Без тебя бункер','держится недолго.']],
+    sfx:[[0.3,'heart'],[9.2,'crowd']],
+  },
+};
+function playEnding(id, done){ edPlay(id, done); }
+
+
+/* =========================================================
+   ПОРТРЕТЫ ЖИТЕЛЕЙ (SVG, по пояс, анимированные)
+   ========================================================= */
+const LOOKS = {
+  'Ты':          {sex:'m', age:35, skin:'#d9a982', hair:['short','#2a1c12'], eyes:'#4a6a8a', facial:'stubble', outfit:['jacket','#2c4462','#d8c56a'], scar:true},
+  'Пётр':        {sex:'m', age:48, skin:'#d8a47e', hair:['balding','#6a5a4a'], eyes:'#5a4a3a', facial:'mustache', outfit:['work','#6a5236','#3a2c1e'], wrinkles:1},
+  'Вера':        {sex:'f', age:30, skin:'#e8bfa0', hair:['bun','#3a2416'], eyes:'#3a6a5a', outfit:['medic','#f0f2f4','#7aaed0'], lips:'#b85a5a'},
+  'Марина':      {sex:'f', age:38, skin:'#e2b08c', hair:['ponytail','#8a3a1e'], eyes:'#5a7a3a', outfit:['sweater','#4a6a3a','#d8c8a0'], freckles:1, lips:'#a85048'},
+  'Лёша':        {sex:'m', age:12, kid:1, skin:'#ecc0a0', hair:['messy','#7a5030'], eyes:'#4a7aa0', outfit:['hoodie','#b8342a','#e8e0d0'], freckles:1},
+  'Соня':        {sex:'f', age:6,  kid:1, skin:'#f2cbb0', hair:['pigtails','#c8963a'], eyes:'#5a8ac0', outfit:['cardigan','#e8c84a','#e88aa8'], lips:'#d87878'},
+  'Глеб':        {sex:'m', age:42, skin:'#c8946c', hair:['buzz','#2a2420'], eyes:'#5a5a4a', facial:'beard', outfit:['military','#4a5236','#2a3020'], wrinkles:1},
+  'Арсений':     {sex:'m', age:21, skin:'#ecc4a4', hair:['curly','#3a2a1e'], eyes:'#6a4a2a', glasses:'round', outfit:['striped','#3a5a8a','#d8d0c0'], acc:'phones'},
+  'Зоя Павловна':{sex:'f', age:66, skin:'#e4b898', hair:['greybun','#c8c8c4'], eyes:'#6a6a7a', glasses:'half', outfit:['labcoat','#eef0f0','#7a5a3a'], wrinkles:2, lips:'#b07070'},
+  'Тимур':       {sex:'m', age:30, skin:'#c48c64', hair:['beanie','#22201e'], eyes:'#3a2a1a', facial:'stubble', outfit:['vest','#ff8a2a','#6a6e72']},
+};
+const PT_BIO = {
+  'Ты':'Позывной «Связист-7». Последние полгода — как в тумане.',
+  'Пётр':'Электрик, сосед по лестничной клетке. Знает бункер подозрительно хорошо.',
+  'Вера':'Медсестра. Работала в больнице, где лечили «нужных людей».',
+  'Марина':'Агроном. Пришла с детьми в первую же ночь.',
+  'Лёша':'Сын Марины. Всё время смотрит на шлюз — там где-то отец.',
+  'Соня':'Дочь Марины. Рисует. Говорит, что «дядя в стене» с ней разговаривает.',
+  'Глеб':'Механик. Бывший охранник какого-то закрытого объекта.',
+  'Арсений':'Студент радиофака. Паяльник, очки и бесконечные провода.',
+  'Зоя Павловна':'Тридцать лет в лаборатории водоканала. Никому не доверяет угли.',
+  'Тимур':'Сантехник из «Метро». Прислан Мироном на подмогу.',
+};
+function ptLook(p){
+  if(LOOKS[p.name]) return LOOKS[p.name];
+  // запасной генератор по имени
+  const h=k=>{ let s=0; for(const ch of p.name) s=(s*31+ch.charCodeAt(0)+k*7)%9973; return (s%1000)/1000; };
+  const f=/[ая]$/i.test(p.name), kid=p.prof==='child';
+  const skins=['#f0c8a8','#e2b08c','#d8a47e','#c8946c','#a8764e','#8a5a3a'], hc=['#1a1a1a','#3a2416','#6a4a2a','#8a3a1e','#c8963a','#7a7a76'];
+  const out={jacket:'#3a4a5a',work:'#6a5236',medic:'#f0f2f4',sweater:'#4a6a3a',hoodie:'#5a4a8a',military:'#4a5236',vest:'#ff8a2a',labcoat:'#eef0f0',striped:'#3a5a8a'};
+  const ot={electric:'work',medic:'medic',farmer:'sweater',mechanic:'military',plumber:'vest',child:'hoodie',boss:'jacket',radioman:'striped',chemist:'labcoat'}[p.prof]||'sweater';
+  return {sex:f?'f':'m', age:kid?9:25+Math.floor(h(1)*35), kid, skin:skins[Math.floor(h(2)*6)], eyes:['#4a6a8a','#5a4a3a','#3a6a5a','#6a4a2a'][Math.floor(h(3)*4)],
+    hair:[f?(['bun','ponytail','long'][Math.floor(h(4)*3)]):(['short','buzz','curly','balding'][Math.floor(h(4)*4)]), hc[Math.floor(h(5)*6)]],
+    facial:!f&&!kid&&h(6)>0.5?(['stubble','mustache','beard'][Math.floor(h(7)*3)]):null, outfit:[ot,out[ot],'#d8c8a0'], freckles:h(8)>0.8?1:0, wrinkles:0};
+}
+function ptMood(p){
+  if(p.sick) return 'sick';
+  if(p.migraine>0) return 'pain';
+  if(p.hp<40) return 'hurt';
+  const m=S.res.morale;
+  if(m<30) return 'sad';
+  if(m>=65 && p.hp>=60) return 'smile';
+  return 'calm';
+}
+function ptShade(hex,k){ return iMix(hex, k>0?'#ffffff':'#000000', Math.abs(k)); }
+let PT_UID=0;
+function portraitSVG(p, big){
+  const L=ptLook(p), u='pt'+(++PT_UID), mood=ptMood(p), kid=!!L.kid, f=L.sex==='f';
+  const sk=L.skin, skD=ptShade(sk,-0.18), skL=ptShade(sk,0.12), hcol=L.hair[1], hD=ptShade(hcol,-0.3), hL=ptShade(hcol,0.25);
+  const [oT,oC,oA]=L.outfit, oD=ptShade(oC,-0.3), oL=ptShade(oC,0.15);
+  // геометрия: у детей голова крупнее, плечи уже
+  const hs=kid?1.2:1.08, hcx=50, hcy=kid?46:44;
+  const T=(x,y)=>`${(hcx+(x-50)*hs).toFixed(1)} ${(hcy+(y-45)*hs).toFixed(1)}`;  // точка головы в масштабе
+  const sw=kid?0.82:1, SX=x=>(50+(x-50)*sw).toFixed(1);
+  const seed=(p.name.length*1.7+p.name.charCodeAt(0)*0.13)%5;
+  let s='';
+  // фон
+  const bg1=p.away?'#3a3e44':p.locked?'#2a1e1e':ptShade(oC,-0.55), bg2=p.away?'#6a6e74':ptShade(oC,-0.25);
+  s+=`<defs><linearGradient id="${u}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${bg2}"/><stop offset="1" stop-color="${bg1}"/></linearGradient>
+    <radialGradient id="${u}f" cx=".38" cy=".38" r=".75"><stop offset="0" stop-color="${skL}"/><stop offset=".7" stop-color="${sk}"/><stop offset="1" stop-color="${skD}"/></radialGradient>
+    <linearGradient id="${u}o" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${oL}"/><stop offset=".55" stop-color="${oC}"/><stop offset="1" stop-color="${oD}"/></linearGradient>
+    <clipPath id="${u}c"><rect width="100" height="120" rx="14"/></clipPath></defs>`;
+  s+=`<g clip-path="url(#${u}c)"><rect width="100" height="120" fill="url(#${u}b)"/><circle cx="72" cy="22" r="40" fill="#fff" opacity=".05"/>`;
+  if(p.away){ for(let i=0;i<26;i++){ const x=(i*37+seed*13)%100, y=(i*53)%120; s+=`<circle class="pt-snow" cx="${x}" cy="${y}" r="${0.5+(i%3)*0.4}" fill="#e8e8e8" opacity=".6" style="animation-delay:-${(i*0.37)%4}s"/>`; } }
+  s+=`<g class="pt-breath" style="animation-delay:-${seed}s">`;
+  // волосы сзади (длинные / хвост / косички)
+  const hb=L.hair[0];
+  if(hb==='long') s+=`<path d="M${T(33,40)} C${T(30,64)} ${T(32,80)} ${T(34,86)} L${T(66,86)} C${T(68,80)} ${T(70,64)} ${T(67,40)} Z" fill="${hD}"/>`;
+  if(hb==='ponytail') s+=`<g class="pt-sway" style="transform-origin:${T(62,34).replace(' ','px ')}px"><path d="M${T(60,30)} C${T(74,38)} ${T(74,62)} ${T(68,82)} C${T(64,70)} ${T(64,50)} ${T(58,36)} Z" fill="${hcol}"/><path d="M${T(66,44)} C${T(70,56)} ${T(69,68)} ${T(67,78)}" stroke="${hL}" stroke-width=".8" fill="none" opacity=".6"/></g>`;
+  // торс и одежда
+  const torso=`M${SX(4)} 120 C${SX(6)} 98 ${SX(20)} 86 ${SX(38)} 81 Q50 86 ${SX(62)} 81 C${SX(80)} 86 ${SX(94)} 98 ${SX(96)} 120 Z`;
+  s+=`<g transform="translate(50 120) scale(1.08 1.13) translate(-50 -120)"><path d="${torso}" fill="url(#${u}o)"/>`;
+  s+=`<path d="M${SX(38)} 81 C${SX(30)} 92 ${SX(26)} 104 ${SX(25)} 120 M${SX(62)} 81 C${SX(70)} 92 ${SX(74)} 104 ${SX(75)} 120" stroke="${oD}" stroke-width="1.2" fill="none" opacity=".6"/>`;
+  const neckTop=kid?66:63;
+  // шея
+  s+=`<path d="M44.5 ${neckTop} L44 78 Q50 82 56 78 L55.5 ${neckTop} Z" fill="${skD}"/><path d="M45 ${neckTop+2} Q50 ${neckTop+7} 55 ${neckTop+2} L55 ${neckTop} L45 ${neckTop} Z" fill="rgba(0,0,0,.18)"/>`;
+  // детали одежды
+  const O={
+    jacket:()=>`<path d="M${SX(38)} 81 L44 96 L50 84 L56 96 L${SX(62)} 81" fill="${oD}"/><path d="M50 86 L50 120" stroke="#1a1a1a" stroke-width="1"/><path d="M47 88 L50 92 L53 88" stroke="#888" stroke-width=".6" fill="none"/>
+      <rect x="${SX(8)}" y="104" width="${(84*sw).toFixed(1)}" height="4" fill="${oA}" opacity=".95"/><rect x="${SX(8)}" y="104" width="${(84*sw).toFixed(1)}" height="1.2" fill="#fff" opacity=".5"/>`,
+    work:()=>`<path d="M${SX(38)} 81 L45 92 L50 86 L55 92 L${SX(62)} 81" fill="${oD}"/><rect x="${SX(58)}" y="94" width="11" height="11" rx="1.5" fill="${oD}" opacity=".7"/><rect x="${SX(60)}" y="90" width="1.6" height="8" fill="#c0392b"/><rect x="${SX(63.5)}" y="88" width="1.6" height="10" fill="#d8d8d8"/>
+      ${[92,100,108,116].map(y=>`<circle cx="50" cy="${y}" r="1.1" fill="${oA}"/>`).join('')}<path d="M${SX(30)} 110 q4 -2 8 1" stroke="${oA}" stroke-width="2" fill="none" opacity=".5"/>`,
+    medic:()=>`<path d="M44 84 L50 98 L56 84 Z" fill="${oA}"/><path d="M${SX(38)} 81 L43 100 L47 120 M${SX(62)} 81 L57 100 L53 120" stroke="#c8ccd0" stroke-width="1.4" fill="none"/>
+      <rect x="${SX(31)}" y="94" width="9" height="9" rx="1.5" fill="#fff" stroke="#d0d0d0" stroke-width=".5"/><path d="M${SX(35.5)} 95.5 v6 M${SX(32.5)} 98.5 h6" stroke="#d0342c" stroke-width="2"/>
+      <path d="M41 82 C38 92 42 104 47 106 M59 82 C62 92 60 100 57 104" stroke="#2a2a2a" stroke-width="1.4" fill="none"/><circle cx="57" cy="106" r="2.6" fill="#9aa0a6" stroke="#5a5f64" stroke-width=".8"/>`,
+    sweater:()=>`<path d="M42 82 Q50 90 58 82 Q50 86 42 82 Z" fill="${oD}"/>${[90,96,102,108,114].map(y=>`<path d="M${SX(10)} ${y} Q50 ${y+2} ${SX(90)} ${y}" stroke="${oD}" stroke-width=".7" fill="none" opacity=".55"/>`).join('')}
+      <path d="M${SX(38)} 80 C44 86 56 86 ${SX(62)} 80 L${SX(64)} 84 C56 90 44 90 ${SX(36)} 84 Z" fill="${oA}" opacity=".9"/>`,
+    hoodie:()=>`<path d="M${SX(34)} 82 C40 74 60 74 ${SX(66)} 82 C60 88 40 88 ${SX(34)} 82 Z" fill="${oD}"/><path d="M46 86 L45 98 M54 86 L55 98" stroke="${oA}" stroke-width="1" /><circle cx="45" cy="99" r=".9" fill="${oA}"/><circle cx="55" cy="99" r=".9" fill="${oA}"/>
+      <path d="M38 110 L62 110 L60 120 L40 120 Z" fill="${oD}" opacity=".5"/><text x="50" y="106" font-size="6" text-anchor="middle" fill="${oA}" font-family="sans-serif" font-weight="900" opacity=".8">7</text>`,
+    cardigan:()=>`<path d="M44 82 L50 120 L56 82 Q50 88 44 82 Z" fill="${oA}"/><path d="M44 83 Q47 90 50 90 Q53 90 56 83" stroke="#fff" stroke-width="1.2" fill="none"/>${[96,104,112].map(y=>`<circle cx="${y%8?47:53}" cy="${y}" r="1" fill="#fff"/><circle cx="47" cy="${y}" r="1" fill="#fff"/>`).join('')}
+      <circle cx="${SX(70)}" cy="100" r="3.2" fill="#ff8aa8"/><circle cx="${SX(70)}" cy="100" r="1.2" fill="#ffd23a"/>`,
+    military:()=>`<path d="M${SX(38)} 81 L45 90 L50 85 L55 90 L${SX(62)} 81" fill="${oD}"/><rect x="${SX(14)}" y="83" width="16" height="3.4" rx="1" fill="${oD}" transform="rotate(14 ${SX(22)} 85)"/><rect x="${SX(70)}" y="83" width="16" height="3.4" rx="1" fill="${oD}" transform="rotate(-14 ${SX(78)} 85)"/>
+      <rect x="${SX(30)}" y="94" width="13" height="12" rx="1.5" fill="${oD}" opacity=".8"/><rect x="${SX(57)}" y="94" width="13" height="12" rx="1.5" fill="${oD}" opacity=".8"/><rect x="${SX(30)}" y="94" width="13" height="4" fill="${oA}" opacity=".7"/><rect x="${SX(57)}" y="94" width="13" height="4" fill="${oA}" opacity=".7"/>
+      <path d="M46 82 Q50 94 54 82" stroke="#9aa0a6" stroke-width=".6" fill="none"/><rect x="48.4" y="92" width="3.2" height="5" rx="1" fill="#b8bcc0"/><ellipse cx="${SX(64)}" cy="112" rx="5" ry="2.4" fill="#1a1a1a" opacity=".3"/>`,
+    striped:()=>`<path d="M43 82 Q50 88 57 82" stroke="${oA}" stroke-width="2.2" fill="none"/>${[90,97,104,111,118].map(y=>`<path d="M${SX(9)} ${y} Q50 ${y+1.5} ${SX(91)} ${y}" stroke="${oA}" stroke-width="2.6" fill="none" opacity=".9"/>`).join('')}`,
+    labcoat:()=>`<path d="M42 82 L50 120 L58 82 Q50 90 42 82 Z" fill="${oA}"/>${[94,102].map(y=>`<circle cx="50" cy="${y}" r=".9" fill="#d8c8a0"/>`).join('')}
+      <path d="M${SX(38)} 81 L43 98 L46 120 M${SX(62)} 81 L57 98 L54 120" stroke="#c8ccd0" stroke-width="1.4" fill="none"/><rect x="${SX(60)}" y="96" width="9" height="10" rx="1" fill="#e0e4e6" stroke="#c0c4c6" stroke-width=".5"/><rect x="${SX(62)}" y="92" width="1.4" height="7" fill="#2a5a9a"/>
+      <circle cx="${SX(36)}" cy="96" r="2" fill="#c9a227"/>`,
+    vest:()=>`<path d="M${SX(38)} 81 L46 120 L54 120 L${SX(62)} 81 Q50 86 ${SX(38)} 81 Z" fill="${oA}"/><path d="M${SX(38)} 81 L44 90 L50 85 L56 90 L${SX(62)} 81" fill="${ptShade(oA,-0.2)}"/>
+      <rect x="${SX(14)}" y="100" width="${(30*sw).toFixed(1)}" height="3.4" fill="#e8e8e0"/><rect x="${SX(56)}" y="100" width="${(30*sw).toFixed(1)}" height="3.4" fill="#e8e8e0"/>`,
+  };
+  s+=(O[oT]||O.sweater)();
+  s+=`</g>`;
+  if(L.acc==='phones') s+=`<path d="M40 76 C40 86 60 86 60 76" stroke="#1a1a1a" stroke-width="2.4" fill="none"/><rect x="36" y="74" width="6" height="8" rx="2.4" fill="#2a2a2a"/><rect x="58" y="74" width="6" height="8" rx="2.4" fill="#2a2a2a"/><circle cx="39" cy="78" r="1.2" fill="#d0342c"/>`;
+  // голова
+  s+=`<g class="pt-head${kid?' kid':''}" style="animation-delay:-${seed*1.3}s;transform-origin:50px ${neckTop+4}px">`;
+  // уши
+  s+=`<ellipse cx="${T(34.5,0).split(' ')[0]}" cy="${T(0,48).split(' ')[1]}" rx="${2.6*hs}" ry="${4.2*hs}" fill="${skD}"/><ellipse cx="${T(65.5,0).split(' ')[0]}" cy="${T(0,48).split(' ')[1]}" rx="${2.6*hs}" ry="${4.2*hs}" fill="${skD}"/>`;
+  // волосы-подложка (пучок, косички — за головой)
+  if(hb==='bun'||hb==='greybun') s+=`<circle cx="${T(50,0).split(' ')[0]}" cy="${T(0,21).split(' ')[1]}" r="${7*hs}" fill="${hcol}"/><path d="M${T(45,18)} Q${T(50,15)} ${T(55,18)}" stroke="${hL}" stroke-width=".8" fill="none"/>`;
+  if(hb==='pigtails') s+=`<g class="pt-sway" style="transform-origin:${T(34,44).replace(' ','px ')}px"><path d="M${T(35,42)} C${T(24,48)} ${T(24,62)} ${T(28,70)} C${T(31,62)} ${T(32,52)} ${T(37,46)} Z" fill="${hcol}"/><circle cx="${T(33,45).split(' ')[0]}" cy="${T(0,45).split(' ')[1]}" r="${2.2*hs}" fill="#e85a7a"/></g>
+    <g class="pt-sway r" style="transform-origin:${T(66,44).replace(' ','px ')}px"><path d="M${T(65,42)} C${T(76,48)} ${T(76,62)} ${T(72,70)} C${T(69,62)} ${T(68,52)} ${T(63,46)} Z" fill="${hcol}"/><circle cx="${T(67,45).split(' ')[0]}" cy="${T(0,45).split(' ')[1]}" r="${2.2*hs}" fill="#e85a7a"/></g>`;
+  // лицо
+  s+=`<path d="M${T(35,44)} C${T(35,60)} ${T(42,f?67:68)} ${T(50,f?68:69)} C${T(58,f?67:68)} ${T(65,60)} ${T(65,44)} C${T(65,29)} ${T(58,24)} ${T(50,24)} C${T(42,24)} ${T(35,29)} ${T(35,44)} Z" fill="url(#${u}f)"/>`;
+  // румянец, веснушки, морщины, шрам
+  s+=`<ellipse cx="${T(41,0).split(' ')[0]}" cy="${T(0,55).split(' ')[1]}" rx="${3.4*hs}" ry="${2*hs}" fill="#e8786a" opacity="${kid?.35:.18}"/><ellipse cx="${T(59,0).split(' ')[0]}" cy="${T(0,55).split(' ')[1]}" rx="${3.4*hs}" ry="${2*hs}" fill="#e8786a" opacity="${kid?.35:.18}"/>`;
+  if(L.freckles) for(let i=0;i<9;i++){ const x=(i%2?44:56)+((i*1.7)%5)-2.5, y=51+((i*2.3)%4); s+=`<circle cx="${T(x,0).split(' ')[0]}" cy="${T(0,y).split(' ')[1]}" r=".45" fill="#a8603a" opacity=".7"/>`; }
+  if(L.wrinkles){ s+=`<path d="M${T(43,33)} Q${T(50,31.5)} ${T(57,33)}" stroke="${skD}" stroke-width=".7" fill="none"/>`; if(L.wrinkles>1) s+=`<path d="M${T(44,36)} Q${T(50,34.8)} ${T(56,36)}" stroke="${skD}" stroke-width=".6" fill="none"/><path d="M${T(38.5,47)} l-1.6 .8 M${T(61.5,47)} l1.6 .8" stroke="${skD}" stroke-width=".6"/>`;
+    s+=`<path d="M${T(45,55)} Q${T(44,58)} ${T(45.5,61)} M${T(55,55)} Q${T(56,58)} ${T(54.5,61)}" stroke="${skD}" stroke-width=".6" fill="none" opacity=".8"/>`; }
+  if(L.scar) s+=`<path d="M${T(59,38)} l2.5 6" stroke="#b07060" stroke-width=".9" opacity=".7"/>`;
+  // щетина / борода / усы
+  if(L.facial==='stubble') s+=`<path d="M${T(37,52)} C${T(38,64)} ${T(44,69)} ${T(50,69)} C${T(56,69)} ${T(62,64)} ${T(63,52)} C${T(60,59)} ${T(56,61)} ${T(50,61)} C${T(44,61)} ${T(40,59)} ${T(37,52)} Z" fill="${hcol}" opacity=".22"/>`;
+  if(L.facial==='beard') s+=`<path d="M${T(36,49)} C${T(36,66)} ${T(43,73)} ${T(50,73)} C${T(57,73)} ${T(64,66)} ${T(64,49)} C${T(61,58)} ${T(57,60)} ${T(50,60)} C${T(43,60)} ${T(39,58)} ${T(36,49)} Z" fill="${hcol}"/><path d="M${T(44,58)} Q${T(50,56.5)} ${T(56,58)}" stroke="${hcol}" stroke-width="2.4" fill="none"/>`;
+  if(L.facial==='mustache') s+=`<path d="M${T(44,58.5)} Q${T(47,56)} ${T(50,57.5)} Q${T(53,56)} ${T(56,58.5)} Q${T(53,59.5)} ${T(50,58.8)} Q${T(47,59.5)} ${T(44,58.5)} Z" fill="${hcol}"/>`;
+  // глаза
+  const ew=(kid?3.8:3.2)*hs, eh=(kid?2.9:2.2)*hs, ey=47, ir=(kid?2.1:1.7)*hs;
+  const lidLow = mood==='sick'||mood==='pain' ? 0.45 : mood==='sad'||mood==='hurt' ? 0.25 : 0;
+  [44,56].forEach((ex,i)=>{ const [cx,cy]=T(ex,ey).split(' ');
+    s+=`<ellipse cx="${cx}" cy="${cy}" rx="${ew}" ry="${eh}" fill="#f8f6f2"/>`;
+    s+=`<g class="pt-look" style="animation-delay:-${seed*2}s"><circle cx="${cx}" cy="${cy}" r="${ir}" fill="${L.eyes}"/><circle cx="${cx}" cy="${cy}" r="${ir*0.5}" fill="#111"/><circle cx="${(+cx+ir*0.35).toFixed(1)}" cy="${(+cy-ir*0.35).toFixed(1)}" r="${ir*0.28}" fill="#fff"/></g>`;
+    if(lidLow) s+=`<rect x="${(+cx-ew-0.5).toFixed(1)}" y="${(+cy-eh-0.6).toFixed(1)}" width="${(ew*2+1).toFixed(1)}" height="${(eh*2*lidLow+0.6).toFixed(1)}" fill="${sk}"/>`;
+    s+=`<rect class="pt-lid" style="animation-delay:-${(seed*0.9+i*0.02).toFixed(2)}s" x="${(+cx-ew-0.6).toFixed(1)}" y="${(+cy-eh-0.8).toFixed(1)}" width="${(ew*2+1.2).toFixed(1)}" height="${(eh*2+1.6).toFixed(1)}" fill="${sk}"/>`;
+    s+=`<path d="M${(+cx-ew).toFixed(1)} ${(+cy-eh*0.2+eh*2*lidLow*0.5).toFixed(1)} Q${cx} ${(+cy-eh*1.25+eh*2*lidLow).toFixed(1)} ${(+cx+ew).toFixed(1)} ${(+cy-eh*0.2+eh*2*lidLow*0.5).toFixed(1)}" stroke="${f?'#2a1a14':ptShade(sk,-0.45)}" stroke-width="${f?1:0.7}" fill="none"/>`;
+  });
+  if(mood==='sick'||mood==='hurt'||L.age>55) s+=`<path d="M${T(41,50.5)} Q${T(44,52)} ${T(47,50.5)} M${T(53,50.5)} Q${T(56,52)} ${T(59,50.5)}" stroke="${skD}" stroke-width=".6" fill="none" opacity=".8"/>`;
+  // брови
+  const bc=L.hair[0]==='greybun'?'#8a8a86':hD, bt=f?1.1:1.6;
+  const br={smile:[-0.6,0], calm:[0,0], sad:[1.6,-1.2], hurt:[1.4,-1], sick:[1.2,-0.8], pain:[2,-1.6]}[mood];
+  s+=`<path d="M${T(40.5,42+br[0]*0.2)} Q${T(44,40.2+br[1])} ${T(47.5,41.6-br[0]*0.4)}" stroke="${bc}" stroke-width="${bt}" stroke-linecap="round" fill="none"/><path d="M${T(52.5,41.6-br[0]*0.4)} Q${T(56,40.2+br[1])} ${T(59.5,42+br[0]*0.2)}" stroke="${bc}" stroke-width="${bt}" stroke-linecap="round" fill="none"/>`;
+  // нос
+  s+=`<path d="M${T(50,48)} Q${T(48.4,53.5)} ${T(49.3,55)} Q${T(50.8,55.8)} ${T(52,54.6)}" stroke="${skD}" stroke-width=".9" fill="none" stroke-linecap="round"/>`;
+  // рот
+  const lc=L.lips||ptShade(sk,-0.35), mo={smile:`M${T(45,59.5)} Q${T(50,64)} ${T(55,59.5)}`, calm:`M${T(45.8,60.5)} Q${T(50,61.6)} ${T(54.2,60.5)}`, sad:`M${T(45.8,62)} Q${T(50,59)} ${T(54.2,62)}`, hurt:`M${T(45.5,61)} L${T(54.5,61)}`, sick:`M${T(46,61.5)} Q${T(50,59.8)} ${T(54,61.5)}`, pain:`M${T(45.5,61.5)} Q${T(47.5,60)} ${T(50,61.5)} Q${T(52.5,60)} ${T(54.5,61.5)}`}[mood];
+  s+=`<path d="${mo}" stroke="${lc}" stroke-width="${f?1.5:1.2}" fill="none" stroke-linecap="round"/>`;
+  if(mood==='smile') s+=`<path d="M${T(46.5,60.6)} Q${T(50,62.6)} ${T(53.5,60.6)}" stroke="#fff" stroke-width=".7" fill="none" opacity=".7"/>`;
+  // причёска спереди
+  const H={
+    short:`M${T(34,44)} C${T(33,28)} ${T(40,21)} ${T(50,21)} C${T(61,21)} ${T(67,28)} ${T(66,44)} C${T(64,36)} ${T(61,31)} ${T(56,30)} C${T(52,34)} ${T(45,34)} ${T(41,31)} C${T(38,34)} ${T(36,38)} ${T(34,44)} Z`,
+    buzz:`M${T(34.5,40)} C${T(34,27)} ${T(41,22)} ${T(50,22)} C${T(59,22)} ${T(66,27)} ${T(65.5,40)} C${T(62,32)} ${T(56,30)} ${T(50,30)} C${T(44,30)} ${T(38,32)} ${T(34.5,40)} Z`,
+    balding:`M${T(34,46)} C${T(33,38)} ${T(35,33)} ${T(38.5,31)} L${T(39,43)} Z M${T(66,46)} C${T(67,38)} ${T(65,33)} ${T(61.5,31)} L${T(61,43)} Z`,
+    bun:`M${T(34,46)} C${T(33,27)} ${T(41,22)} ${T(50,22)} C${T(60,22)} ${T(67,27)} ${T(66,46)} C${T(64,36)} ${T(59,29)} ${T(52,28)} C${T(48,31)} ${T(41,32)} ${T(36,38)} Z`,
+    greybun:`M${T(34,44)} C${T(33,27)} ${T(41,22)} ${T(50,22)} C${T(60,22)} ${T(67,27)} ${T(66,44)} C${T(63,34)} ${T(57,29)} ${T(50,29)} C${T(43,29)} ${T(37,34)} ${T(34,44)} Z`,
+    ponytail:`M${T(34,48)} C${T(32,27)} ${T(41,21)} ${T(51,21)} C${T(61,21)} ${T(67,28)} ${T(66,44)} C${T(62,32)} ${T(54,28)} ${T(46,29)} C${T(42,34)} ${T(37,38)} ${T(34,48)} Z`,
+    long:`M${T(33.5,50)} C${T(31,26)} ${T(41,21)} ${T(50,21)} C${T(59,21)} ${T(69,26)} ${T(66.5,50)} C${T(64,36)} ${T(58,29)} ${T(50,30)} C${T(42,29)} ${T(36,36)} ${T(33.5,50)} Z`,
+    messy:`M${T(34,45)} L${T(32,34)} L${T(37,35)} L${T(36,25)} L${T(42,29)} L${T(44,19)} L${T(49,26)} L${T(54,18)} L${T(57,26)} L${T(63,21)} L${T(63,30)} L${T(68,31)} L${T(66,45)} C${T(63,36)} ${T(58,32)} ${T(52,32)} C${T(47,35)} ${T(40,33)} ${T(34,45)} Z`,
+    pigtails:`M${T(34,46)} C${T(33,27)} ${T(41,22)} ${T(50,22)} C${T(59,22)} ${T(67,27)} ${T(66,46)} C${T(63,35)} ${T(57,30)} ${T(50,32)} C${T(43,30)} ${T(37,35)} ${T(34,46)} Z`,
+    curly:'',
+    beanie:`M${T(33,42)} C${T(32,22)} ${T(68,22)} ${T(67,42)} Z`,
+  };
+  if(hb==='curly'){ for(let i=0;i<15;i++){ const a=Math.PI*(1.02+i/14*0.96), x=50+Math.cos(a)*16.5, y=40+Math.sin(a)*17; s+=`<circle cx="${T(x,0).split(' ')[0]}" cy="${T(0,y).split(' ')[1]}" r="${4.2*hs}" fill="${i%2?hcol:hD}"/>`; } }
+  else if(H[hb]) s+=`<path d="${H[hb]}" fill="${hb==='beanie'?hcol:hcol}" ${hb==='buzz'?'opacity=".85"':''}/>`;
+  if(hb==='beanie') s+=`<rect x="${T(32.5,0).split(' ')[0]}" y="${T(0,37).split(' ')[1]}" width="${35*hs}" height="${6*hs}" rx="2" fill="${hL}"/><circle cx="${T(50,0).split(' ')[0]}" cy="${T(0,22).split(' ')[1]}" r="${3*hs}" fill="${hL}"/>${[0,1,2,3,4,5,6].map(k=>`<path d="M${T(35+k*5,38)} L${T(35+k*5,42.5)}" stroke="${hD}" stroke-width=".6"/>`).join('')}`;
+  if(['short','bun','ponytail','long','pigtails','greybun'].includes(hb)) s+=`<path d="M${T(44,25)} Q${T(50,23)} ${T(57,26)}" stroke="${hL}" stroke-width="1.1" fill="none" opacity=".7"/>`;
+  if(hb==='balding') s+=`<ellipse cx="${T(47,0).split(' ')[0]}" cy="${T(0,28).split(' ')[1]}" rx="${4*hs}" ry="${2*hs}" fill="#fff" opacity=".25"/><path d="M${T(44,26)} q3 -2 6 0 M${T(47,25)} q3 -1.5 6 .5" stroke="${hcol}" stroke-width=".5" fill="none"/>`;
+  // очки
+  if(L.glasses==='round') s+=[44,56].map(ex=>{ const [cx,cy]=T(ex,47).split(' '); return `<circle cx="${cx}" cy="${cy}" r="${4.6*hs}" fill="rgba(200,220,240,.12)" stroke="#2a2a2a" stroke-width="1"/>`; }).join('')+`<path d="M${T(48.6,47)} L${T(51.4,47)} M${T(39.4,46.5)} L${T(35,45)} M${T(60.6,46.5)} L${T(65,45)}" stroke="#2a2a2a" stroke-width="1"/>`;
+  if(L.glasses==='half') s+=[44,56].map(ex=>{ const [cx,cy]=T(ex,48.5).split(' '); return `<path d="M${(+cx-4.4).toFixed(1)} ${cy} Q${cx} ${(+cy+5).toFixed(1)} ${(+cx+4.4).toFixed(1)} ${cy} Z" fill="rgba(200,220,240,.15)" stroke="#8a6a2a" stroke-width=".9"/>`; }).join('')+`<path d="M${T(48.4,48.5)} L${T(51.6,48.5)}" stroke="#8a6a2a" stroke-width=".9"/><path d="M${T(35,48)} C${T(32,66)} ${T(38,78)} ${T(44,84)} M${T(65,48)} C${T(68,66)} ${T(62,78)} ${T(56,84)}" stroke="#c9a227" stroke-width=".5" fill="none" stroke-dasharray="1 .8"/>`;
+  // состояние: болезнь, ранения, мигрень
+  if(mood==='sick'){ s+=`<path d="M${T(35,44)} C${T(35,60)} ${T(42,68)} ${T(50,69)} C${T(58,68)} ${T(65,60)} ${T(65,44)} C${T(65,29)} ${T(58,24)} ${T(50,24)} C${T(42,24)} ${T(35,29)} ${T(35,44)} Z" fill="#9ad08a" opacity=".22"/>`;
+    s+=`<path class="pt-drop" d="M${T(62,34)} q-1.4 2.6 0 3.6 q1.4 -1 0 -3.6 Z" fill="#bfe4ff" opacity=".9"/><path d="M${T(38,36)} q-1.2 2.2 0 3 q1.2 -.8 0 -3 Z" fill="#bfe4ff" opacity=".7"/>`; }
+  if(p.hp<40) s+=`<path d="M${T(34,35)} Q${T(50,31)} ${T(66,35)} L${T(66,39.5)} Q${T(50,35.5)} ${T(34,39.5)} Z" fill="#f2efe8" stroke="#d8d4cc" stroke-width=".4"/><circle cx="${T(58,0).split(' ')[0]}" cy="${T(0,36.5).split(' ')[1]}" r="${1.4*hs}" fill="#c0392b" opacity=".75"/>`;
+  else if(p.hp<70) s+=`<rect x="${T(56.5,0).split(' ')[0]}" y="${T(0,53).split(' ')[1]}" width="${5.4*hs}" height="${2.4*hs}" rx="1" fill="#e8c8a0" transform="rotate(-20 ${T(59,54).replace(' ',' ')})"/>`;
+  if(mood==='pain') s+=`<path class="pt-throb" d="M${T(29,36)} l-3 -2 M${T(29,40)} l-3.6 0 M${T(29,44)} l-3 2" stroke="#ff8a7a" stroke-width="1" stroke-linecap="round"/>`;
+  s+=`</g>`; // голова
+  // противогаз на вылазке
+  if(p.away){ const [mx,my]=T(50,55).split(' ');
+    s+=`<path d="M${T(35,40)} C${T(33,62)} ${T(42,72)} ${T(50,72)} C${T(58,72)} ${T(67,62)} ${T(65,40)} C${T(60,36)} ${T(40,36)} ${T(35,40)} Z" fill="#3a4440"/>
+      ${[44,56].map(ex=>{ const [cx,cy]=T(ex,47).split(' '); return `<circle cx="${cx}" cy="${cy}" r="${4.6*hs}" fill="#a8bcb8" stroke="#1a1a1a" stroke-width="1.6"/><circle cx="${(+cx+1.2).toFixed(1)}" cy="${(+cy-1.2).toFixed(1)}" r="${1.2*hs}" fill="#fff" opacity=".6"/>`; }).join('')}
+      <rect x="${(+mx-5).toFixed(1)}" y="${(+my+2).toFixed(1)}" width="10" height="10" rx="2.5" fill="#55605a"/><rect x="${(+mx-4).toFixed(1)}" y="${(+my+4).toFixed(1)}" width="8" height="1" fill="#2a302c"/><rect x="${(+mx-4).toFixed(1)}" y="${(+my+7).toFixed(1)}" width="8" height="1" fill="#2a302c"/>
+      <path d="M${T(34,34)} C${T(36,18)} ${T(64,18)} ${T(66,34)}" stroke="#2a2a2a" stroke-width="2.4" fill="none"/>`; }
+  s+=`</g>`; // дыхание
+  if(p.locked) s+=`<rect width="100" height="120" fill="#000" opacity=".35"/>${[14,30,46,62,78].map(x=>`<rect x="${x}" y="0" width="5" height="120" fill="#4a4f54"/><rect x="${x}" y="0" width="1.4" height="120" fill="#8a9096"/>`).join('')}<rect x="0" y="54" width="100" height="5" fill="#4a4f54"/>`;
+  s+=`<rect width="100" height="120" rx="14" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/></g>`;
+  return `<svg class="ptr${mood==='sick'?' sick':''}${kid?' kid':''}" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${p.name}">${s}</svg>`;
+}
+function openPortrait(name){
+  const p=P(name); if(!p) return; const pr=PROFS[p.prof]||{n:p.prof,i:'👤'}, tr=TRAITS[p.trait], known=tr&&traitKnown(p);
+  const mood={smile:'Держится бодро',calm:'Спокоен(на)',sad:'Подавлен(а)',hurt:'Ранен(а)',sick:'Болеет',pain:'Мучает мигрень'}[ptMood(p)];
+  const d=document.createElement('div'); d.className='ptmodal'; d.onclick=()=>d.remove();
+  d.innerHTML=`<div class="ptbox" onclick="event.stopPropagation()"><div class="ptbig">${portraitSVG(p,true)}</div>
+    <h2 style="margin:12px 0 2px">${p.name}</h2><p class="small dim">${pr.i} ${pr.n}${pr.room?' · ★ '+ROOMS[pr.room].name:''}</p>
+    <p style="margin:10px 0">${PT_BIO[p.name]||'Пришёл(ла) в бункер в первые дни. О прошлом говорит мало.'}</p>
+    <p class="small">${known?tr.i+' <b>'+tr.n+'</b> — '+tr.d:'❔ Характер пока не ясен'}</p>
+    <p class="small" style="margin-top:6px">❤ ${p.hp} · ${p.away?'🗺 на вылазке':p.locked?'🔒 под замком':mood}</p>
+    <button class="main" style="margin-top:14px" onclick="this.closest('.ptmodal').remove()">Закрыть</button></div>`;
+  document.body.append(d); haptic('light');
+}
 
 /* =========================================================
    8. ЗАПУСК
