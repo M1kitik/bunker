@@ -44,6 +44,10 @@
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:6px;flex-wrap:wrap}
   .chips{flex-wrap:wrap;justify-content:flex-end}
   .topbar b{font-family:Unbounded,system-ui,sans-serif;font-size:17px}
+  .tbl{display:flex;align-items:center;gap:10px}
+  .mbtn{width:36px;height:36px;margin:0!important;padding:0!important;border-radius:11px!important;display:flex!important;flex-direction:column;justify-content:center!important;align-items:center;gap:4px;background:var(--glass)!important;border:1px solid var(--gline)!important;flex:none}
+  .mbtn i{display:block;width:15px;height:2px;border-radius:2px;background:#e8e2d8} .mbtn i:nth-child(2){width:11px;margin-left:-4px}
+  .mbtn:active{transform:scale(.92)}
   .chips{display:flex;gap:6px;align-items:center}
   .chip{background:var(--glass);border:1px solid var(--gline);border-radius:20px;padding:4px 10px;font-size:12px;white-space:nowrap}
   .chip.btn{cursor:pointer;width:auto;margin:0;padding:4px 9px}
@@ -469,6 +473,18 @@ if (tg) {
   try { if(tg.isVersionAtLeast('7.7')) tg.disableVerticalSwipes(); } catch(e){}   // чтобы прокрутка не сворачивала игру
 }
 
+// анонимная статистика: игра отмечается у нашего бота (номер игрока и день, без личных данных)
+const STATS_URL = 'https://bunker-bot.zhigailovcsgosteam.workers.dev/ping';
+let STATS_LAST = 0;
+function pingStats(extra, force){
+  try{
+    if(!inTG || !tg.initData || !navigator.sendBeacon) return;
+    if(!force && Date.now()-STATS_LAST < 90000) return;       // не чаще раза в полторы минуты
+    STATS_LAST = Date.now();
+    const body = JSON.stringify(Object.assign({initData: tg.initData, day: (S&&S.day)||0}, extra||{}));
+    navigator.sendBeacon(STATS_URL, new Blob([body], {type:'text/plain'}));
+  }catch(e){}
+}
 function haptic(type){ try{ if(inTG) tg.HapticFeedback.impactOccurred(type||'light'); }catch(e){} }
 
 const SAVE_KEY = 'bunker_save_v1';
@@ -1945,6 +1961,14 @@ function emStopAudio(){ try{ if(emAudioCtx) emAudioCtx.close(); }catch(e){} emAu
    6. ДЕЙСТВИЯ ИГРОКА
    ========================================================= */
 function go(screen){ S.screen=screen; save(); render(); window.scrollTo(0,0); }
+// выход в главное меню из игры: прогресс сохраняется, «Продолжить» вернёт на тот же экран
+function openMainMenu(){
+  haptic('medium'); sfx.play('door');
+  document.querySelectorAll('.ptmodal').forEach(x=>x.remove()); ROOM_SHEET=null; try{ tutHide(); }catch(e){}
+  S.screen_prev=S.screen; save();
+  S.screen='title'; render(); window.scrollTo(0,0);
+}
+function backToGame(){ const to=(S.screen_prev && S.screen_prev!=='title' && S.screen_prev!=='start') ? S.screen_prev : 'manage'; bgm.play('game'); go(to); }
 
 function togglePick(id){
   haptic();
@@ -2034,6 +2058,7 @@ function finishDay(){
   const em=pickEmergency();
   if(em && em.deferEnd) return startEmergency(em);     // буря у шлюза — до возвращения вылазки
   endDay();
+  pingStats({day:S.day});
   if(S.ending) return go('ending');
   if(em) return startEmergency(em);                    // ночное ЧП
   go('summary');
@@ -2389,7 +2414,7 @@ function hud(){
   const r=S.res, {prodE,useE,d}=compute(), n=S.residents.length;
   const lvl=(v,warnAt,badAt)=> v<=badAt?'bad':v<=warnAt?'warn':'';
   return `<div class="hud">
-    <div class="topbar"><b>День ${S.day}</b>
+    <div class="topbar"><div class="tbl"><button class="mbtn" onclick="openMainMenu()" title="Главное меню" aria-label="Главное меню"><i></i><i></i><i></i></button><b>День ${S.day}</b></div>
       <div class="chips"><span class="chip">👥 ${n}${freeWorkers()>0?` · ${freeWorkers()} своб.`:''}${people(p=>p.sick).length?` · 🤒${people(p=>p.sick).length}`:''}</span>
       ${S.rooms.radio.lvl>0?`<span class="chip">📡 ${r.signal}</span>`:''}
       ${(r.meds||0)>0?`<span class="chip">💊 ${r.meds}</span>`:''}
@@ -2596,6 +2621,7 @@ function render0(){
   if(sc==='ending'){
     if(!S.endClip && EDCLIP[S.ending]){ S.endClip=1; save(); app.innerHTML=''; bgm.stop(); playEnding(S.ending, ()=>render()); return; }
     const E=ENDINGS[S.ending]||ENDINGS.endure;
+    if(!S.endPinged){ S.endPinged=1; pingStats({day:S.day, ending:S.ending}, true); }
     let seen=[]; try{ seen=JSON.parse(localStorage.getItem('bunker_endings')||'[]'); if(!seen.includes(S.ending)){ seen.push(S.ending); localStorage.setItem('bunker_endings',JSON.stringify(seen)); } }catch(e){}
     const MC={best:'#ffd23a',good:'#7be36a',grey:'#c3c7d4',bad:'#ff6a5a',secret:'#b58ad8'}[E.mood]||'#ff8a7a';
     const ep=(typeof epilogue==='function' && S.flags.a3) ? epilogue() : [];
@@ -3036,7 +3062,7 @@ document.addEventListener('click',()=>setTimeout(tutCheck,60));
    7.8 ГЛАВНОЕ МЕНЮ
    ========================================================= */
 const TG_CHANNEL_URL = 'https://t.me/bunkergametiktok';   // наш Telegram-канал
-const GAME_VER = 'v33';
+const GAME_VER = 'v35';
 function seenEndings(){ try{ return JSON.parse(localStorage.getItem('bunker_endings')||'[]'); }catch(e){ return []; } }
 function toast(msg){
   document.querySelectorAll('.toast').forEach(t=>t.remove());
@@ -3066,7 +3092,7 @@ function renderMenu(hasSave){
       <p class="mline"><span></span>ядерная зима<span></span></p>
     </div>
     ${save}
-    <button class="main mplay" onclick="${hasSave?`bgm.play('game');go(S.screen_prev||'event')`:`startPrologue()`}">${hasSave?`▶ Продолжить`:`▶ Начать игру`}</button>
+    <button class="main mplay" onclick="${hasSave?`backToGame()`:`startPrologue()`}">${hasSave?`▶ Продолжить`:`▶ Начать игру`}</button>
     <div class="mgrid">
       <button class="mtile" onclick="openEndings()"><span class="mi">🏆</span><b>Концовки</b><small>${seen.length} / ${total}</small><em class="mbar"><i style="width:${Math.round(seen.length/total*100)}%"></i></em></button>
       <button class="mtile mlock" onclick="haptic();sfx.play('deny');toast('♾ Бесконечный бункер — в разработке.<br>Следи за новостями в нашем канале!')"><span class="mi">♾</span><b>Бесконечный бункер</b><small>Выживание без конца</small><span class="msoon">🔒 СКОРО</span></button>
@@ -5832,12 +5858,13 @@ load(raw=>{
   let saved=null;
   try{ saved = raw ? JSON.parse(raw) : null; }catch(e){}
   if(saved && saved.screen && saved.screen!=='ending' && saved.screen!=='pick'){
-    S = migrate(saved); S.screen_prev = saved.screen; S.screen='title';
+    S = migrate(saved); S.screen_prev = (saved.screen==='title' ? (saved.screen_prev||'manage') : saved.screen); S.screen='title';
   } else {
     S = newState(); S.screen='start';
   }
   render();
   if(window.bootDone) bootDone();
+  pingStats({day: S.screen==='start' ? 0 : S.day}, true);
 });
 </script>
 </body>
